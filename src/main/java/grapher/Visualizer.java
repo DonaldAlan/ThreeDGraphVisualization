@@ -167,8 +167,9 @@ public class Visualizer extends Application {
 				connectedComponent.placeOnePassUsingStocasticMoves();
 				break;
 			case Barrycenter:
-				connectedComponent.placeUsingBarrycenter();
-				break;
+				throw new UnsupportedOperationException();
+				//connectedComponent.placeUsingBarrycenter();
+				//break;
 			case FruchtermanAndReingold:
 				connectedComponent.fruchtermanAndReingold();
 				break;
@@ -285,7 +286,8 @@ public class Visualizer extends Application {
 		  default: throw new IllegalStateException();
 		}
 	}
-	   private void buildSlider(Group root) {
+	@SuppressWarnings("unchecked")
+	private void buildSlider(Group root) {
 	        importanceSlider.setTranslateX(-200);
 	        importanceSlider.setTranslateY(-286);
 	        importanceSlider.setTranslateZ(1100);

@@ -1,20 +1,23 @@
 # ThreeDGraphVisualization
 A graph visualization utility in 3D JavaFX
 
-by Don Smith, ThinkerFeeler@gmail.com
+Copyright by Don Smith, ThinkerFeeler@gmail.com
 
 License:  The GNU Lesser General Public License (LGPL)
 
+
+Install: to use Javafx (which is needed for 3d) you may need to edit the path to jfxrt.jar in compile.bat, run-ChooseGraphFilesAndVisualize.bat, and run-BuildGeneratedGraphs.bat .
+
 Two ways to run this toolkit are:
 
-1. ChooseGraphFileAndVisualize.java 
+1. ChooseGraphFileAndVisualize.java  (run-ChooseGraphFilesAndVisualize.bat)
 
   Run ChooseGraphFileAndVisualize.java to choose graph files in various formats (gexf, gml, and graphml) and visualize them.  
   In the graphs/ subdirectory you'll find some sample graphs.    When you run ChooseGraphFileAndVisualize.java, it will present a FileChooser dialog 
   pointing to the graphs/ subdirectory.
 
 
-2.  BuildGeneratedGraphs.java 
+2.  BuildGeneratedGraphs.java  (run-BuildGeneratedGraphs.bat)
 
   Run BuildGeneratedGraphs.java to view some synthetic (generated) graphs. Modify the code in main(String args) to choose which graph to visualize.
 
