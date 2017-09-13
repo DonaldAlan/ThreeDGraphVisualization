@@ -8,6 +8,8 @@ License:  The GNU Lesser General Public License (LGPL)
 
 Install: to use Javafx (which is needed for 3d) you may need to edit the path to jfxrt.jar in compile.bat, run-ChooseGraphFilesAndVisualize.bat, and run-BuildGeneratedGraphs.bat .
 
+See the images in screenshots/ for sample screenshots.
+
 Two ways to run this toolkit are:
 
 1. ChooseGraphFileAndVisualize.java  (run-ChooseGraphFilesAndVisualize.bat)
