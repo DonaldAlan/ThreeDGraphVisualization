@@ -8,8 +8,8 @@ License:  The GNU Lesser General Public License (LGPL)
 
 RUNNING:
 
-You'll need to edit run-BuildGeneratedGraphs.bat  and run-ChooseGraphFilesAndVisualize.bat  so they point to your jdk/jre.
-To use Javafx (which is needed for 3d) you may need to edit the path to jfxrt.jar .
+You'll need to edit compile.bat, run-BuildGeneratedGraphs.bat  and run-ChooseGraphFilesAndVisualize.bat  so they point to your jdk/jre.
+You may need to edit the path to jfxrt.jar in those files.
 
 See the images in screenshots/ for sample screenshots.
 
