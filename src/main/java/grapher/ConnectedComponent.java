@@ -318,6 +318,13 @@ public class ConnectedComponent {
 	//--------------------------------------------
 	public void randomizeColors(int mergeCount) {
 		for(Node3D node:nodes) {
+			if (!node.isVisible()) {
+				continue;
+			}
+			if (node.getSphere() == null) {
+				System.err.println("Sphere is null but isVisible = true");
+				continue;
+			}
 			PhongMaterial material = new PhongMaterial(randomColor());
 			node.setMaterial(material);
 		}
@@ -326,12 +333,18 @@ public class ConnectedComponent {
 	//--------------------------------------------
 	public void mergeNearbyColors() {
 		for(Node3D node:nodes) {
+			if (!node.isVisible()) {
+				continue;
+			}
 			Color oldColor=node.getMaterial().getDiffuseColor();
 			double components[]=new double[3];
 			components[0]=oldColor.getRed();
 			components[1]=oldColor.getGreen();
 			components[2]=oldColor.getBlue();
 			for(Node3D neighbor:node.getNeighbors()) {
+				if (!neighbor.isVisible()) {
+					continue;
+				}
 				Color color=neighbor.getMaterial().getDiffuseColor();
 				components[0] += color.getRed();
 				components[1] += color.getGreen();

@@ -102,7 +102,7 @@ public class Visualizer extends Application {
 	private MessageBox messageBox;
 	private double minImportance=Double.MAX_VALUE;
 	private double maxImportance=Double.NEGATIVE_INFINITY;
-	private double percentToShow=100.0; // display all by default
+	private double percentToShow=100; // 100.0; // display all by default
 	private Font tooltipFont = new Font("Times Roman",20);
 	private final Slider importanceSlider=new Slider();
 	private final ComboBox<String> importanceAlgorithmComboBox = new ComboBox<>();
@@ -113,6 +113,9 @@ public class Visualizer extends Application {
 		numberFormat.setMaximumFractionDigits(3);
 	}
 
+	public Visualizer() {
+		importanceSlider.setValue(percentToShow);
+	}
 	// Return cost of using point3D for node i
 	private double getCost(int i, Point3D point3d, Node3D nodeI) {
 		double sumCosts = 0;
@@ -179,9 +182,11 @@ public class Visualizer extends Application {
 		moveConnectedComponentsAwayFromEachOther();
 		movePointsSoCenterOfMassIsAtOrigin();
 		
-		double seconds=0.001*(System.currentTimeMillis()-startTime);
+		long middle = System.currentTimeMillis();
+		double seconds=0.001*(middle-startTime);
 		System.out.println(numberFormat.format(seconds) + " seconds to place one pass");
 		refreshNodes();
+		seconds = 0.001*(System.currentTimeMillis() - middle);
 	}
 
 	private void movePointsSoCenterOfMassIsAtOrigin() {
@@ -293,7 +298,7 @@ public class Visualizer extends Application {
 	        importanceSlider.setTranslateZ(1100);
 	        importanceSlider.setMin(0);
 	        importanceSlider.setMax(100); // logarithmic scale
-	        importanceSlider.setValue(100);
+	        importanceSlider.setValue(percentToShow);
 	        importanceSlider.setShowTickLabels(false);
 	        importanceSlider.setShowTickMarks(true);
 	        importanceSlider.setMajorTickUnit(5);
@@ -367,7 +372,9 @@ public class Visualizer extends Application {
 		world.getChildren().clear();
 		shapes.clear();
 		displayNodes();
+		System.out.println("Requesting layout");
 		world.requestLayout();
+		System.out.println("Done requesting layout");
 	}
 
 	private void moveConnectedComponentsAwayFromEachOther() {
@@ -842,17 +849,19 @@ public class Visualizer extends Application {
 	private void displayNodes() {
 		// If we are focused on a node, then ignore the importance limit
 		int limit = focusedNode==null? (int) Math.round(0.01 * percentToShow * nodesToDisplay.length) : nodesToDisplay.length;
+		System.out.println("Display nodes: percentToShow = " + percentToShow + ", limit = " + limit);
 		for (int i = 0; i < limit; i++) {
 			Node3D node = nodesToDisplay[i];
-			if (!node.isVisible()) {
-				System.err.println(node + " is not visible");
-			}
+			node.setIsVisible(true);
 			double radius = node == focusedNode?  3*sphereRadius: sphereRadius;
 			Sphere sphere = drawSphere(node.getX(), node.getY(), node.getZ(), radius, randomMaterial(), 
 					node.toString() + ", imp=" + numberFormat.format(node.getImportance()));
 			sphere.setUserData(node);
 			node.setSphere(sphere);
 			shapes.add(sphere);
+		}
+		for(int i = limit; i< nodesToDisplay.length;i++) {
+			nodesToDisplay[i].setIsVisible(false);
 		}
 		for (int i = 0; i < limit; i++) {
 			Node3D node = nodesToDisplay[i];
@@ -903,6 +912,9 @@ public class Visualizer extends Application {
 		primaryStage = stage;
 		final Group root = new Group();
 		
+		if (nodesToDisplay.length>1000) {
+			percentToShow = 100_000.0/nodesToDisplay.length;
+		}
 		try {
 			runCurrentImportanceAlgorithm();
 			calculateMinMaxImportance();
@@ -935,7 +947,7 @@ public class Visualizer extends Application {
 			placeOnePass();
 			randomizeColors(2);
 			
-			showAverageDistances();
+			//showAverageDistances();
 			world.setTranslateZ(0.5*Node3D.windowSize);
 			animate();
 			primaryStage.show();
