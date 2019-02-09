@@ -1,6 +1,8 @@
 package grapher;
 
 
+import java.awt.Event;
+
 /*
  * @Author Don Smith, ThinkerFeeler@gmail.com
  * 
@@ -22,6 +24,8 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 
+import javax.swing.JOptionPane;
+
 import javafx.animation.AnimationTimer;
 import javafx.application.Application;
 import javafx.collections.FXCollections;
@@ -36,6 +40,7 @@ import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Slider;
+import javafx.scene.control.TextField;
 import javafx.scene.control.Tooltip;
 import javafx.scene.input.InputEvent;
 import javafx.scene.input.KeyEvent;
@@ -52,6 +57,7 @@ import javafx.scene.shape.Sphere;
 import javafx.scene.text.Font;
 import javafx.scene.transform.Rotate;
 import javafx.scene.transform.Translate;
+import javafx.stage.Modality;
 import javafx.stage.Stage;
 
 public class Visualizer extends Application {
@@ -99,6 +105,7 @@ public class Visualizer extends Application {
 	private volatile Node3D focusedNode=null;
 	private Set<ConnectedComponent> connectedComponents=null;
 	private List<Shape3D> shapes = new ArrayList<Shape3D>();
+	private final Group root = new Group();
 	
 	private Stage primaryStage;
 	private MessageBox messageBox;
@@ -293,6 +300,7 @@ public class Visualizer extends Application {
 		  default: throw new IllegalStateException();
 		}
 	}
+
 	@SuppressWarnings("unchecked")
 	private void buildSlider(Group root) {
 	        importanceSlider.setTranslateX(-200);
@@ -718,17 +726,18 @@ public class Visualizer extends Application {
 				showAverageDistances();
 				break;
 			case H:  {
-				String message="\n\nNavigate in 3D space by dragging the mouse, or by pressing the arrow keys."
-						+ "\nUse the drop-down at the top left to choose the count of stochastic placements; higher values result in nicer graphs."
-						+ "\nUse the next drop-down to choose the importance algorithm that's used to rank nodes."
-						+ "\nUse the slider at the top to adjust how many nodes to display, ordered by importance."
-						+ "\nThe button on the upper right controls whether to approximate forces (faster).  "
-						+ "\nFor large graphs, it defaults to Approximate Forces; for smaller graphs it defaults to Unrestricted Forces"
-						+ "\nLeft-click on a node to see details. Right click to focus on that node."
-						+ "\n\nPress PageUp and PageDown to adjust how many nodes are shown when focussed."
-						+ "\nPress 'r' to reset the view. Press 'R' or click on 'Redraw' to recompute the layout."
-						+ "\nPress 'c' to randomize the colors."
-						+ "\nPress 'q' to exit."
+				String message="\n\n Navigate in 3D space by dragging the mouse, or by pressing the arrow keys."
+						+ "\n Use the drop-down at the top left to choose the count of stochastic placements; higher values result in nicer graphs."
+						+ "\n Use the next drop-down to choose the importance algorithm that's used to rank nodes."
+						+ "\n Use the slider at the top to adjust how many nodes to display, ordered by importance."
+						+ "\n The button on the upper right controls whether to approximate forces (faster).  "
+						+ "\n For large graphs, it defaults to Approximate Forces; for smaller graphs it defaults to Unrestricted Forces"
+						+ "\n Left-click on a node to see details. Right click to focus on that node."
+						+ "\n Press Ctrl-F to search for a node by id. If found, the program will focus on that node."
+						+ "\n\n Press PageUp and PageDown to adjust how many nodes are shown when focussed."
+						+ "\n Press 'r' to reset the view. Press 'R' or click on 'Redraw' to recompute the layout."
+						+ "\n Press 'c' to randomize the colors."
+						+ "\n Press 'q' to exit."
 						;
 				new MessageBox(message,"Help");
 				break;
@@ -763,10 +772,31 @@ public class Visualizer extends Application {
 					}
 				}
 				break;
+			case F:
+				if (ke.isControlDown()) {
+					doSearchAndFocus();
+				}
+				break;
 			default:
 			}
 		}
 	};
+	private void doSearchAndFocus() {
+		String id = (String) JOptionPane.showInputDialog(
+                null,
+                "Enter node name");
+		if (id!=null) {
+			id = id.trim();
+			if (id.length()>0) {
+				for(Node3D node: nodesToDisplay) {
+					if (node.getId().equals(id)) {
+						focus(node);
+						return;
+					}
+				}
+			}
+		}
+	}
 	private void handleKeyEvents(Scene scene) {
 		scene.setOnKeyPressed(keyEventHandler);
 	}
@@ -891,7 +921,6 @@ public class Visualizer extends Application {
 		int n=nodesToDisplay.length;
 		return new Point3D(x/n,y/n,z/n);
 	}
-
 	//--------------
 	private void animate() {
 		final AnimationTimer timer = new AnimationTimer() {
@@ -912,7 +941,7 @@ public class Visualizer extends Application {
 	@Override
 	public void start(Stage stage) throws Exception {
 		primaryStage = stage;
-		final Group root = new Group();
+		
 		
 		if (nodesToDisplay.length>preferredCountOfNodesShown) {
 			percentToShow = 100.0*preferredCountOfNodesShown/nodesToDisplay.length;
@@ -943,7 +972,6 @@ public class Visualizer extends Application {
 			//handleKeyEvents(scene);
 			buildApproximateOnlyButton(root);
 			buildRedoLayoutButton(root);
-			
 			scene.setCamera(camera);
 		
 			placeOnePass();
