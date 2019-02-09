@@ -55,6 +55,8 @@ import javafx.scene.transform.Translate;
 import javafx.stage.Stage;
 
 public class Visualizer extends Application {
+	public static int preferredCountOfNodesShown = 1000; // The slider can override this value.
+	//--------------------
 	public static enum Layout { Stochastic,Spring,Barrycenter,FruchtermanAndReingold;}
 	public static Layout layout = Layout.Stochastic;
 	public static Node3D[] nodesToDisplay = null;
@@ -912,8 +914,8 @@ public class Visualizer extends Application {
 		primaryStage = stage;
 		final Group root = new Group();
 		
-		if (nodesToDisplay.length>1000) {
-			percentToShow = 100_000.0/nodesToDisplay.length;
+		if (nodesToDisplay.length>preferredCountOfNodesShown) {
+			percentToShow = 100.0*preferredCountOfNodesShown/nodesToDisplay.length;
 		}
 		try {
 			runCurrentImportanceAlgorithm();
