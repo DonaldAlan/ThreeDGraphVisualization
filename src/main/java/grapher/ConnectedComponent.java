@@ -8,6 +8,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
+import java.text.NumberFormat;
 import java.util.Random;
 import java.util.Set;
 
@@ -23,7 +24,8 @@ import javafx.scene.paint.PhongMaterial;
  *  
  */
 public class ConnectedComponent {
-	public static int stochasticMovesReps=14;  // Raising this will result in prettier graphs, at the cost of slower execution. TODO: slider, etc.
+	public static int secondsToWaitPerIteration = 10;
+	public static int stochasticMovesReps=4;  // Raising this will result in prettier graphs, at the cost of slower execution. TODO: slider, etc.
 	public static int numberOfSamplesForApproximation=1000; // The higher, the more approximate the forces using ApproximateForces.
 	public static boolean approximateForces=false; // Renders much faster with this true, but graphs don't look as good.
 	public static boolean repulsiveDenonimatorIsSquared=true;
@@ -35,18 +37,27 @@ public class ConnectedComponent {
 	//......
 	private static final Random random = new Random();
 	private final TreeSet<Node3D> nodes = new TreeSet<>();
-	private Node3D[] nodesToDisplay=null;
+	private Node3D[] nodesToDisplayThisCC=null;
 	private double extentOfInitialGridPlacement;
+	private static final long startMilliseconds = System.currentTimeMillis();
 	// minX==Double.MAX_VALUE when we need to recompute
 	double minX=Double.MAX_VALUE,maxX=Double.NEGATIVE_INFINITY;
 	double minY=Double.MAX_VALUE,maxY=Double.NEGATIVE_INFINITY;
 	double minZ=Double.MAX_VALUE,maxZ=Double.NEGATIVE_INFINITY;
+	private static final NumberFormat numberFormat = NumberFormat.getInstance();
+	static {
+		numberFormat.setMinimumFractionDigits(1);
+		numberFormat.setMaximumFractionDigits(1);
+	}
 	public ConnectedComponent(Node3D node) {
 		nodes.add(node);
 		totalCount++;
 	}
 	public Node3D getFirst() {
 		return nodes.first();
+	}
+	private void debug(String message) {
+		System.out.println(numberFormat.format(0.001*(System.currentTimeMillis() - startMilliseconds)) + ": " + message);
 	}
 	public Point3D computeCentroid() {
 		double x=0;
@@ -90,9 +101,9 @@ public class ConnectedComponent {
 	// Each run takes O(n*d*d) where n is the number of vertices in the connected component and d is the max degree of the vertex and its neighbors.
 	private double getCostExpensive(int i, Point3D point3d, Node3D nodeI) {
 		double sumCosts = 0;
-		for (int j = 0; j < nodesToDisplay.length; j++) {
+		for (int j = 0; j < nodesToDisplayThisCC.length; j++) {
 			if (i != j) {
-				Node3D nodeJ = nodesToDisplay[j];
+				Node3D nodeJ = nodesToDisplayThisCC[j];
 				if (!nodeJ.isVisible()) { // When focusing on the neighborhood of a single vertex, ignore invisible vertices (not in the neighborhood).
 					continue;
 				}
@@ -145,14 +156,14 @@ public class ConnectedComponent {
 				}
 			}
 		}
-		int increment=nodesToDisplay.length/numberOfSamplesForApproximation;
+		int increment=nodesToDisplayThisCC.length/numberOfSamplesForApproximation;
 		if (increment==0) {
 			increment=1;
 		}
 		// Because of increment, we only sample nodes
-		for (int j = 0; j < nodesToDisplay.length; j+=increment) {
+		for (int j = 0; j < nodesToDisplayThisCC.length; j+=increment) {
 			if (i != j  && j==-1) {
-				Node3D nodeJ = nodesToDisplay[j];
+				Node3D nodeJ = nodesToDisplayThisCC[j];
 				if (!nodeJ.isVisible()) { // When focusing on the neighborhood of a single vertex, ignore invisible vertices (not in the neighborhood).
 					continue;
 				}
@@ -173,28 +184,28 @@ public class ConnectedComponent {
 		return Color.rgb(random.nextInt(256),random.nextInt(256), random.nextInt(256),1);
 	}
 	private void placeOne() {
-		nodesToDisplay[0].setPoint3D(new Point3D(0,0,0));
+		nodesToDisplayThisCC[0].setPoint3D(new Point3D(0,0,0));
 		getMaxWidthHeightDepth();
 	}
 	private void placeTwo() {
-		nodesToDisplay[0].setPoint3D(new Point3D(0,0,0));
-		nodesToDisplay[1].setPoint3D(new Point3D(Visualizer.distanceForOneEdge,0,0));
+		nodesToDisplayThisCC[0].setPoint3D(new Point3D(0,0,0));
+		nodesToDisplayThisCC[1].setPoint3D(new Point3D(Visualizer.distanceForOneEdge,0,0));
 		getMaxWidthHeightDepth();
 	}
 	private void placeThree() {
-		nodesToDisplay[0].setPoint3D(new Point3D(0,0,0));
-		nodesToDisplay[1].setPoint3D(new Point3D(Visualizer.distanceForOneEdge,0,0));
+		nodesToDisplayThisCC[0].setPoint3D(new Point3D(0,0,0));
+		nodesToDisplayThisCC[1].setPoint3D(new Point3D(Visualizer.distanceForOneEdge,0,0));
 		if (random.nextBoolean()) {
-			nodesToDisplay[2].setPoint3D(new Point3D(0,Visualizer.distanceForOneEdge,0));
+			nodesToDisplayThisCC[2].setPoint3D(new Point3D(0,Visualizer.distanceForOneEdge,0));
 		} else {
-			nodesToDisplay[2].setPoint3D(new Point3D(0,0,Visualizer.distanceForOneEdge));
+			nodesToDisplayThisCC[2].setPoint3D(new Point3D(0,0,Visualizer.distanceForOneEdge));
 		}
 		getMaxWidthHeightDepth();
 	}
 	// Uses less memory than placeRandomMovesSequential but requires higher count, because it doesn't remember the deltaVector.
 	private void placeRandomMovesSequentialNew(double distance, int count) {	// 11.533
-		for(int i=0;i<nodesToDisplay.length;i++) {
-			Node3D node = nodesToDisplay[i];
+		for(int i=0;i<nodesToDisplayThisCC.length;i++) {
+			Node3D node = nodesToDisplayThisCC[i];
 			Point3D best=node.getPoint3D();
 			double bestCost=getCost(i, node.getPoint3D(), node);
 			//long start=System.currentTimeMillis();
@@ -212,13 +223,18 @@ public class ConnectedComponent {
 		}
 	}
 	private void placeRandomMoves(double distance, int count) {
+		debug("Before placeRandomMovesInParallel");
 	    placeRandomMovesInParallel(distance, count);
+	    debug("After placeRandomMovesInParallel");
 	    placeRandomMovesSequential(distance,count/4); // Do it sequentially since the parallel version may err due to two connected nodes moving at the same time.
 	}
 	// Uses more memory, but needs smaller count, because it multiplies deltaVector by -1
 	private void placeRandomMovesSequential(double distance, int count) {	//20.84
-		for(int i=0;i<nodesToDisplay.length;i++) {
-			Node3D node = nodesToDisplay[i];
+		for(int i=0;i<nodesToDisplayThisCC.length;i++) {
+			Node3D node = nodesToDisplayThisCC[i];
+			if (!node.isVisible()) {
+				continue;
+			}
 			Point3D best=node.getPoint3D();
 			double bestCost=getCost(i, node.getPoint3D(), node);
 			//long start=System.currentTimeMillis();
@@ -261,9 +277,12 @@ public class ConnectedComponent {
 
 	private void placeRandomMovesInParallel(final double distance, final int count) {	
 		final ExecutorService executorService=Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors()); 
-		final CountDownLatch latch = new CountDownLatch(nodesToDisplay.length);
-		for(int i=0;i<nodesToDisplay.length;i++) {
-			final Node3D node = nodesToDisplay[i];
+		final CountDownLatch latch = new CountDownLatch(nodesToDisplayThisCC.length);
+		for(int i=0;i<nodesToDisplayThisCC.length;i++) {
+			final Node3D node = nodesToDisplayThisCC[i];
+			if (!node.isVisible()) {
+				continue;
+			}
 			final Point3D startPoint=node.getPoint3D();
 			final Point3D[] best={node.getPoint3D()};
 			final double [] bestCost={getCost(i, node.getPoint3D(), node)};
@@ -289,7 +308,7 @@ public class ConnectedComponent {
 			executorService.execute(runnable);
 		}
 		try {
-			latch.await(1, TimeUnit.MINUTES);
+			latch.await(secondsToWaitPerIteration, TimeUnit.SECONDS);
 		} catch (InterruptedException e1) {
 			e1.printStackTrace();
 			System.exit(1);
@@ -303,15 +322,13 @@ public class ConnectedComponent {
 	}
 	//--------------------------------------------
 	private void permuteNodes() {
-		for(int i=0;i<nodesToDisplay.length;i++) {
-			int index=random.nextInt(nodesToDisplay.length);
+		for(int i=0;i<nodesToDisplayThisCC.length;i++) {
+			int index=random.nextInt(nodesToDisplayThisCC.length);
 			if (i!=index) {
-				Node3D node1=nodesToDisplay[i];
-				Node3D node2=nodesToDisplay[index];
-				nodesToDisplay[i]=node2;
-				nodesToDisplay[index]=node1;
-				node1.setIndexInImportanceOrder(index);
-				node2.setIndexInImportanceOrder(i);
+				Node3D node1=nodesToDisplayThisCC[i];
+				Node3D node2=nodesToDisplayThisCC[index];
+				nodesToDisplayThisCC[i]=node2;
+				nodesToDisplayThisCC[index]=node1;
 			}
 		}
 	}
@@ -319,10 +336,6 @@ public class ConnectedComponent {
 	public void randomizeColors(int mergeCount) {
 		for(Node3D node:nodes) {
 			if (!node.isVisible()) {
-				continue;
-			}
-			if (node.getSphere() == null) {
-				System.err.println("Sphere is null but isVisible = true");
 				continue;
 			}
 			PhongMaterial material = new PhongMaterial(randomColor());
@@ -414,7 +427,7 @@ public class ConnectedComponent {
 	}
 	public void shift(double deltaX, double deltaY, double deltaZ) {
 		Point3D centroid=computeCentroid();
-		for(Node3D node: nodesToDisplay) {
+		for(Node3D node: nodesToDisplayThisCC) {
 			node.setPoint3D(new Point3D(
 					node.getX()-centroid.getX()+deltaX, 
 					node.getY()-centroid.getY()+deltaY,
@@ -423,69 +436,72 @@ public class ConnectedComponent {
 		getMaxWidthHeightDepth();
 	}
 	public void done() {
-		nodesToDisplay=new Node3D[nodes.size()];
-		nodes.toArray(nodesToDisplay);
+		nodesToDisplayThisCC=new Node3D[nodes.size()];
+		nodes.toArray(nodesToDisplayThisCC);
+		//debug(nodes.size() + " nodes in "+ this.getFirst());
 		placeInitiallyInGrid();
 	}
 
-	@Deprecated // doesn't work
-	public void placeUsingBarrycenter() {
-//		final Set<Node3D> fixed = chooseEightPairwiseNodesWithNoEdgesBetween();
-//		System.out.println("Chose " + fixed.size() + " fixed nodes");
-//		if (fixed.size() < 3) {
+//	@Deprecated // doesn't work
+//	public void placeUsingBarrycenterDeprecated() {
+////		final Set<Node3D> fixed = chooseEightPairwiseNodesWithNoEdgesBetween();
+////		System.out.println("Chose " + fixed.size() + " fixed nodes");
+////		if (fixed.size() < 3) {
+////			placeOnePassUsingSpringModel();
+////			return;
+////		}
+//		if (nodesToDisplay.length <= 8) {
 //			placeOnePassUsingSpringModel();
-//			return;
+//		return;
 //		}
-		if (nodesToDisplay.length <= 8) {
-			placeOnePassUsingSpringModel();
-		return;
-		}
-		final Set<Node3D> fixed = chooseEightRandomNodes();
-		placeEdgesAtCornersOfHyperCube(fixed);
-		Point3D center = new Point3D(extentOfInitialGridPlacement/2,extentOfInitialGridPlacement/2,extentOfInitialGridPlacement/2);
-		for(Node3D node:nodesToDisplay) {
-			if (!fixed.contains(node)) {
-				node.setPoint3D(center);
-			}
-		}
-		int reps = 0;
-		boolean changed = true;
-		while (changed) {
-			changed = false;
-			reps++;
-			for (Node3D node : nodesToDisplay) {
-				if (!fixed.contains(node) && node.getNeighbors().size() > 0) {
-					int n = node.getNeighbors().size();
-					double sumX = 0.0;
-					double sumY = 0.0;
-					double sumZ = 0.0;
-					for (Node3D neighbor : node.getNeighbors()) {
-						sumX += neighbor.getX();
-						sumY += neighbor.getY();
-						sumZ += neighbor.getZ();
-					}
-					double newX = sumX / n;
-					double newY = sumY / n;
-					double newZ = sumZ / n;
-					if (differ(node.getX(), newX) || differ(node.getY(), newY) || differ(node.getZ(), newZ)) {
-						node.setPoint3D(new Point3D(newX, newY, newZ));
-						changed = true;
-					}
-				}
-			}
-		} //
-		System.out.println(reps + " reps to place with Barrycenter");
-	}
+//		final Set<Node3D> fixed = chooseEightRandomNodes();
+//		placeEdgesAtCornersOfHyperCube(fixed);
+//		Point3D center = new Point3D(extentOfInitialGridPlacement/2,extentOfInitialGridPlacement/2,extentOfInitialGridPlacement/2);
+//		for(Node3D node:nodesToDisplay) {
+//			if (!fixed.contains(node)) {
+//				node.setPoint3D(center);
+//			}
+//		}
+//		int reps = 0;
+//		boolean changed = true;
+//		while (changed) {
+//			changed = false;
+//			reps++;
+//			for (Node3D node : nodesToDisplay) {
+//				if (!fixed.contains(node) && node.getNeighbors().size() > 0) {
+//					int n = node.getNeighbors().size();
+//					double sumX = 0.0;
+//					double sumY = 0.0;
+//					double sumZ = 0.0;
+//					for (Node3D neighbor : node.getNeighbors()) {
+//						sumX += neighbor.getX();
+//						sumY += neighbor.getY();
+//						sumZ += neighbor.getZ();
+//					}
+//					double newX = sumX / n;
+//					double newY = sumY / n;
+//					double newZ = sumZ / n;
+//					if (differ(node.getX(), newX) || differ(node.getY(), newY) || differ(node.getZ(), newZ)) {
+//						node.setPoint3D(new Point3D(newX, newY, newZ));
+//						changed = true;
+//					}
+//				}
+//			}
+//		} //
+//		System.out.println(reps + " reps to place with Barrycenter");
+//	}
 	
 	
 	private static boolean differ(double x, double y) {
 		return Math.abs(x-y)>0.1;
 	}
 	public void placeOnePassUsingSpringModel() {	
-		double maxXYZ = Math.pow(nodesToDisplay.length,1.0/3.0)*Visualizer.distanceForOneEdge;
+		double maxXYZ = Math.pow(nodesToDisplayThisCC.length,1.0/3.0)*Visualizer.distanceForOneEdge;
 		for(int i=0;i<springRep;i++) {
-			for(Node3D node:nodesToDisplay) {
-				node.computeSpringForceAndMove(maxXYZ);
+			for(Node3D node:nodesToDisplayThisCC) {
+				if (node.isVisible()) {
+					node.computeSpringForceAndMove(maxXYZ);
+				}
 			}
 		}
 	}
@@ -501,23 +517,23 @@ public class ConnectedComponent {
 
 	//---------------
 		public void fruchtermanAndReingold() {
-			if (nodesToDisplay.length<=1) {
+			if (nodesToDisplayThisCC.length<=1) {
 				return;
 			}
 			final double volume=Math.pow(Node3D.windowSize,3);
 			final double C=1.0;
-			final double k = C*Math.pow(volume/nodesToDisplay.length, 0.33333) ;
+			final double k = C*Math.pow(volume/nodesToDisplayThisCC.length, 0.33333) ;
 			double maxXYZ = Node3D.windowSize;
 			
-			for(Node3D node: nodesToDisplay) {
+			for(Node3D node: nodesToDisplayThisCC) {
 				node.setPoint3D(new Point3D(maxXYZ*random.nextDouble(), maxXYZ*random.nextDouble(), maxXYZ*random.nextDouble()));
 			}
 		
 			//System.out.println("area = " + area + ", k = " + k);
 			Vector3 delta = new Vector3(0,0,0);
-			final int n=nodesToDisplay.length;
+			final int n=nodesToDisplayThisCC.length;
 			double startTemperature=0.5*maxXYZ;
-			System.out.println("maxXYZ= " + maxXYZ + " for " + nodesToDisplay.length  + " stochasticDecayFactor = " + decayFactor
+			System.out.println("maxXYZ= " + maxXYZ + " for " + nodesToDisplayThisCC.length  + " stochasticDecayFactor = " + decayFactor
 					+ " vertices, startTemperature = " + startTemperature + ", k = " + toString(k) + "\n"); 
 			int iteration=0;
 			for(double temperature=startTemperature;temperature>0.1;temperature*=decayFactor) {
@@ -525,13 +541,16 @@ public class ConnectedComponent {
 				// Attractive forces are between vertices connected by an edge.  f_a(d) = d*d/k.
 				// All pairs of vertices have repulsive forces.                  f_r(d) = -k*k/d;
 				for(int i=0;i<n;i++) {
-					Node3D v = nodesToDisplay[i];
+					Node3D v = nodesToDisplayThisCC[i];
+					if (!v.isVisible()) {
+						continue;
+					}
 					v.setDisplacement(0,0,0);
 					for(int j=0;j<n;j++) {
 						if (i==j) {
 							continue;
 						}
-						Node3D u=nodesToDisplay[j];
+						Node3D u=nodesToDisplayThisCC[j];
 						//Calculate repulsive forces
 						delta.setToMinus(v.getPoint3D(),u.getPoint3D());
 						double lengthDelta = delta.length();
@@ -570,7 +589,10 @@ public class ConnectedComponent {
 					if (trace) {System.out.println();}
 				} // for i
 				// Limit max displacement to temperature and prevent going outside frame
-				for(Node3D v: nodesToDisplay) {
+				for(Node3D v: nodesToDisplayThisCC) {
+					if (!v.isVisible()) {
+						continue;
+					}
 					Vector3 displ = v.getDisplacement();
 					//System.out.print(displ + "  ");
 					double length=displ.length();
@@ -598,7 +620,7 @@ public class ConnectedComponent {
 		return new Point3D(random.nextDouble()-0.5,random.nextDouble()-0.5, random.nextDouble()-0.5).normalize(); 
 	}
 	public void placeOnePassUsingStocasticMoves() {		
-		if (nodesToDisplay==null) {
+		if (nodesToDisplayThisCC==null) {
 			done();		
 		}
 		if (nodes.size()==1) {
@@ -613,18 +635,17 @@ public class ConnectedComponent {
 			placeThree();
 			return;
 		}
+		debug("Starting placeOnePassUsingStocasticMoves");
 		double start=getMaxWidthHeightDepth();
 		//System.out.print("Placing with start = " + start + " and reps = " + reps + ": ");
 		int iteration=0;
-		permuteNodes();
 		for(double d=start;d>1; d=d*decayFactor) {
-			//System.out.print('.');
+			permuteNodes();
+			debug("d = " + d + ", stochasticMovesReps = " + stochasticMovesReps);
 			placeRandomMoves(d,stochasticMovesReps);
 			iteration++;
 		}
-		if (trace) {
-			System.out.println(iteration + " iterations");
-		}
+		debug(iteration + " iterations");
 		getMaxWidthHeightDepth();
 	}
 	public boolean intersects(ConnectedComponent other) {
@@ -643,7 +664,7 @@ public class ConnectedComponent {
 	private Set<Node3D> chooseEightRandomNodes() {
 		Set<Node3D> result = new TreeSet<>();
 		while (result.size()<8) {
-			Node3D node = nodesToDisplay[random.nextInt(nodesToDisplay.length)];
+			Node3D node = nodesToDisplayThisCC[random.nextInt(nodesToDisplayThisCC.length)];
 			result.add(node);
 		}
 		return result;
@@ -660,7 +681,7 @@ public class ConnectedComponent {
 		return result;
 	}
 	private Node3D chooseNodeWithNoEdgeTo(Set<Node3D> result) {
-		for(Node3D node:nodesToDisplay) {
+		for(Node3D node:nodesToDisplayThisCC) {
 			if (!result.contains(node)&& !hasEdgeTo(node,result)) {
 				return node;
 			}
@@ -724,7 +745,7 @@ public class ConnectedComponent {
 		trace=false;
 		cc.fruchtermanAndReingold();
 	//	cc.placeOnePassUsingSpringModel();
-		for(Node3D node1:cc.nodesToDisplay) {
+		for(Node3D node1:cc.nodesToDisplayThisCC) {
 			System.out.print(node1.getId() + " " + toString(node1.getPoint3D()) + ": ");
 			for(Node3D node2:node1.getNeighbors()) {
 				System.out.print(toString(node1.distance(node2))+ " ");

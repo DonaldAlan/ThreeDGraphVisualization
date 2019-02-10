@@ -37,7 +37,7 @@ public class Node3D implements Comparable<Node3D> {
 	private ConnectedComponent connectedComponent;
 	private double distance = Double.MAX_VALUE;
 	private double importance=1.0;
-	private int index;
+	private int indexInImportanceOrder;
 	private boolean isVisible=true;
 	private Sphere sphere=null;
 	//-----------------------------------
@@ -80,10 +80,10 @@ public class Node3D implements Comparable<Node3D> {
 		return attributes;
 	}
 	public int getIndexInImportanceOrder() {
-		return index;
+		return indexInImportanceOrder;
 	}
 	public void setIndexInImportanceOrder(int index) {
-		this.index=index;
+		this.indexInImportanceOrder=index;
 	}
 	
 	public Map<Node3D,Double> getEdges() {return edges;}
@@ -175,7 +175,7 @@ public class Node3D implements Comparable<Node3D> {
 	}
 	public Set<Node3D> getNeighbors() {return edges.keySet();}
 	
-	public Iterable<Node3D> getVisibileNeighbors() {
+	public Iterable<Node3D> getVisibleNeighborsIterable() {
 		return new Iterable<Node3D>() {
 			@Override
 			public Iterator<Node3D> iterator() {
