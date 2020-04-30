@@ -31,7 +31,7 @@ Two ways to use this toolkit are:
  Graphs are laid out using stochastic relaxation of spring tensions and repulsive forces.  Vertex positions are randomly moved from their current positions, using a decreasing temperature to control the distance moved.  After each move, the cost is recalculated. Moves that lower the cost are preferred.
 
  There are three components to the cost:
- 1. a large, constant repulsive force that prevents vertices from being placed more than a specified minimum distance from each other
+ 1. a large, constant repulsive force that prevents vertices from being placed less than a specified minimum distance from each other
  (to prevent overcrowding).
  2. a repulsive force that varies as the inverse of the Euclidean distance between vertices.
  3. a spring force (either attractive or repulsive) between nodes. The spring constant (the force of the spring) depends on the graph
@@ -41,7 +41,7 @@ Two ways to use this toolkit are:
 
  UnrestrictedForces is appropriate for smaller graphs, as its running time is O(n*n*d*d), where n is number of vertices and d is  the (max) degree of vertices. UnrestrictedForces sets up repulsive forces (type 1 and 2 above) between each pair of vertices,  as well as spring forces between vertices at graph-theoretic distance 1 or 2 (neighbors, or neighbors of neighbors).   The resulting visualizations are more informative and attractive but are slow to build for large graphs.
 
- ApproximateForces running time is O(n*d*d), as it mainly forces only between pairs of vertices at graph theoretic distance 1 or 2   (neighbors or neighbors of neighbors). In addition, it adds repulsive forces of a <em>sample</em> of nodes not in the neighborhood.    The sampling represents an approximation to UnrestrictedForces.
+ ApproximateForces running time is O(n*d*d), as it maintains forces mostly between pairs of vertices at graph theoretic distance 1 or 2   (neighbors or neighbors of neighbors). In addition, it adds repulsive forces of a <em>sample</em> of nodes not in the neighborhood.    The sampling represents an approximation to UnrestrictedForces.
 
  The layout algorithms take advantage of multi-threading if you have multiple cores.
 

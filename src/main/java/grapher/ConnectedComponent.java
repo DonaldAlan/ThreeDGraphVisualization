@@ -25,7 +25,7 @@ import javafx.scene.paint.PhongMaterial;
  */
 public class ConnectedComponent {
 	public static int secondsToWaitPerIteration = 10;
-	public static int stochasticMovesReps=4;  // Raising this will result in prettier graphs, at the cost of slower execution. TODO: slider, etc.
+	public static int stochasticMovesReps=14;  // Raising this will result in prettier graphs, at the cost of slower execution. TODO: slider, etc.
 	public static int numberOfSamplesForApproximation=1000; // The higher, the more approximate the forces using ApproximateForces.
 	public static boolean approximateForces=false; // Renders much faster with this true, but graphs don't look as good.
 	public static boolean repulsiveDenonimatorIsSquared=true;

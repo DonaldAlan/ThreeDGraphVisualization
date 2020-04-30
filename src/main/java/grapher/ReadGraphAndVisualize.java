@@ -230,6 +230,9 @@ public class ReadGraphAndVisualize {
 		}
 	}
 	//-----------
+	// For each node n, consider the set of all pairs (n1, n2) of neighbors of that node and compute the global proportion of
+	// pairs of neighbors having n1 and n2 being neighbors of one another.
+	//       
 	public static double computeClusteringCoefficient(final Node3D[] nodes) {
 		int countPairs=0;
 		int countNeighborsConnected=0;

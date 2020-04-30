@@ -16,8 +16,9 @@ import javax.swing.JFileChooser;
  */
 public final class ChooseGraphFileAndVisualize {
 	private static void test() {
-		final JFileChooser fileChooser = new JFileChooser("graphs");
-		fileChooser.setSelectedFile(new File("graphs/diseasome.gml"));
+		final JFileChooser fileChooser = // new JFileChooser("d:/tmp"); 
+		   new JFileChooser("graphs");
+		fileChooser.setSelectedFile(new File("Collatz.gml")); // COllatz  graph.gml
 		fileChooser.showOpenDialog(null);
 		File file = fileChooser.getSelectedFile();
 		if (file==null) {
@@ -32,6 +33,7 @@ public final class ChooseGraphFileAndVisualize {
 			}
 		}
 	}
+	
 	public static void main(String [] args) {
 		try {
 			while (true) {test();}}
