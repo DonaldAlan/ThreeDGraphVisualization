@@ -20,10 +20,15 @@ import javafx.scene.paint.PhongMaterial;
  * 
  * @author Don Smith, ThinkerFeeler@gmail.com
  *
+ *TODO:  to keep nodes separated, place them ONLY on a 3d grid at regular intervals.
+ *   During relaxation, move a node to an empty position if that lowers the cost.
+ *   
  * See README.txt for more documentation. 
  *  
  */
 public class ConnectedComponent {
+	private Node3D[][][] nodeMatrix;
+	public double simpleDecayFactor = 0.75;
 	public static int secondsToWaitPerIteration = 10;
 	public static int stochasticMovesReps=14;  // Raising this will result in prettier graphs, at the cost of slower execution. TODO: slider, etc.
 	public static int numberOfSamplesForApproximation=1000; // The higher, the more approximate the forces using ApproximateForces.
@@ -59,6 +64,54 @@ public class ConnectedComponent {
 	private void debug(String message) {
 		System.out.println(numberFormat.format(0.001*(System.currentTimeMillis() - startMilliseconds)) + ": " + message);
 	}
+	public void done() {
+		nodesToDisplayThisCC=new Node3D[nodes.size()];
+		nodes.toArray(nodesToDisplayThisCC);
+		//debug(nodes.size() + " nodes in "+ this.getFirst());
+		int n=2*(int)Math.ceil(Math.pow(nodes.size(),0.33333));
+		System.out.println("n = " + n + ", n*n*n = " + (n*n*n) + ", nodes.size() = " + nodes.size());
+		nodeMatrix = new Node3D[n][n][n];
+		placeInitiallyInGrid(n);
+	}
+	//--------------------------------------------
+		private void placeInitiallyInGrid(int n) {
+			//double volumeNeeded = nodes.size()*Math.pow(PlotCylindersAndSpheres.distanceForOneEdge,3);
+			int cubeRootOfSize = (int) (Math.pow(nodes.size(), 0.333333))+1;
+			if (cubeRootOfSize<=1){
+				cubeRootOfSize=2;
+			}
+			int nodeIndex=0;
+			for(int x=0;x<n && nodeIndex<nodesToDisplayThisCC.length;x+=2)  {
+				for(int y=0;y<n&& nodeIndex<nodesToDisplayThisCC.length;y+=2) {
+					for(int z=0;z<n && nodeIndex<nodesToDisplayThisCC.length;z+=2) {
+						Node3D node = nodesToDisplayThisCC[nodeIndex];
+						nodeIndex++;
+						nodeMatrix[x][y][z]=node;
+						node.setPoint3D(new Point3D(10*x,10*y,10*z));
+					}
+				}
+			}
+			minX=Double.MAX_VALUE;
+			extentOfInitialGridPlacement=cubeRootOfSize*10;
+		}
+		
+		public void placeOnePassUsingSpringModel() {
+			final double distanceForOneEdge = computeDistanceForOneEdge();
+			final double maxXYZ = Math.pow(nodesToDisplayThisCC.length,1.0/3.0)*distanceForOneEdge;
+			final double dFactor= 1.0/Math.pow(maxXYZ,  1.0/springRep);
+			System.out.println("Placing with spring model using springRep = " + springRep
+					+ ", maxXYZ = " + maxXYZ + ", distanceForOneEdge = " + distanceForOneEdge + ", dFactor = " + dFactor);
+			double d=maxXYZ;
+			for(int i=0;i<springRep;i++) {
+				for(Node3D node:nodesToDisplayThisCC) {
+					if (node.isVisible()) {
+						node.computeSpringForceAndMove(maxXYZ, d);
+					}
+				}
+				d*=dFactor;
+			}
+			System.out.println("At end d = " + d);
+		}
 	public Point3D computeCentroid() {
 		double x=0;
 		double y=0;
@@ -372,35 +425,7 @@ public class ConnectedComponent {
 			node.setMaterial(material); 
 		}
 	}
-	//--------------------------------------------
-	private void placeInitiallyInGrid() {
-		//double volumeNeeded = nodes.size()*Math.pow(PlotCylindersAndSpheres.distanceForOneEdge,3);
-		int cubeRootOfSize = (int) (Math.pow(nodes.size(), 0.333333))+2;
-		if (cubeRootOfSize<=1){
-			cubeRootOfSize=2;
-		}
-		int x=0;
-		int y=0;
-		int z=0;
-		double d=1.5*Visualizer.distanceForOneEdge;
-		for(Node3D node:nodes) {
-			node.setPoint3D(new Point3D(x*d,y*d,z*d));
-			x++;
-			if (x==cubeRootOfSize) {
-				x=0;
-				y++;
-				if (y==cubeRootOfSize) {
-					y=0;
-					z++;
-					if (z==cubeRootOfSize) {
-						System.err.println("WARN: Unexpected: z==" + cubeRootOfSize);
-					}
-				}
-			}
-		}
-		minX=Double.MAX_VALUE;
-		extentOfInitialGridPlacement=cubeRootOfSize*Visualizer.distanceForOneEdge;
-	}
+	
 	private static Point3D randomUnitVector() {
 		return new Point3D(ThreadLocalRandom.current().nextDouble()-0.5,ThreadLocalRandom.current().nextDouble()-0.5,ThreadLocalRandom.current().nextDouble()-0.5).normalize();
 	}
@@ -435,12 +460,7 @@ public class ConnectedComponent {
 		}
 		getMaxWidthHeightDepth();
 	}
-	public void done() {
-		nodesToDisplayThisCC=new Node3D[nodes.size()];
-		nodes.toArray(nodesToDisplayThisCC);
-		//debug(nodes.size() + " nodes in "+ this.getFirst());
-		placeInitiallyInGrid();
-	}
+	
 
 //	@Deprecated // doesn't work
 //	public void placeUsingBarrycenterDeprecated() {
@@ -492,19 +512,13 @@ public class ConnectedComponent {
 //	}
 	
 	
+	private double computeDistanceForOneEdge() {
+		return (Math.sqrt(3.0)*Node3D.windowSize) / nodesToDisplayThisCC.length;
+	}
 	private static boolean differ(double x, double y) {
 		return Math.abs(x-y)>0.1;
 	}
-	public void placeOnePassUsingSpringModel() {	
-		double maxXYZ = Math.pow(nodesToDisplayThisCC.length,1.0/3.0)*Visualizer.distanceForOneEdge;
-		for(int i=0;i<springRep;i++) {
-			for(Node3D node:nodesToDisplayThisCC) {
-				if (node.isVisible()) {
-					node.computeSpringForceAndMove(maxXYZ);
-				}
-			}
-		}
-	}
+	
 	//--------------
 	private static final double attractive(double d, double k) {
 		return (d*d)/k;
@@ -515,6 +529,17 @@ public class ConnectedComponent {
 		return (k*k)/(d);  // d*d?    d?
 	}
 
+	//----------------------
+	public void simple() {
+		final double maxXYZ = Node3D.windowSize;
+		for(Node3D node: nodesToDisplayThisCC) {
+			node.setPoint3D(new Point3D(maxXYZ*random.nextDouble(), maxXYZ*random.nextDouble(), maxXYZ*random.nextDouble()));
+		}
+		double distanceToMove = maxXYZ;
+		while (distanceToMove> 1) {
+			distanceToMove *= simpleDecayFactor;
+		}
+	}
 	//---------------
 		public void fruchtermanAndReingold() {
 			if (nodesToDisplayThisCC.length<=1) {
@@ -752,5 +777,15 @@ public class ConnectedComponent {
 			}
 			System.out.println();
 		}
+		for(double f = 0.5;f<=0.91;f+= 0.05) {
+			double d=1000;
+			int count=0;
+			while (d>1) {
+				d=d*f;
+				count++;
+			}
+			System.out.println(f + " " + count);
+		}
 	}
+
 }

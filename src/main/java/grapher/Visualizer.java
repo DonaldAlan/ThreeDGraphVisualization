@@ -61,8 +61,8 @@ import javafx.stage.Stage;
 public class Visualizer extends Application {
 	public static int preferredCountOfNodesShown = 1000; // The slider can override this value.
 	//--------------------
-	public static enum Layout { Stochastic,Spring,Barrycenter,FruchtermanAndReingold;}
-	public static Layout layout = Layout.Stochastic;
+	public static enum Layout { Stochastic,Spring,Barrycenter,FruchtermanAndReingold, Simple;}
+	public static Layout layout = Layout.Spring;
 	public static Node3D[] nodesToDisplay = null;
 	public static Node3D[] savedAllNodes=null;
 	public static double distanceForOneEdge = 10;
@@ -159,15 +159,17 @@ public class Visualizer extends Application {
 		approximationButton.requestLayout();
 	}
 	private void randomizeNodePlacements() {
+		System.out.println("Entering randomizeNodePlacements");
 		for(int i=0;i<limitIndexForNodesToDisplay;i++) {
 			nodesToDisplay[i].randomizePlacement();
 		}
 	}
 	public void placeOnePass() {
 		long startTime=System.currentTimeMillis();
-		randomizeNodePlacements();
+	//	randomizeNodePlacements();
 		computeConnectedComponents();
-		System.out.println(connectedComponents.size() + " connected components, " + nodesToDisplay.length + " nodes, limit = " + limitIndexForNodesToDisplay);
+		System.out.println("Layout = " + layout + ": " + connectedComponents.size() + " connected components, "
+		+ nodesToDisplay.length + " nodes, limit = " + limitIndexForNodesToDisplay);
 		for (ConnectedComponent connectedComponent : connectedComponents) {
 			switch (layout) {
 			case Spring:
@@ -182,6 +184,9 @@ public class Visualizer extends Application {
 				//break;
 			case FruchtermanAndReingold:
 				connectedComponent.fruchtermanAndReingold();
+				break;
+			case Simple:
+				connectedComponent.simple();
 				break;
 			}
 			connectedComponent.getMaxWidthHeightDepth();
@@ -424,6 +429,7 @@ public class Visualizer extends Application {
 	 * Ignores isVisible. Only needs to be done once
 	 */
 	private void computeConnectedComponents() {
+		System.out.println("Entering computeConnectedComponents with limitIndexForNodesToDisplay= "+ limitIndexForNodesToDisplay);
 		if (connectedComponents==null) {
 			connectedComponents = new HashSet<>();
 			for (int i=0;i<limitIndexForNodesToDisplay;i++) {
@@ -877,7 +883,6 @@ public class Visualizer extends Application {
 	// --------------------------
 	private void displayNodes() {
 		// If we are focused on a node, then ignore the importance limit
-		limitIndexForNodesToDisplay = focusedNode==null? (int) Math.round(0.01 * percentToShow * nodesToDisplay.length) : nodesToDisplay.length;
 		System.out.println("Display nodes: percentToShow = " + percentToShow + ", limit = " + limitIndexForNodesToDisplay);
 		for (int i = 0; i < limitIndexForNodesToDisplay; i++) {
 			Node3D node = nodesToDisplay[i];
@@ -979,7 +984,9 @@ public class Visualizer extends Application {
 			buildApproximateOnlyButton(root);
 			buildRedoLayoutButton(root);
 			scene.setCamera(camera);
-		
+			limitIndexForNodesToDisplay = focusedNode==null? (int) Math.round(0.01 * percentToShow * nodesToDisplay.length) : nodesToDisplay.length;
+			System.out.println("percentToShow = " + percentToShow + ", limitIndexForNodesToDisplay = " + limitIndexForNodesToDisplay);
+
 			placeOnePass();
 			randomizeColors(2);
 			displayNodes();

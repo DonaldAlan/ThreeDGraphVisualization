@@ -526,7 +526,8 @@ public class Node3D implements Comparable<Node3D> {
     public static double c2=20.0;
     public static double c3=1.0;
     public static double c4=0.01;
-    public void computeSpringForceAndMove(double maxXYZ) { // From https://cs.brown.edu/~rt/gdhandbook/chapters/force-directed.pdf
+    @Deprecated
+    public void computeSpringForceAndMove(double maxXYZ, double factor) { // From https://cs.brown.edu/~rt/gdhandbook/chapters/force-directed.pdf
             final double x=getX();
             final double y=getY();
             final double z=getZ();
@@ -551,9 +552,11 @@ public class Node3D implements Comparable<Node3D> {
                     }
                     double force=0.0;
                     if (getNeighbors().contains(v)) {
-                            force = c1*Math.log(d/c2);
+                            force = factor*c1*Math.log(d/c2);
                             //System.out.println("force1 = " + force + ", d = " + d);
-                    } 
+                    } else {
+                    	force = -factor*c1*Math.log(d/c2);
+                    }
                     force += -c3/square(d);
                     //System.out.println("force2 = " + force + ", d = " + d);
                     xf +=  force*(deltaX);

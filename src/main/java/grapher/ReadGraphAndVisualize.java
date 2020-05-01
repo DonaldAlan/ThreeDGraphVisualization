@@ -251,12 +251,12 @@ public class ReadGraphAndVisualize {
 		return (0.0+countNeighborsConnected)/countPairs;
 	}
 	// ----------------
-	public void readGraphAndVisualize() throws Exception {
+	public void readGraphAndVisualize(Visualizer.Layout layout) throws Exception {
 		readInGraph();
 		Node3D nodes[] = new Node3D[mapFromNodeIdToNode.size()];
 		// ystem.exit(0);
 		mapFromNodeIdToNode.values().toArray(nodes);
-		processNodes(nodes, new File(path).getName());
+		processNodes(nodes, new File(path).getName(), layout);
 	}
 	public static int countEdges(Node3D[] nodes) {
 		int count=0;
@@ -265,7 +265,7 @@ public class ReadGraphAndVisualize {
 		}
 		return count;
 	}
-	public static void processNodes(Node3D[] nodes, String title) {
+	public static void processNodes(Node3D[] nodes, String title, Visualizer.Layout layout) {
 		int edgeCount=countEdges(nodes);
 		System.out.println(
 				nodes.length + " nodes, " + edgeCount + " edges, " + ConnectedComponent.totalCount + " connected components, "
@@ -277,7 +277,7 @@ public class ReadGraphAndVisualize {
 		//Node3D.computeImportanceViaJungPageRank(nodes); 
 		//...
 		//standardizeImportances(nodes,100);
-		Visualizer.layout=Layout.Stochastic;
+		Visualizer.layout=layout;
 		ConnectedComponent.decayFactor=Math.min(0.99,0.3+3.0/(Math.log(nodes.length)));
 		Node3D.c1=2;
 		Node3D.c2=2;
