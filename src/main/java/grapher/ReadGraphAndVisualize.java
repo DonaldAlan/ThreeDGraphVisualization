@@ -80,7 +80,7 @@ public class ReadGraphAndVisualize {
 							} else {
 								double y=point3D.getY();
 								double z=point3D.getZ();
-								node.setPoint3D(new Point3D(x,y,z));
+								node.setXYZ(x,y,z);
 							}
 						}
 					} else if (readXYZ && attribute.equalsIgnoreCase("y")) {
@@ -92,7 +92,7 @@ public class ReadGraphAndVisualize {
 							} else {
 								double x=point3D.getX();
 								double z=point3D.getZ();
-								node.setPoint3D(new Point3D(x,y,z));
+								node.setXYZ(x,y,z);
 							}
 						}
 					} else if (readXYZ && attribute.equalsIgnoreCase("z")) {
@@ -104,7 +104,7 @@ public class ReadGraphAndVisualize {
 							} else {
 								double x=point3D.getX();
 								double y=point3D.getY();
-								node.setPoint3D(new Point3D(x,y,z));
+								node.setXYZ(x,y,z);
 							}
 						}
 					} else {

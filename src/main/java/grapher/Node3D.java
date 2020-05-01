@@ -23,6 +23,7 @@ import javafx.scene.shape.Sphere;
 
 //-----------
 public class Node3D implements Comparable<Node3D> {
+	private int xIndex,yIndex,zIndex;
 	public static int windowSize=1000;
 	private static final Random random = new Random();
 	public static final NumberFormat numberFormat = NumberFormat.getInstance();
@@ -33,7 +34,7 @@ public class Node3D implements Comparable<Node3D> {
 	private final String id;
 	private final Map<Node3D,Double> edges = new HashMap<>(); // maps node to edge weight
 	private final Map<String,Object> attributes= new TreeMap<>();
-	private Point3D position;
+	private double x,y,z;
 	private ConnectedComponent connectedComponent;
 	private double distance = Double.MAX_VALUE;
 	private double importance=1.0;
@@ -51,9 +52,23 @@ public class Node3D implements Comparable<Node3D> {
 		this.id=id;
 		attributes.put("description",description);
 		connectedComponent=new ConnectedComponent(this);
-		position = new Point3D(random.nextDouble()*windowSize,random.nextDouble()*windowSize,random.nextDouble()*windowSize);
+		randomizePlacement();		
 	}
 	
+	public void setIndices(int xIndex,int yIndex, int zIndex) {
+		this.xIndex=xIndex;
+		this.yIndex=yIndex;
+		this.zIndex=zIndex;
+	}
+	public int getXIndex() {
+		return xIndex;
+	}
+	public int getYIndex() {
+		return yIndex;
+	}
+	public int getZIndex() {
+		return zIndex;
+	}
 	public String getIdAndDescription() {
 		String descr = getDescription();
 		if (descr.equals(id)) {
@@ -87,17 +102,11 @@ public class Node3D implements Comparable<Node3D> {
 	}
 	
 	public Map<Node3D,Double> getEdges() {return edges;}
-	public double distance(Node3D other) {
-		return position.distance(other.position);
-	}
+
 	public ConnectedComponent getConnectedComponent() {return connectedComponent;}
-	public Point3D getPoint3D() {return position;}
-	public double getX() {return position.getX();}
-	public double getY() {return position.getY();}
-	public double getZ() {return position.getZ();}
-	public void setPoint3D(Point3D p) {
-		position=p;
-	}
+	public double getX() {return x;}
+	public double getY() {return y;}
+	public double getZ() {return z;}
 	public void addEdge(Node3D node) {addEdge(node,1.0);}
 	public void addEdge(Node3D otherNode, double weight) {
 		edges.put(otherNode,weight);
@@ -145,10 +154,38 @@ public class Node3D implements Comparable<Node3D> {
 		}
 		return Double.MAX_VALUE;
 	}
-
+	private double cost = -1.0;
+	public void setCost(double c) {
+		cost=c;
+	}
+	public double distance(Node3D other) {
+		return Math.sqrt(square(x-other.x) + square(y-other.y) + square(z-other.z));
+	}
+	public double getCost() {
+		if (cost>=0) {
+			return cost;
+		}
+		cost=0.0;
+		for(Node3D neighbor: getNeighbors()) {
+			if (neighbor.isVisible) {
+				cost+= distance(neighbor);
+			}
+		}
+		return cost;
+	}
+	public double getCostIfWeWereAtXYZ(double x,double y, double z) {
+		double cost=0.0;
+		for(Node3D neighbor: getNeighbors()) {
+			if (neighbor.isVisible) {
+				cost+= Math.sqrt(square(x-neighbor.x) + square(y-neighbor.y)+ square(z-neighbor.z));
+			}
+		}
+		return cost;
+	}
+	
 	private static double square(double x) {return x*x;}
 	public double xyzDistanceTo(Node3D other) {
-		return position.distance(other.position);
+		return Math.abs(x-other.x)+Math.abs(y-other.y)+ Math.abs(z-other.z); 
 	}
 	public double meanXYZDistanceToNeighbors() {
 		if (edges.isEmpty()) {
@@ -307,7 +344,8 @@ public class Node3D implements Comparable<Node3D> {
 
 	@Override
 	public int compareTo(Node3D other) {
-		return id.compareTo(other.id);
+		  return id.compareTo(other.id);
+//		return Double.compare(other.importance, importance); // TODO
 	}
 	//-------------
 	private static void show(Node3D ... nodes) {
@@ -526,46 +564,7 @@ public class Node3D implements Comparable<Node3D> {
     public static double c2=20.0;
     public static double c3=1.0;
     public static double c4=0.01;
-    @Deprecated
-    public void computeSpringForceAndMove(double maxXYZ, double factor) { // From https://cs.brown.edu/~rt/gdhandbook/chapters/force-directed.pdf
-            final double x=getX();
-            final double y=getY();
-            final double z=getZ();
-            double xf=0;
-            double yf=0;
-            double zf=0;
-            for(Node3D v:connectedComponent.getNodes()) {
-                    if (v==this) {
-                    	continue;
-                    }
-                    double deltaX=v.getX()-x;
-                    double deltaY=v.getY()-y;
-                    double deltaZ=v.getZ()-z;
-                    double d = Math.sqrt(square(deltaX) + square(deltaY) + square(deltaZ));
-                    if (d==0.0) {
-                    		v.setPoint3D(new Point3D(x+random.nextDouble()-0.5, y+random.nextDouble()-0.5, z+random.nextDouble()-0.5));
-                    		System.out.print("r");
-                    		  deltaX=v.getX()-x;
-                              deltaY=v.getY()-y;
-                              deltaZ=v.getZ()-z;
-                              d = Math.sqrt(square(deltaX) + square(deltaY) + square(deltaZ));
-                    }
-                    double force=0.0;
-                    if (getNeighbors().contains(v)) {
-                            force = factor*c1*Math.log(d/c2);
-                            //System.out.println("force1 = " + force + ", d = " + d);
-                    } else {
-                    	force = -factor*c1*Math.log(d/c2);
-                    }
-                    force += -c3/square(d);
-                    //System.out.println("force2 = " + force + ", d = " + d);
-                    xf +=  force*(deltaX);
-                    yf +=  force*(deltaY);
-                    zf +=  force*(deltaZ);
-            }
-            //System.out.println("xf = " + xf + ", yf = " + yf + ", zf = " + zf + "       x = " + x + ", y = " + y + ", z = " + z);
-            setPoint3D(new Point3D(limit(x+c4*xf, maxXYZ),limit(y+c4*yf, maxXYZ),limit(z+c4*zf, maxXYZ)));
-    }
+   
     public static double limit(double d, double maxXYZ) {
     	if (d<0) {return 0;}
     	else if (d>maxXYZ) {return maxXYZ;}
@@ -606,6 +605,22 @@ public class Node3D implements Comparable<Node3D> {
 		sphere.setMaterial(material);
 	}
 	public void randomizePlacement() {
-		position = new Point3D(random.nextDouble()*windowSize,random.nextDouble()*windowSize,random.nextDouble()*windowSize);
+		x=random.nextDouble()*windowSize;
+		y=random.nextDouble()*windowSize;
+		z=random.nextDouble()*windowSize;
+	}
+	public void setXYZ(double d, double e, double f) {
+		cost=-1;
+		this.x=d;
+		this.y=e;
+		this.z=f;
+	}
+	private Point3D point3D=null;
+	public Point3D getPoint3D() {
+		if (point3D!=null && point3D.getX()==x && point3D.getY()==y && point3D.getZ()==z) {
+			return point3D;
+		}
+		point3D = new Point3D(x,y,z);
+		return point3D;
 	}
 } // class Node3D

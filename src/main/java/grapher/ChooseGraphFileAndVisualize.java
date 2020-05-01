@@ -27,7 +27,7 @@ public final class ChooseGraphFileAndVisualize {
 			System.out.println("Selected file is " + file.getAbsolutePath());
 			ReadGraphAndVisualize read = new ReadGraphAndVisualize(file.getAbsolutePath());
 			try {
-				read.readGraphAndVisualize(Visualizer.Layout.Stochastic);
+				read.readGraphAndVisualize(Visualizer.Layout.Spring);
 			} catch (Exception e) {
 				e.printStackTrace();
 			}

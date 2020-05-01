@@ -11,7 +11,7 @@ package grapher;
 public class BuildGeneratedGraphs {
 
 	private static void processNodes(Node3D[] nodes, String title) {
-		ReadGraphAndVisualize.processNodes(nodes, title, Visualizer.Layout.Stochastic); 
+		ReadGraphAndVisualize.processNodes(nodes, title, Visualizer.Layout.Spring); 
 	}
 	// -------------------------------------------
 		public static void main(String[] args) {
@@ -20,7 +20,7 @@ public class BuildGeneratedGraphs {
 			ConnectedComponent.repulsiveDenonimatorIsSquared=true;
 			try {
 				//processNodes(GraphGenerators.makeGraphWithChokePoint(15, 15, 1.5), "ChokePoint Graph"); System.exit(0);
-				processNodes(GraphGenerators.makeCube(), "Cube"); System.exit(0);
+				//processNodes(GraphGenerators.makeCube(), "Cube"); System.exit(0);
 				//processNodes(GraphGenerators.makeHyperCube1(), "HyperCube"); System.exit(0);
 				//processNodes(GraphGenerators.makeSphere(4,64),"Sphere Graph"); System.exit(0);
 				//processNodes(GraphGenerators.createBarabasiAlbertViaJung(220,2),"BarboseAlbertViaJung"); System.exit(0);

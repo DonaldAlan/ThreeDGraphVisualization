@@ -114,7 +114,7 @@ public class Visualizer extends Application {
 	private final Slider importanceSlider=new Slider();
 	private final ComboBox<String> importanceAlgorithmComboBox = new ComboBox<>();
 	private final ComboBox<String> stochasticCountComboBox = new ComboBox<>();
-	private int limitIndexForNodesToDisplay;
+	private int limitIndexForNodesTaoDisplay;
 	// --------------
 	static {
 		numberFormat.setMaximumFractionDigits(3);
@@ -160,7 +160,7 @@ public class Visualizer extends Application {
 	}
 	private void randomizeNodePlacements() {
 		System.out.println("Entering randomizeNodePlacements");
-		for(int i=0;i<limitIndexForNodesToDisplay;i++) {
+		for(int i=0;i<nodesToDisplay.length;i++) {
 			nodesToDisplay[i].randomizePlacement();
 		}
 	}
@@ -168,22 +168,20 @@ public class Visualizer extends Application {
 		long startTime=System.currentTimeMillis();
 	//	randomizeNodePlacements();
 		computeConnectedComponents();
-		System.out.println("Layout = " + layout + ": " + connectedComponents.size() + " connected components, "
-		+ nodesToDisplay.length + " nodes, limit = " + limitIndexForNodesToDisplay);
 		for (ConnectedComponent connectedComponent : connectedComponents) {
 			switch (layout) {
 			case Spring:
 				connectedComponent.placeOnePassUsingSpringModel();
 				break;
 			case Stochastic:
-				connectedComponent.placeOnePassUsingStocasticMoves();
+				System.err.println("Stochastic not implemented");
 				break;
 			case Barrycenter:
 				throw new UnsupportedOperationException();
 				//connectedComponent.placeUsingBarrycenter();
 				//break;
 			case FruchtermanAndReingold:
-				connectedComponent.fruchtermanAndReingold();
+				System.err.println("FruchtermanAndReingold not implemented");
 				break;
 			case Simple:
 				connectedComponent.simple();
@@ -210,7 +208,7 @@ public class Visualizer extends Application {
 		double zDelta=centerOfMass.getZ();
 		for(Node3D node:nodesToDisplay) {
 			if (node.isVisible()) {
-				node.setPoint3D(new Point3D(node.getX()-xDelta, node.getY()-yDelta,(node.getZ()-zDelta)));
+				node.setXYZ(node.getX()-xDelta, node.getY()-yDelta,(node.getZ()-zDelta));
 			}
 		}
 		centerOfMass = findCenterOfMass();
@@ -429,10 +427,9 @@ public class Visualizer extends Application {
 	 * Ignores isVisible. Only needs to be done once
 	 */
 	private void computeConnectedComponents() {
-		System.out.println("Entering computeConnectedComponents with limitIndexForNodesToDisplay= "+ limitIndexForNodesToDisplay);
 		if (connectedComponents==null) {
 			connectedComponents = new HashSet<>();
-			for (int i=0;i<limitIndexForNodesToDisplay;i++) {
+			for (int i=0;i<nodesToDisplay.length;i++) {
 				connectedComponents.add(nodesToDisplay[i].getConnectedComponent());
 			}
 			for(ConnectedComponent conn:connectedComponents) {
@@ -674,7 +671,7 @@ public class Visualizer extends Application {
 				}
 				if (focusedNode!=null || ke.isShiftDown()) {
 					for(Node3D n:savedAllNodes) {
-						n.setPoint3D(new Point3D(Node3D.windowSize*random.nextDouble(),Node3D.windowSize*random.nextDouble(),Node3D.windowSize*random.nextDouble()));
+						n.setXYZ(Node3D.windowSize*random.nextDouble(),Node3D.windowSize*random.nextDouble(),Node3D.windowSize*random.nextDouble());
 					}
 				}
 				if (focusedNode!=null) {
@@ -883,8 +880,7 @@ public class Visualizer extends Application {
 	// --------------------------
 	private void displayNodes() {
 		// If we are focused on a node, then ignore the importance limit
-		System.out.println("Display nodes: percentToShow = " + percentToShow + ", limit = " + limitIndexForNodesToDisplay);
-		for (int i = 0; i < limitIndexForNodesToDisplay; i++) {
+		for (int i = 0; i < nodesToDisplay.length; i++) {
 			Node3D node = nodesToDisplay[i];
 			node.setIsVisible(true);
 			double radius = node == focusedNode?  3*sphereRadius: sphereRadius;
@@ -894,14 +890,11 @@ public class Visualizer extends Application {
 			node.setSphere(sphere);
 			shapes.add(sphere);
 		}
-		for(int i = limitIndexForNodesToDisplay; i< nodesToDisplay.length;i++) {
-			nodesToDisplay[i].setIsVisible(false);
-		}
-		for (int i = 0; i < limitIndexForNodesToDisplay; i++) {
+		for (int i = 0; i < nodesToDisplay.length; i++) {
 			Node3D node = nodesToDisplay[i];
 			Point3D p1 = node.getPoint3D();
 			for (Node3D neighbor : node.getNeighbors()) {
-				if ((focusedNode!=null || neighbor.getIndexInImportanceOrder() < limitIndexForNodesToDisplay) && neighbor.isVisible()) {
+				if (focusedNode!=null || neighbor.isVisible()) {
 					Point3D p2 = neighbor.getPoint3D();
 					Cylinder cylinder = createCylinderBetween(p1, p2,node);
 					cylinder.setUserData(node);
@@ -946,8 +939,6 @@ public class Visualizer extends Application {
 		
 		if (nodesToDisplay.length>preferredCountOfNodesShown) {
 			percentToShow = 100.0*preferredCountOfNodesShown/nodesToDisplay.length;
-			limitIndexForNodesToDisplay =(int) Math.round(0.01 * percentToShow * nodesToDisplay.length) ;
-			System.out.println("Setting limitIndexForNodesToDisplay to " + limitIndexForNodesToDisplay);
 			ConnectedComponent.stochasticMovesReps = 4; 
 			ConnectedComponent.decayFactor *= 0.75; 
 		}
@@ -955,12 +946,6 @@ public class Visualizer extends Application {
 			runCurrentImportanceAlgorithm();
 			calculateMinMaxImportance();
 			assignImportanceIndices();
-			for(int i=0;i<limitIndexForNodesToDisplay;i++) {
-				nodesToDisplay[i].setIsVisible(true);
-			}
-			for(int i=limitIndexForNodesToDisplay;i< nodesToDisplay.length;i++) {
-				nodesToDisplay[i].setIsVisible(false);
-			}
 
 //			PhongMaterial mat = new PhongMaterial(Color.GOLD);
 //			Sphere sp=new Sphere(15); 
@@ -984,8 +969,6 @@ public class Visualizer extends Application {
 			buildApproximateOnlyButton(root);
 			buildRedoLayoutButton(root);
 			scene.setCamera(camera);
-			limitIndexForNodesToDisplay = focusedNode==null? (int) Math.round(0.01 * percentToShow * nodesToDisplay.length) : nodesToDisplay.length;
-			System.out.println("percentToShow = " + percentToShow + ", limitIndexForNodesToDisplay = " + limitIndexForNodesToDisplay);
 
 			placeOnePass();
 			randomizeColors(2);

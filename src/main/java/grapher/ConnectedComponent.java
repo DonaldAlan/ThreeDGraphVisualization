@@ -9,6 +9,8 @@ import java.util.concurrent.Future;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.text.NumberFormat;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 import java.util.Set;
 
@@ -27,7 +29,9 @@ import javafx.scene.paint.PhongMaterial;
  *  
  */
 public class ConnectedComponent {
+	private final List<Node3D> nodes = new ArrayList<>();
 	private Node3D[][][] nodeMatrix;
+	private int numberOfNodesToShow;
 	public double simpleDecayFactor = 0.75;
 	public static int secondsToWaitPerIteration = 10;
 	public static int stochasticMovesReps=14;  // Raising this will result in prettier graphs, at the cost of slower execution. TODO: slider, etc.
@@ -36,14 +40,12 @@ public class ConnectedComponent {
 	public static boolean repulsiveDenonimatorIsSquared=true;
 	public static double decayFactor=0.9;
 	public static boolean trace=false;
-	public int springRep=100;
-	public static int SEPARATION=5; // minimum separation between components in the 3D space
+	public int springReps=100;
+	public int innerReps=20;
 	public static int totalCount=0;
 	//......
 	private static final Random random = new Random();
-	private final TreeSet<Node3D> nodes = new TreeSet<>();
-	private Node3D[] nodesToDisplayThisCC=null;
-	private double extentOfInitialGridPlacement;
+
 	private static final long startMilliseconds = System.currentTimeMillis();
 	// minX==Double.MAX_VALUE when we need to recompute
 	double minX=Double.MAX_VALUE,maxX=Double.NEGATIVE_INFINITY;
@@ -59,59 +61,72 @@ public class ConnectedComponent {
 		totalCount++;
 	}
 	public Node3D getFirst() {
-		return nodes.first();
-	}
-	private void debug(String message) {
-		System.out.println(numberFormat.format(0.001*(System.currentTimeMillis() - startMilliseconds)) + ": " + message);
+		return nodes.get(0);
 	}
 	public void done() {
-		nodesToDisplayThisCC=new Node3D[nodes.size()];
-		nodes.toArray(nodesToDisplayThisCC);
-		//debug(nodes.size() + " nodes in "+ this.getFirst());
-		int n=2*(int)Math.ceil(Math.pow(nodes.size(),0.33333));
-		System.out.println("n = " + n + ", n*n*n = " + (n*n*n) + ", nodes.size() = " + nodes.size());
-		nodeMatrix = new Node3D[n][n][n];
-		placeInitiallyInGrid(n);
+		int m=2*(int)Math.ceil(Math.pow(nodes.size(),0.33333));
+		System.out.println("n = " + m + ", n*n*n = " + (m*m*m) + ", nodes.size() = " + nodes.size());
+		nodeMatrix = new Node3D[m][m][m];
+		numberOfNodesToShow = nodes.size();
+		placeInitiallyInGrid(m);
 	}
 	//--------------------------------------------
-		private void placeInitiallyInGrid(int n) {
+		private void placeInitiallyInGrid(final int m) {
 			//double volumeNeeded = nodes.size()*Math.pow(PlotCylindersAndSpheres.distanceForOneEdge,3);
 			int cubeRootOfSize = (int) (Math.pow(nodes.size(), 0.333333))+1;
 			if (cubeRootOfSize<=1){
 				cubeRootOfSize=2;
 			}
 			int nodeIndex=0;
-			for(int x=0;x<n && nodeIndex<nodesToDisplayThisCC.length;x+=2)  {
-				for(int y=0;y<n&& nodeIndex<nodesToDisplayThisCC.length;y+=2) {
-					for(int z=0;z<n && nodeIndex<nodesToDisplayThisCC.length;z+=2) {
-						Node3D node = nodesToDisplayThisCC[nodeIndex];
+			for(int x=0;x<m && nodeIndex<numberOfNodesToShow;x+=2)  {
+				for(int y=0;y<m&& nodeIndex<numberOfNodesToShow;y+=2) {
+					for(int z=0;z<m && nodeIndex<numberOfNodesToShow;z+=2) {
+						Node3D node = nodes.get(nodeIndex);
 						nodeIndex++;
 						nodeMatrix[x][y][z]=node;
-						node.setPoint3D(new Point3D(10*x,10*y,10*z));
+						node.setIndices(x,y,z);
+						node.setXYZ(10.0*x,10.0*y,10.0*z);
 					}
 				}
 			}
 			minX=Double.MAX_VALUE;
-			extentOfInitialGridPlacement=cubeRootOfSize*10;
 		}
 		
-		public void placeOnePassUsingSpringModel() {
-			final double distanceForOneEdge = computeDistanceForOneEdge();
-			final double maxXYZ = Math.pow(nodesToDisplayThisCC.length,1.0/3.0)*distanceForOneEdge;
-			final double dFactor= 1.0/Math.pow(maxXYZ,  1.0/springRep);
-			System.out.println("Placing with spring model using springRep = " + springRep
-					+ ", maxXYZ = " + maxXYZ + ", distanceForOneEdge = " + distanceForOneEdge + ", dFactor = " + dFactor);
-			double d=maxXYZ;
-			for(int i=0;i<springRep;i++) {
-				for(Node3D node:nodesToDisplayThisCC) {
-					if (node.isVisible()) {
-						node.computeSpringForceAndMove(maxXYZ, d);
+	public void placeOnePassUsingSpringModel() {
+		final double distanceForOneEdge = computeDistanceForOneEdge();
+		final double maxXYZ = Math.pow(nodes.size(), 1.0 / 3.0) * distanceForOneEdge;
+		final double dFactor = 1.0 / Math.pow(maxXYZ, 1.0 / springReps);
+		System.out.println("Placing with spring model using springRep = " + springReps + ", maxXYZ = " + maxXYZ
+				+ ", distanceForOneEdge = " + distanceForOneEdge + ", dFactor = " + dFactor);
+		double d = maxXYZ;
+		int lessCount = 0;
+		for (int rep = 0; rep < springReps; rep++) {
+			for (int i = 0; i < numberOfNodesToShow; i++) {
+				final Node3D node = nodes.get(i);
+				double cost = node.getCost();
+				for (int j = 0; j < innerReps; j++) {
+					final int rx = random.nextInt(nodeMatrix.length);
+					final int ry = random.nextInt(nodeMatrix.length);
+					final int rz = random.nextInt(nodeMatrix.length);
+					if (nodeMatrix[rx][ry][rz] == null) {
+						double rc = node.getCostIfWeWereAtXYZ(10 * rx, 10 * ry, 10 * rz);
+						if (rc < cost) {
+							lessCount++;
+							node.setCost(rc);
+							cost=rc;
+							nodeMatrix[node.getXIndex()][node.getYIndex()][node.getZIndex()] = null;
+							node.setXYZ(10 * rx, 10 * ry, 10 * rz);
+							node.setIndices(rx, ry, rz);
+							nodeMatrix[rx][ry][rz] = node;
+						}
 					}
 				}
-				d*=dFactor;
 			}
-			System.out.println("At end d = " + d);
+			d *= dFactor;
 		}
+		System.out.println("At end d = " + d + ", springReps = " + springReps + ", nodes.size() = " + nodes.size() + 
+				", lessCount = " + lessCount);
+	}
 	public Point3D computeCentroid() {
 		double x=0;
 		double y=0;
@@ -124,7 +139,7 @@ public class ConnectedComponent {
 		int n=nodes.size();
 		return new Point3D(x/n,y/n,z/n);
 	}
-	public TreeSet<Node3D> getNodes() {
+	public List<Node3D> getNodes() {
 		return nodes;
 	}
 	@Override
@@ -147,170 +162,12 @@ public class ConnectedComponent {
 	public int size() {
 		return nodes.size();
 	}
-	// Return cost of using point3D for node i
-	private double getCost(int i, Point3D point3d, Node3D nodeI) {
-		return approximateForces? getCostNeighborhoodOnly(i,point3d, nodeI) : getCostExpensive(i, point3d, nodeI);
-	}
-	// Each run takes O(n*d*d) where n is the number of vertices in the connected component and d is the max degree of the vertex and its neighbors.
-	private double getCostExpensive(int i, Point3D point3d, Node3D nodeI) {
-		double sumCosts = 0;
-		for (int j = 0; j < nodesToDisplayThisCC.length; j++) {
-			if (i != j) {
-				Node3D nodeJ = nodesToDisplayThisCC[j];
-				if (!nodeJ.isVisible()) { // When focusing on the neighborhood of a single vertex, ignore invisible vertices (not in the neighborhood).
-					continue;
-				}
-				double distance = point3d.distance(nodeJ.getPoint3D());
-				if (distance<Visualizer.distanceForOneEdge) { // Huge repulsive force prevents crowding: edges closer than Visualizer.distanceForOneEdge in Euclidean space. 
-					return Double.MAX_VALUE;
-				}
-				sumCosts+= 1/(repulsiveDenonimatorIsSquared ? (distance*distance) : distance); // repulsive force between all pairs of vertices
-				if (nodeI.getEdges().containsKey(nodeJ) || nodeJ.getEdges().containsKey(nodeI)) {
-					sumCosts+= /*nodeI.getImportance()*/ square(distance-Visualizer.distanceForOneEdge);   // Spring force between edge-connected vertices (attractive or repuslive). 
-					// Consider neighbors "third" at graph distance 2.
-					for(Node3D third: nodeJ.getNeighbors()) {
-						if (third!=nodeI && third.isVisible()) {
-							distance=point3d.distance(third.getPoint3D());
-							if (distance<Visualizer.distanceForOneEdge) { // Prevent crowding at graph-distance 2.
-								return Double.MAX_VALUE;
-							}
-							sumCosts+= square(distance-Math.sqrt(2)*Visualizer.distanceForOneEdge)/2; // Spring force between vertices at graph-distance 2.
-						}
-					}
-				}
-			}
-		}
-		return sumCosts;
-	}
-	// Return cost of using point3D for node i, using attractive and repulsive forces only between neighbors and neighbors of neighbors.
-	// O(d*d) where d is the max degree of the vertex and its neighbors.
-	// It also adds repulsive forces for a sample of all nodes.
-	private double getCostNeighborhoodOnly(int i, Point3D point3d, Node3D nodeI) {
-		double sumCosts=0;
-		for(Node3D nodeJ: nodeI.getNeighbors()) {
-			if (!nodeJ.isVisible()) {
-				continue;
-			}
-			double distance = point3d.distance(nodeJ.getPoint3D());
-			if (distance<Visualizer.distanceForOneEdge) { // Prevent crowding
-				return Double.MAX_VALUE;
-			}
-			// Spring for direct neighbor
-			sumCosts+= /*nodeI.getImportance()*/ square(distance-Visualizer.distanceForOneEdge);
-			// Now look at neighbors "third" of that neighbor
-			for(Node3D third: nodeJ.getNeighbors()) {
-				if (third!=nodeI && third.isVisible()) {
-					distance=point3d.distance(third.getPoint3D());
-					if (distance<Visualizer.distanceForOneEdge) { // Prevent crowding
-						return Double.MAX_VALUE;
-					}
-					// Spring for neighbor at graph distance 2
-					sumCosts+= square(distance-Math.sqrt(2)*Visualizer.distanceForOneEdge)/2;
-				}
-			}
-		}
-		int increment=nodesToDisplayThisCC.length/numberOfSamplesForApproximation;
-		if (increment==0) {
-			increment=1;
-		}
-		// Because of increment, we only sample nodes
-		for (int j = 0; j < nodesToDisplayThisCC.length; j+=increment) {
-			if (i != j  && j==-1) {
-				Node3D nodeJ = nodesToDisplayThisCC[j];
-				if (!nodeJ.isVisible()) { // When focusing on the neighborhood of a single vertex, ignore invisible vertices (not in the neighborhood).
-					continue;
-				}
-				if (!nodeI.getNeighbors().contains(nodeJ) && ! nodeJ.getNeighbors().contains(nodeI)) {
-					double distance = point3d.distance(nodeJ.getPoint3D());
-					if (distance<Visualizer.distanceForOneEdge) { // Huge repulsive force prevents crowding: edges closer than Visualizer.distanceForOneEdge in Euclidean space. 
-						return Double.MAX_VALUE;
-					}
-					sumCosts+= 1/(repulsiveDenonimatorIsSquared ? (distance*distance) : distance); // repulsive force between all pairs of vertices
-				}
-			}
-		}
-		return sumCosts;
-	}
+
+	
 	private static double square(final double d) {return d*d;}
 	
 	private static Color randomColor() {
 		return Color.rgb(random.nextInt(256),random.nextInt(256), random.nextInt(256),1);
-	}
-	private void placeOne() {
-		nodesToDisplayThisCC[0].setPoint3D(new Point3D(0,0,0));
-		getMaxWidthHeightDepth();
-	}
-	private void placeTwo() {
-		nodesToDisplayThisCC[0].setPoint3D(new Point3D(0,0,0));
-		nodesToDisplayThisCC[1].setPoint3D(new Point3D(Visualizer.distanceForOneEdge,0,0));
-		getMaxWidthHeightDepth();
-	}
-	private void placeThree() {
-		nodesToDisplayThisCC[0].setPoint3D(new Point3D(0,0,0));
-		nodesToDisplayThisCC[1].setPoint3D(new Point3D(Visualizer.distanceForOneEdge,0,0));
-		if (random.nextBoolean()) {
-			nodesToDisplayThisCC[2].setPoint3D(new Point3D(0,Visualizer.distanceForOneEdge,0));
-		} else {
-			nodesToDisplayThisCC[2].setPoint3D(new Point3D(0,0,Visualizer.distanceForOneEdge));
-		}
-		getMaxWidthHeightDepth();
-	}
-	// Uses less memory than placeRandomMovesSequential but requires higher count, because it doesn't remember the deltaVector.
-	private void placeRandomMovesSequentialNew(double distance, int count) {	// 11.533
-		for(int i=0;i<nodesToDisplayThisCC.length;i++) {
-			Node3D node = nodesToDisplayThisCC[i];
-			Point3D best=node.getPoint3D();
-			double bestCost=getCost(i, node.getPoint3D(), node);
-			//long start=System.currentTimeMillis();
-			for(int j=0;j<count;j++) {
-				Point3D p = randomVectorOfLengthDistancePlusPoint(distance,node.getPoint3D()); //randomUnitVector().multiply(distance);
-				double cost=getCost(i,p, node);
-				if (cost<bestCost) {
-					bestCost=cost;
-					best=p;
-				}
-			}
-			node.setPoint3D(best);
-			// Takes 1 mls on average when you use UnrestrictedForces
-			//if (i==0) {System.out.println(System.currentTimeMillis()-start + " mls");}
-		}
-	}
-	private void placeRandomMoves(double distance, int count) {
-		debug("Before placeRandomMovesInParallel");
-	    placeRandomMovesInParallel(distance, count);
-	    debug("After placeRandomMovesInParallel");
-	    placeRandomMovesSequential(distance,count/4); // Do it sequentially since the parallel version may err due to two connected nodes moving at the same time.
-	}
-	// Uses more memory, but needs smaller count, because it multiplies deltaVector by -1
-	private void placeRandomMovesSequential(double distance, int count) {	//20.84
-		for(int i=0;i<nodesToDisplayThisCC.length;i++) {
-			Node3D node = nodesToDisplayThisCC[i];
-			if (!node.isVisible()) {
-				continue;
-			}
-			Point3D best=node.getPoint3D();
-			double bestCost=getCost(i, node.getPoint3D(), node);
-			//long start=System.currentTimeMillis();
-			for(int j=0;j<count;j++) {
-				Point3D deltaVector = randomUnitVector().multiply(distance);
-				Point3D p  = node.getPoint3D().add(deltaVector);
-				double cost=getCost(i,p, node);
-				if (cost<bestCost) {
-					bestCost=cost;
-					best=p;
-				} else {
-					p=node.getPoint3D().add(deltaVector.multiply(-1)); 
-					cost=getCost(i,p,node);
-					if (cost<bestCost) {
-						bestCost=cost;
-						best=p;
-					} 
-				}
-			}
-			node.setPoint3D(best);
-			// Takes 1 mls on average when you use UnrestrictedForces
-			//if (i==0) {System.out.println(System.currentTimeMillis()-start + " mls");}
-		}
 	}
 
 	private static Point3D randomVectorOfLengthDistancePlusPoint(double distance, Point3D point) {
@@ -328,60 +185,17 @@ public class ConnectedComponent {
 		return new Point3D(x*factor,y*factor,z*factor);
 	}
 
-	private void placeRandomMovesInParallel(final double distance, final int count) {	
-		final ExecutorService executorService=Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors()); 
-		final CountDownLatch latch = new CountDownLatch(nodesToDisplayThisCC.length);
-		for(int i=0;i<nodesToDisplayThisCC.length;i++) {
-			final Node3D node = nodesToDisplayThisCC[i];
-			if (!node.isVisible()) {
-				continue;
-			}
-			final Point3D startPoint=node.getPoint3D();
-			final Point3D[] best={node.getPoint3D()};
-			final double [] bestCost={getCost(i, node.getPoint3D(), node)};
-			final int ii=i;
-			Runnable runnable = new Runnable(){
-				@Override
-				public void run() {
-					for(int j=0;j<count;j++) {
-						Point3D deltaVector = randomUnitVector().multiply(distance);
-						Point3D newPoint  = startPoint.add(deltaVector);
-						double cost=getCost(ii,newPoint, node);
-						synchronized (startPoint) {
-							if (cost<bestCost[0]) {
-								bestCost[0]=cost;
-								best[0]=newPoint;
-							}
-						}
-						// TODO: synchronize? It seems to work without synchronizing.
-						node.setPoint3D(best[0]);
-						latch.countDown();
-					}};
-			};
-			executorService.execute(runnable);
-		}
-		try {
-			latch.await(secondsToWaitPerIteration, TimeUnit.SECONDS);
-		} catch (InterruptedException e1) {
-			e1.printStackTrace();
-			System.exit(1);
-		}
-		executorService.shutdown();
-		try {
-			executorService.awaitTermination(1, TimeUnit.SECONDS);
-		} catch (InterruptedException e) {
-			System.err.println("Warning: interrupted executorService");
-		}
-	}
+	
 	//--------------------------------------------
 	private void permuteNodes() {
-		for(int i=0;i<nodesToDisplayThisCC.length;i++) {
-			int index=random.nextInt(nodesToDisplayThisCC.length);
+		final int n=nodes.size();
+		for(int i=0;i<n;i++) {
+			int index=random.nextInt(n);
 			if (i!=index) {
-				Node3D node1=nodesToDisplayThisCC[i];
-				Node3D node2=nodesToDisplayThisCC[index];
-				nodesToDisplayThisCC[i]=node2;
-				nodesToDisplayThisCC[index]=node1;
+				Node3D node1=nodes.get(i);
+				Node3D node2=nodes.get(index);
+				nodes.set(i,node2);
+				nodes.set(index,node1);
 			}
 		}
 	}
@@ -452,11 +266,11 @@ public class ConnectedComponent {
 	}
 	public void shift(double deltaX, double deltaY, double deltaZ) {
 		Point3D centroid=computeCentroid();
-		for(Node3D node: nodesToDisplayThisCC) {
-			node.setPoint3D(new Point3D(
+		for(Node3D node: nodes) {
+			node.setXYZ(
 					node.getX()-centroid.getX()+deltaX, 
 					node.getY()-centroid.getY()+deltaY,
-					node.getZ()-centroid.getZ()+deltaZ));
+					node.getZ()-centroid.getZ()+deltaZ);
 		}
 		getMaxWidthHeightDepth();
 	}
@@ -513,7 +327,7 @@ public class ConnectedComponent {
 	
 	
 	private double computeDistanceForOneEdge() {
-		return (Math.sqrt(3.0)*Node3D.windowSize) / nodesToDisplayThisCC.length;
+		return (Math.sqrt(3.0)*Node3D.windowSize) / nodes.size();
 	}
 	private static boolean differ(double x, double y) {
 		return Math.abs(x-y)>0.1;
@@ -532,111 +346,17 @@ public class ConnectedComponent {
 	//----------------------
 	public void simple() {
 		final double maxXYZ = Node3D.windowSize;
-		for(Node3D node: nodesToDisplayThisCC) {
-			node.setPoint3D(new Point3D(maxXYZ*random.nextDouble(), maxXYZ*random.nextDouble(), maxXYZ*random.nextDouble()));
+		for(Node3D node: nodes) {
+			node.setXYZ(maxXYZ*random.nextDouble(), maxXYZ*random.nextDouble(), maxXYZ*random.nextDouble());
 		}
 		double distanceToMove = maxXYZ;
 		while (distanceToMove> 1) {
 			distanceToMove *= simpleDecayFactor;
 		}
 	}
-	//---------------
-		public void fruchtermanAndReingold() {
-			if (nodesToDisplayThisCC.length<=1) {
-				return;
-			}
-			final double volume=Math.pow(Node3D.windowSize,3);
-			final double C=1.0;
-			final double k = C*Math.pow(volume/nodesToDisplayThisCC.length, 0.33333) ;
-			double maxXYZ = Node3D.windowSize;
-			
-			for(Node3D node: nodesToDisplayThisCC) {
-				node.setPoint3D(new Point3D(maxXYZ*random.nextDouble(), maxXYZ*random.nextDouble(), maxXYZ*random.nextDouble()));
-			}
-		
-			//System.out.println("area = " + area + ", k = " + k);
-			Vector3 delta = new Vector3(0,0,0);
-			final int n=nodesToDisplayThisCC.length;
-			double startTemperature=0.5*maxXYZ;
-			System.out.println("maxXYZ= " + maxXYZ + " for " + nodesToDisplayThisCC.length  + " stochasticDecayFactor = " + decayFactor
-					+ " vertices, startTemperature = " + startTemperature + ", k = " + toString(k) + "\n"); 
-			int iteration=0;
-			for(double temperature=startTemperature;temperature>0.1;temperature*=decayFactor) {
-				iteration++;
-				// Attractive forces are between vertices connected by an edge.  f_a(d) = d*d/k.
-				// All pairs of vertices have repulsive forces.                  f_r(d) = -k*k/d;
-				for(int i=0;i<n;i++) {
-					Node3D v = nodesToDisplayThisCC[i];
-					if (!v.isVisible()) {
-						continue;
-					}
-					v.setDisplacement(0,0,0);
-					for(int j=0;j<n;j++) {
-						if (i==j) {
-							continue;
-						}
-						Node3D u=nodesToDisplayThisCC[j];
-						//Calculate repulsive forces
-						delta.setToMinus(v.getPoint3D(),u.getPoint3D());
-						double lengthDelta = delta.length();
-						boolean edge= u.getNeighbors().contains(v);
-						if (trace) {
-							System.out.print("v = " + toString(v.getPoint3D()) + v.getDisplacement() + ", u = " + toString(u.getPoint3D()) +
-									", delta=" + delta + ", |delta| = " + toString(lengthDelta) + (edge? " (EDGE)":"(NO EDGE"));
-						}
-						if (lengthDelta==0.0) {
-							double newDistance = //PlotCylindersAndSpheres.distanceForOneEdge*random.nextDouble() +
-									(edge?  Visualizer.distanceForOneEdge:  4*Visualizer.distanceForOneEdge);
-							Point3D directionVector=randomNormalizedDirectionVector();
-							Point3D newPoint3D = u.getPoint3D().add(directionVector.multiply(newDistance));
-							//System.out.println(" ZERO!!! Moving u : " + toString(u.getPoint3D()) + " --> " + toString(newPoint3D) + " at iteration " + iteration);
-							System.out.print('z');
-							u.setPoint3D(newPoint3D);
-							continue;
-						}
-						delta.multiply(repulsive(lengthDelta,k)/lengthDelta);
-						v.getDisplacement().add(delta);
-						if (trace) {
-							System.out.println(", repulsiveDelt= = " + delta + " with length " + toString(delta.length()) + ", new v displacement = " + v.getDisplacement());
-						}
-						// Calculate attractive forces
-						if (i<j && edge) {
-							delta.setToMinus(v.getPoint3D(),u.getPoint3D());
-							delta.multiply(attractive(lengthDelta, k)/lengthDelta);
-							v.getDisplacement().substract(delta);
-							u.getDisplacement().add(delta);
-							if (trace) {
-								System.out.println("Due to edge between v and u delta2= " + delta + ", |delta| = " + toString(delta.length())
-								+ ", new v displ = " + v.getDisplacement() + ", new u displ = " + u.getDisplacement() + "\n");
-							}
-						}
-					} // for j
-					if (trace) {System.out.println();}
-				} // for i
-				// Limit max displacement to temperature and prevent going outside frame
-				for(Node3D v: nodesToDisplayThisCC) {
-					if (!v.isVisible()) {
-						continue;
-					}
-					Vector3 displ = v.getDisplacement();
-					//System.out.print(displ + "  ");
-					double length=displ.length();
-					displ.multiply(Math.min(length, temperature)/length);
-					displ.add(v.getX(),v.getY(),v.getZ());
-					double x=Node3D.limit(displ.getX(),maxXYZ);
-					double y=Node3D.limit(displ.getY(),maxXYZ);
-					double z=Node3D.limit(displ.getZ(),maxXYZ);
-					Point3D point = new Point3D(x,y,z);
-					//System.out.println(point);
-					v.setPoint3D(point);
-				}
-				//System.out.println();
-				//break;
-			}
-			System.out.println("k = " + k + ", maxXYZ = " + toString(maxXYZ) + ", iterations = " + iteration);
-		}
-	private static String toString(Point3D p) {
-		return "(" + toString(p.getX()) + ", " + toString(p.getY()) + ", " + toString(p.getZ()) + ")";
+	
+	private static String toString(double x, double y, double z) {
+		return "(" + toString(x) + ", " + toString(x) + ", " + toString(z) + ")";
 	}
 		public static String toString(double d) {
 			return Node3D.numberFormat.format(d);
@@ -644,52 +364,11 @@ public class ConnectedComponent {
 	private static Point3D randomNormalizedDirectionVector() {
 		return new Point3D(random.nextDouble()-0.5,random.nextDouble()-0.5, random.nextDouble()-0.5).normalize(); 
 	}
-	public void placeOnePassUsingStocasticMoves() {		
-		if (nodesToDisplayThisCC==null) {
-			done();		
-		}
-		if (nodes.size()==1) {
-			placeOne();
-			return;
-		}
-		if (nodes.size()==2) {
-			placeTwo();
-			return;
-		}
-		if (nodes.size()==3) {
-			placeThree();
-			return;
-		}
-		debug("Starting placeOnePassUsingStocasticMoves");
-		double start=getMaxWidthHeightDepth();
-		//System.out.print("Placing with start = " + start + " and reps = " + reps + ": ");
-		int iteration=0;
-		for(double d=start;d>1; d=d*decayFactor) {
-			permuteNodes();
-			debug("d = " + d + ", stochasticMovesReps = " + stochasticMovesReps);
-			placeRandomMoves(d,stochasticMovesReps);
-			iteration++;
-		}
-		debug(iteration + " iterations");
-		getMaxWidthHeightDepth();
-	}
-	public boolean intersects(ConnectedComponent other) {
-		if (minX==Double.MAX_VALUE) {
-			getMaxWidthHeightDepth();
-		}
-		if (  minX-SEPARATION>=other.maxX || other.minX-SEPARATION>=maxX // We add -SEPARATION so that components are separated from each other
-			||minY-SEPARATION>=other.maxY || other.minY-SEPARATION>=maxY
-			||minZ-SEPARATION>=other.maxZ || other.minZ-SEPARATION>=maxZ) {
-			//System.out.println(this + " doesn't intersect \n" + other + "\n");
-			return false;
-		} else {
-			return true;
-		}
-	}
+
 	private Set<Node3D> chooseEightRandomNodes() {
 		Set<Node3D> result = new TreeSet<>();
 		while (result.size()<8) {
-			Node3D node = nodesToDisplayThisCC[random.nextInt(nodesToDisplayThisCC.length)];
+			Node3D node = nodes.get(random.nextInt(nodes.size()));
 			result.add(node);
 		}
 		return result;
@@ -706,7 +385,7 @@ public class ConnectedComponent {
 		return result;
 	}
 	private Node3D chooseNodeWithNoEdgeTo(Set<Node3D> result) {
-		for(Node3D node:nodesToDisplayThisCC) {
+		for(Node3D node:nodes) {
 			if (!result.contains(node)&& !hasEdgeTo(node,result)) {
 				return node;
 			}
@@ -722,35 +401,6 @@ public class ConnectedComponent {
 		return false;
 	}
 	
-
-	private void placeEdgesAtCornersOfHyperCube(Set<Node3D> fixed) {
-		double x=0;
-		double y=0;
-		double z=0;
-		boolean reachedEnd=false;
-		for(Node3D node3D: fixed) {
-			node3D.setPoint3D(new Point3D(x,y,z));
-			System.out.println(node3D.getPoint3D()); 
-			if (z==0) {
-				z=extentOfInitialGridPlacement;
-			} else {
-				z=0;
-				if (y==0) {
-					y=extentOfInitialGridPlacement;
-				} else {
-					y=0;
-					if (x==0) {
-						x=extentOfInitialGridPlacement;
-					} else {
-						if (reachedEnd) {
-							throw new IllegalStateException();
-						}
-						reachedEnd=true;
-					}
-				}
-			}
-		}
-	}
 	//------------
 	public static void main(String [] args) {
 		Node3D.windowSize=100;
@@ -768,10 +418,9 @@ public class ConnectedComponent {
 		ConnectedComponent cc = n1.getConnectedComponent();
 		cc.done();
 		trace=false;
-		cc.fruchtermanAndReingold();
 	//	cc.placeOnePassUsingSpringModel();
-		for(Node3D node1:cc.nodesToDisplayThisCC) {
-			System.out.print(node1.getId() + " " + toString(node1.getPoint3D()) + ": ");
+		for(Node3D node1:cc.nodes) {
+			System.out.print(node1.getId() + " " + toString(node1.getX(),node1.getY(), node1.getZ()) + ": ");
 			for(Node3D node2:node1.getNeighbors()) {
 				System.out.print(toString(node1.distance(node2))+ " ");
 			}
@@ -786,6 +435,10 @@ public class ConnectedComponent {
 			}
 			System.out.println(f + " " + count);
 		}
+	}
+	public boolean intersects(ConnectedComponent component) {
+		System.err.println("intersects TODO!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+		return false;
 	}
 
 }
