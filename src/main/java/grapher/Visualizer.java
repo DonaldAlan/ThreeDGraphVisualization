@@ -176,7 +176,7 @@ public class Visualizer extends Application {
 				connectedComponent.springModel();
 				break;
 			case Stochastic:
-				System.err.println("Stochastic not implemented");
+				connectedComponent.stochasticModel();
 				break;
 			case Barrycenter:
 				throw new UnsupportedOperationException();

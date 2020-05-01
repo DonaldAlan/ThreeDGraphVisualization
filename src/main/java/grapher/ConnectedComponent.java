@@ -35,7 +35,7 @@ public class ConnectedComponent {
 	private Node3D[][][] nodeMatrix;
 	private int numberOfNodesToShow;
 	public double simpleDecayFactor = 0.75;
-	public static int secondsToWaitPerIteration = 10;
+	public static int secondsToWaitPerIteration = 4;
 	public static int stochasticMovesReps=14;  // Raising this will result in prettier graphs, at the cost of slower execution. TODO: slider, etc.
 	public static int numberOfSamplesForApproximation=1000; // The higher, the more approximate the forces using ApproximateForces.
 	public static boolean approximateForces=false; // Renders much faster with this true, but graphs don't look as good.
@@ -47,7 +47,6 @@ public class ConnectedComponent {
 	//......
 	private static final Random random = new Random();
 
-	private static final long startMilliseconds = System.currentTimeMillis();
 	// minX==Double.MAX_VALUE when we need to recompute
 	double minX=Double.MAX_VALUE,maxX=Double.NEGATIVE_INFINITY;
 	double minY=Double.MAX_VALUE,maxY=Double.NEGATIVE_INFINITY;
@@ -73,7 +72,7 @@ public class ConnectedComponent {
 	}
 	public void done() {
 		int m=2*(int)Math.ceil(Math.pow(nodes.size(),0.33333));
-//		System.out.println("n = " + m + ", n*n*n = " + (m*m*m) + ", nodes.size() = " + nodes.size());
+		System.out.println("m = " + m + ", m*m*m = " + (m*m*m) + ", nodes.size() = " + nodes.size());
 		nodeMatrix = new Node3D[m][m][m];
 		numberOfNodesToShow = nodes.size();
 		placeInitiallyInGrid(m);
@@ -115,26 +114,29 @@ public class ConnectedComponent {
 			public void run() {
 				int limit = 1 + nodes.size()/100;
 				for(int i=0;i<limit;i++) {
-					springModel();
+					stochasticModel();
 				}
 			}
 		};
 		new Thread(runnable).start();
 	}
 	public void springModel() {
+		throw new RuntimeException("SpringModel not implemented yet");
+	}
+	public void stochasticModel() {
 		int iteration=0;
 		final long startTime = System.currentTimeMillis();
 		do {
-			if (springModelAux(iteration)==0) {
+			if (stochasticModelAux(iteration)==0) {
 				break;
 			}
 			iteration++;
-		} while (System.currentTimeMillis()-startTime< 4000);
+		} while (System.currentTimeMillis()-startTime< secondsToWaitPerIteration*1000);
 		if (nodes.size()>500 && iteration>2) {
 			System.out.println("Exited springModel() after " + iteration + " iterations");
 		}
 	}
-	public int springModelAux(int iteration) {
+	public int stochasticModelAux(int iteration) {
 		int lessCount = 0;
 		int delta = nodeMatrix.length/2;
 		while (delta > 0) {
