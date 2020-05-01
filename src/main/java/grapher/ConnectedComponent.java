@@ -17,6 +17,7 @@ import java.util.Set;
 import javafx.geometry.Point3D;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.PhongMaterial;
+import javafx.scene.shape.Sphere;
 
 /**
  * 
@@ -29,6 +30,7 @@ import javafx.scene.paint.PhongMaterial;
  *  
  */
 public class ConnectedComponent {
+	public int innerReps=20;
 	private final List<Node3D> nodes = new ArrayList<>();
 	private Node3D[][][] nodeMatrix;
 	private int numberOfNodesToShow;
@@ -40,8 +42,7 @@ public class ConnectedComponent {
 	public static boolean repulsiveDenonimatorIsSquared=true;
 	public static double decayFactor=0.9;
 	public static boolean trace=false;
-	public int springReps=100;
-	public int innerReps=20;
+
 	public static int totalCount=0;
 	//......
 	private static final Random random = new Random();
@@ -91,23 +92,49 @@ public class ConnectedComponent {
 			}
 			minX=Double.MAX_VALUE;
 		}
-		
-	public void placeOnePassUsingSpringModel() {
-		final double distanceForOneEdge = computeDistanceForOneEdge();
-		final double maxXYZ = Math.pow(nodes.size(), 1.0 / 3.0) * distanceForOneEdge;
-		final double dFactor = 1.0 / Math.pow(maxXYZ, 1.0 / springReps);
-		System.out.println("Placing with spring model using springRep = " + springReps + ", maxXYZ = " + maxXYZ
-				+ ", distanceForOneEdge = " + distanceForOneEdge + ", dFactor = " + dFactor);
-		double d = maxXYZ;
+	private int moveRandom(int index, int delta) {
+		int v = index+random.nextInt(delta+delta)-delta;
+		if (v<0) {
+			v=0;
+		}
+		if (v>=nodeMatrix.length) {
+			v=nodeMatrix.length-1;
+		}
+		return v;
+	}
+	public void springModelBackground() {
+		Runnable runnable = new Runnable() {
+			@Override
+			public void run() {
+				int limit = 1 + nodes.size()/100;
+				for(int i=0;i<limit;i++) {
+					springModel();
+				}
+			}
+		};
+		new Thread(runnable).start();
+	}
+	public void springModel() {
+		int iteration=0;
+		final long startTime = System.currentTimeMillis();
+		do {
+			if (springModelAux(iteration)==0) {
+				break;
+			}
+			iteration++;
+		} while (System.currentTimeMillis()-startTime< 4000);
+	}
+	public int springModelAux(int iteration) {
 		int lessCount = 0;
-		for (int rep = 0; rep < springReps; rep++) {
+		int delta = nodeMatrix.length/2;
+		while (delta > 0) {
 			for (int i = 0; i < numberOfNodesToShow; i++) {
 				final Node3D node = nodes.get(i);
 				double cost = node.getCost();
 				for (int j = 0; j < innerReps; j++) {
-					final int rx = random.nextInt(nodeMatrix.length);
-					final int ry = random.nextInt(nodeMatrix.length);
-					final int rz = random.nextInt(nodeMatrix.length);
+					final int rx = moveRandom(node.getXIndex(),delta);
+					final int ry = moveRandom(node.getYIndex(), delta);
+					final int rz = moveRandom(node.getZIndex(), delta);
 					if (nodeMatrix[rx][ry][rz] == null) {
 						double rc = node.getCostIfWeWereAtXYZ(10 * rx, 10 * ry, 10 * rz);
 						if (rc < cost) {
@@ -121,11 +148,25 @@ public class ConnectedComponent {
 						}
 					}
 				}
+			} // for
+			if (nodes.size()>500) {
+				System.out.println(lessCount + " updates for iteration " +iteration);
 			}
-			d *= dFactor;
+			delta--;
+		} // while
+		for(Node3D node:nodes) {
+			Sphere sphere = node.getSphere();
+			if (sphere!=null) {
+				sphere.setTranslateX(node.getX());
+				sphere.setTranslateY(node.getY());
+				sphere.setTranslateZ(node.getZ());
+			}
 		}
-		System.out.println("At end d = " + d + ", springReps = " + springReps + ", nodes.size() = " + nodes.size() + 
-				", lessCount = " + lessCount);
+		if (nodes.get(0).getSphere()!=null) {
+			nodes.get(0).getSphere().getParent().requestLayout();
+			System.out.println("Redrawing for " + nodes.get(0).getId());
+		}
+		return lessCount;
 	}
 	public Point3D computeCentroid() {
 		double x=0;
@@ -436,8 +477,12 @@ public class ConnectedComponent {
 			System.out.println(f + " " + count);
 		}
 	}
+	private static boolean shown=false;
 	public boolean intersects(ConnectedComponent component) {
-		System.err.println("intersects TODO!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+		if (!shown) {
+			System.err.println("intersects TODO!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+			shown=true;
+		}
 		return false;
 	}
 

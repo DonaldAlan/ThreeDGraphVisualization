@@ -171,7 +171,7 @@ public class Visualizer extends Application {
 		for (ConnectedComponent connectedComponent : connectedComponents) {
 			switch (layout) {
 			case Spring:
-				connectedComponent.placeOnePassUsingSpringModel();
+				connectedComponent.springModel();
 				break;
 			case Stochastic:
 				System.err.println("Stochastic not implemented");
