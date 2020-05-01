@@ -168,7 +168,9 @@ public class Visualizer extends Application {
 		long startTime=System.currentTimeMillis();
 	//	randomizeNodePlacements();
 		computeConnectedComponents();
+		double totalCostChange=0.0;
 		for (ConnectedComponent connectedComponent : connectedComponents) {
+			final double startCost = connectedComponent.getCost();
 			switch (layout) {
 			case Spring:
 				connectedComponent.springModel();
@@ -188,15 +190,14 @@ public class Visualizer extends Application {
 				break;
 			}
 			connectedComponent.getMaxWidthHeightDepth();
+			totalCostChange += (startCost - connectedComponent.getCost());
 		}
-		System.out.println("About to call moveConnectedComponentsAwayFromEachOther");
 		moveConnectedComponentsAwayFromEachOther();
-		System.out.println("About to call movePointsSoCenterOfMassIsAtOrigin");
 		movePointsSoCenterOfMassIsAtOrigin();
 		
 		long middle = System.currentTimeMillis();
 		double seconds=0.001*(middle-startTime);
-		System.out.println(numberFormat.format(seconds) + " seconds to place one pass, about to refreshNodes");
+		System.out.println(numberFormat.format(seconds) + " seconds, cost change = " + totalCostChange);
 		refreshNodes();
 		seconds = 0.001*(System.currentTimeMillis() - middle);
 	}
@@ -409,9 +410,8 @@ public class Visualizer extends Application {
 						random.nextInt(Node3D.windowSize));
 			}
 		}
-		System.out.println("Successes count = " + successes + " out of " + connectedComponents.size() + " with " + moves
-				+ " moves");
-		// Map<ConnectedComponent,Point3D> centroids=getCentroids();
+//		System.out.println("Successes count = " + successes + " out of " + connectedComponents.size() + " with " + moves
+//				+ " moves");
 	}
 
 	private Map<ConnectedComponent, Point3D> getCentroids() {
@@ -921,9 +921,8 @@ public class Visualizer extends Application {
 		final AnimationTimer timer = new AnimationTimer() {
 			@Override
 			public void handle(long nowInNanoSeconds) {
-				long diff=nowInNanoSeconds-requestPlaceOnePassTimeInMls;
-				if (requestPlaceOnePassTimeInMls>0 && nowInNanoSeconds-requestPlaceOnePassTimeInMls>50*ONE_MILLISECOND_IN_NANOSECONDS) {
-					System.out.println("Placing after change of attractive/repulsive, diff = " + diff);
+				final long diff=nowInNanoSeconds-requestPlaceOnePassTimeInMls;
+				if (requestPlaceOnePassTimeInMls>0 && diff>50*ONE_MILLISECOND_IN_NANOSECONDS) {
 					requestPlaceOnePassTimeInMls=0;
 					placeOnePass(false);
 					approximationButton.setBackground(backgroundNormal);

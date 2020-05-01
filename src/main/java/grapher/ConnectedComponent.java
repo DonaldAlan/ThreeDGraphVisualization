@@ -64,6 +64,13 @@ public class ConnectedComponent {
 	public Node3D getFirst() {
 		return nodes.get(0);
 	}
+	public double getCost() {
+		double cost=0.0;
+		for(Node3D node:nodes) {
+			cost+= node.getCost();
+		}
+		return cost;
+	}
 	public void done() {
 		int m=2*(int)Math.ceil(Math.pow(nodes.size(),0.33333));
 //		System.out.println("n = " + m + ", n*n*n = " + (m*m*m) + ", nodes.size() = " + nodes.size());
@@ -138,7 +145,10 @@ public class ConnectedComponent {
 					final int rx = moveRandom(node.getXIndex(),delta);
 					final int ry = moveRandom(node.getYIndex(), delta);
 					final int rz = moveRandom(node.getZIndex(), delta);
-					if (nodeMatrix[rx][ry][rz] == null) {
+					Node3D nodeRxRyRz = nodeMatrix[rx][ry][rz];
+					if (nodeRxRyRz == node) {
+						continue;
+					} else if (nodeRxRyRz == null) {
 						double rc = node.getCostIfWeWereAtXYZ(10 * rx, 10 * ry, 10 * rz);
 						if (rc < cost) {
 							lessCount++;
@@ -148,6 +158,25 @@ public class ConnectedComponent {
 							node.setXYZ(10 * rx, 10 * ry, 10 * rz);
 							node.setIndices(rx, ry, rz);
 							nodeMatrix[rx][ry][rz] = node;
+						}
+					} else { // See if swapping lowers cost.
+						final double startCostNodeRxRyRz = nodeRxRyRz.getCost();
+						final double swappedCostNodeRxRyRz = nodeRxRyRz.getCostIfWeWereAtXYZ(10*node.getXIndex(), 10*node.getYIndex(), 10*node.getZIndex());
+						double rc = node.getCostIfWeWereAtXYZ(10 * rx, 10 * ry, 10 * rz);
+						if (rc+swappedCostNodeRxRyRz < cost + startCostNodeRxRyRz) {
+							final int nodeIndexX = node.getXIndex();
+							final int nodeIndexY = node.getYIndex();
+							final int nodeIndexZ = node.getZIndex();
+							lessCount++;
+							cost=rc;
+							nodeMatrix[node.getXIndex()][node.getYIndex()][node.getZIndex()] = nodeRxRyRz;
+							nodeMatrix[rx][ry][rz] = node;
+							node.setXYZ(10 * rx, 10 * ry, 10 * rz);
+							node.setIndices(rx, ry, rz);
+							node.setCost(rc);
+							nodeRxRyRz.setXYZ(10*nodeIndexX, 10*nodeIndexY, 10*nodeIndexZ);
+							nodeRxRyRz.setIndices(nodeIndexX, nodeIndexY, nodeIndexZ);
+							nodeRxRyRz.setCost(swappedCostNodeRxRyRz);
 						}
 					}
 				}
