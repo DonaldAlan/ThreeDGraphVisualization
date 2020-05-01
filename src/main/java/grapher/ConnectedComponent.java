@@ -66,7 +66,7 @@ public class ConnectedComponent {
 	}
 	public void done() {
 		int m=2*(int)Math.ceil(Math.pow(nodes.size(),0.33333));
-		System.out.println("n = " + m + ", n*n*n = " + (m*m*m) + ", nodes.size() = " + nodes.size());
+//		System.out.println("n = " + m + ", n*n*n = " + (m*m*m) + ", nodes.size() = " + nodes.size());
 		nodeMatrix = new Node3D[m][m][m];
 		numberOfNodesToShow = nodes.size();
 		placeInitiallyInGrid(m);
@@ -123,6 +123,9 @@ public class ConnectedComponent {
 			}
 			iteration++;
 		} while (System.currentTimeMillis()-startTime< 4000);
+		if (nodes.size()>500 && iteration>2) {
+			System.out.println("Exited springModel() after " + iteration + " iterations");
+		}
 	}
 	public int springModelAux(int iteration) {
 		int lessCount = 0;
@@ -149,9 +152,9 @@ public class ConnectedComponent {
 					}
 				}
 			} // for
-			if (nodes.size()>500) {
-				System.out.println(lessCount + " updates for iteration " +iteration);
-			}
+//			if (nodes.size()>1000) {
+//				System.out.println(lessCount + " updates for iteration " +iteration);
+//			}
 			delta--;
 		} // while
 		for(Node3D node:nodes) {
@@ -164,7 +167,7 @@ public class ConnectedComponent {
 		}
 		if (nodes.get(0).getSphere()!=null) {
 			nodes.get(0).getSphere().getParent().requestLayout();
-			System.out.println("Redrawing for " + nodes.get(0).getId());
+//			/System.out.println("Redrawing for " + nodes.get(0).getId());
 		}
 		return lessCount;
 	}

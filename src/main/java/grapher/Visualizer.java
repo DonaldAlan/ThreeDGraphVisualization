@@ -164,7 +164,7 @@ public class Visualizer extends Application {
 			nodesToDisplay[i].randomizePlacement();
 		}
 	}
-	public void placeOnePass() {
+	public void placeOnePass(boolean recreateSpheres) {
 		long startTime=System.currentTimeMillis();
 	//	randomizeNodePlacements();
 		computeConnectedComponents();
@@ -246,7 +246,7 @@ public class Visualizer extends Application {
 			runCurrentImportanceAlgorithm();
 			calculateMinMaxImportance();
 			assignImportanceIndices();
-			placeOnePass();
+			placeOnePass(true);
 			refreshNodes();
 			});
 		root.getChildren().add(importanceAlgorithmComboBox);
@@ -638,7 +638,7 @@ public class Visualizer extends Application {
 		for(Node3D n: nodesToDisplay) {
 			n.setIsVisible(true); 
 		}
-		placeOnePass();
+		placeOnePass(true);
 	}
 
 	private Node3D[] getNodesNear(Node3D node, int maxDistance) {
@@ -722,7 +722,7 @@ public class Visualizer extends Application {
 				}
 				break;
 			case P:
-				placeOnePass();
+				placeOnePass(false);
 				//showAverageDistances();
 				break;
 			case H:  {
@@ -925,7 +925,7 @@ public class Visualizer extends Application {
 				if (requestPlaceOnePassTimeInMls>0 && nowInNanoSeconds-requestPlaceOnePassTimeInMls>50*ONE_MILLISECOND_IN_NANOSECONDS) {
 					System.out.println("Placing after change of attractive/repulsive, diff = " + diff);
 					requestPlaceOnePassTimeInMls=0;
-					placeOnePass();
+					placeOnePass(false);
 					approximationButton.setBackground(backgroundNormal);
 					approximationButton.setText(ConnectedComponent.approximateForces? approximateForcesText: unrestrictedForcesText);
 				}
@@ -970,7 +970,7 @@ public class Visualizer extends Application {
 			buildRedoLayoutButton(root);
 			scene.setCamera(camera);
 
-			placeOnePass();
+			placeOnePass(true);
 			randomizeColors(2);
 			displayNodes();
 			//showAverageDistances();
