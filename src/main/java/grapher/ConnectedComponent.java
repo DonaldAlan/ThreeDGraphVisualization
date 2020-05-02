@@ -70,12 +70,12 @@ public class ConnectedComponent {
 	public double getCost() {
 		double cost=0.0;
 		for(Node3D node:nodes) {
-			cost+= node.getCost();
+			cost+= node.getCost(this);
 		}
 		return cost;
 	}
 	public void done() {
-		int m=2*(int)Math.ceil(Math.pow(nodes.size(),0.33333));
+		int m=4*(int)Math.ceil(Math.pow(nodes.size(),0.33333));
 		System.out.println("m = " + m + ", m*m*m = " + (m*m*m) + ", nodes.size() = " + nodes.size());
 		nodeMatrix = new Node3D[m][m][m];
 		numberOfNodesToShow = nodes.size();
@@ -171,7 +171,7 @@ public class ConnectedComponent {
 		while (delta > 0) {
 			for (int i = 0; i < numberOfNodesToShow; i++) {
 				final Node3D node = nodes.get(i);
-				double cost = node.getCost();
+				double cost = node.getCost(this);
 				for (int j = 0; j < innerReps; j++) {
 					final int rx = moveRandom(node.getXIndex(),delta);
 					final int ry = moveRandom(node.getYIndex(), delta);
@@ -191,7 +191,7 @@ public class ConnectedComponent {
 							nodeMatrix[rx][ry][rz] = node;
 						}
 					} else { // See if swapping lowers cost.
-						final double startCostNodeRxRyRz = nodeRxRyRz.getCost();
+						final double startCostNodeRxRyRz = nodeRxRyRz.getCost(this);
 						final double swappedCostNodeRxRyRz = nodeRxRyRz.getCostIfWeWereAtXYZ(positionFactor*node.getXIndex(), positionFactor*node.getYIndex(), positionFactor*node.getZIndex());
 						double rc = node.getCostIfWeWereAtXYZ(10 * rx, 10 * ry, 10 * rz);
 						if (rc+swappedCostNodeRxRyRz < cost + startCostNodeRxRyRz) {
@@ -244,7 +244,7 @@ public class ConnectedComponent {
 				int nodeIndexX = node.getXIndex();
 				int nodeIndexY = node.getYIndex();
 				int nodeIndexZ = node.getZIndex();
-				double cost = node.getCost();
+				double cost = node.getCost(this);
 				for (int nx = Math.max(0, nodeIndexX-delta); nx <= Math.min(nodeIndexX+delta,maxIndexMinus1); nx++) {
 					final int deltaXAbs = Math.abs(nodeIndexX-nx);
 					final int limitY = delta-deltaXAbs;
@@ -275,7 +275,7 @@ public class ConnectedComponent {
 									nodeIndexZ=nz;
 								}
 							} else { // See if swapping lowers cost.
-								final double startCostNodeRxRyRz = nodeRxRyRz.getCost();
+								final double startCostNodeRxRyRz = nodeRxRyRz.getCost(this);
 								final double swappedCostNodeRxRyRz = nodeRxRyRz.getCostIfWeWereAtXYZ(
 										10 * node.getXIndex(), 10 * node.getYIndex(), 10 * node.getZIndex());
 								double rc = node.getCostIfWeWereAtXYZ(10 * nx, 10 * ny, 10 * nz);
@@ -309,6 +309,7 @@ public class ConnectedComponent {
 	
 	// ----------------------
 	public void springModel() {
+		// TODO: add some repulsive forces, so that there's good separation between subclusters.
 		final long startTime = System.currentTimeMillis();
 		long lastCheckTime = startTime;
 		double cost = getCost();

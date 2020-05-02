@@ -659,14 +659,17 @@ public class Visualizer extends Application {
 			case Q:
 				System.exit(0);
 				break;
-			case R:
+			case R: {
+				// TODO: sort nodes by cost and move the costliest ones.
 				System.out.println("Randomize");
+				final double probability = ke.isShiftDown() ? 1.0: 0.1;
 				for(ConnectedComponent c:connectedComponents) {
-					c.randomizePositions(0.1);
+					c.randomizePositions(probability);
 				}
 				System.out.println("Total cost = " + getTotalCost());
 				refreshNodes();
 				System.out.println("Randomize done");
+			}
 				break;
 			case ESCAPE:
 				if (ke.isShiftDown()) {

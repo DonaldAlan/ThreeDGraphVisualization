@@ -161,7 +161,7 @@ public class Node3D implements Comparable<Node3D> {
 	public double distance(Node3D other) {
 		return Math.sqrt(square(x-other.x) + square(y-other.y) + square(z-other.z));
 	}
-	public double getCost() {
+	public double getCost(final ConnectedComponent component) {
 		if (cost>=0) {
 			return cost;
 		}
@@ -171,6 +171,15 @@ public class Node3D implements Comparable<Node3D> {
 				cost+= distance(neighbor);
 			}
 		}
+		double repulsiveCost=0.0;
+		for(Node3D nonNeighbor: component.getNodes()) {
+			if (!edges.containsKey(nonNeighbor)) {
+				repulsiveCost -= distance(nonNeighbor);
+			}
+		}
+		// TODO: adjust the repulsive factor here, via the UI:
+		double ratio = 0.1*(1.0+edges.size())/component.getNodes().size();
+		cost+=  ratio*repulsiveCost;
 		return cost;
 	}
 	public double getCostIfWeWereAtXYZ(double x,double y, double z) {
@@ -354,26 +363,7 @@ public class Node3D implements Comparable<Node3D> {
 		}
 		System.out.println();
 	}
-	//--------------
-	public static void main(String [] args) {
-		Node3D n1 = new Node3D("1","1");
-		Node3D n2 = new Node3D("2","2");
-		Node3D n3 = new Node3D("3","3");
-
-		Node3D n4 = new Node3D("4","4");
-		Node3D n5 = new Node3D("5","5");
-		Node3D n6 = new Node3D("6","6");
-		
-		n1.addEdge(n2); show(n1,n2,n3, n4, n5, n6);
-		n2.addEdge(n3); show(n1,n2,n3, n4, n5, n6);
-		
-		n4.addEdge(n5); show(n1,n2,n3, n4, n5, n6);
-		n6.addEdge(n5); show(n1,n2,n3, n4, n5, n6);
-		
-		n1.addEdge(n6); show(n1,n2,n3, n4, n5, n6);
-		
-		System.out.println(ConnectedComponent.totalCount);
-	}
+	
 	public double getImportance() {
 		return importance;
 	}
@@ -623,4 +613,24 @@ public class Node3D implements Comparable<Node3D> {
 		point3D = new Point3D(x,y,z);
 		return point3D;
 	}
+	//--------------
+		public static void main1(String [] args) {
+			Node3D n1 = new Node3D("1","1");
+			Node3D n2 = new Node3D("2","2");
+			Node3D n3 = new Node3D("3","3");
+
+			Node3D n4 = new Node3D("4","4");
+			Node3D n5 = new Node3D("5","5");
+			Node3D n6 = new Node3D("6","6");
+			
+			n1.addEdge(n2); show(n1,n2,n3, n4, n5, n6);
+			n2.addEdge(n3); show(n1,n2,n3, n4, n5, n6);
+			
+			n4.addEdge(n5); show(n1,n2,n3, n4, n5, n6);
+			n6.addEdge(n5); show(n1,n2,n3, n4, n5, n6);
+			
+			n1.addEdge(n6); show(n1,n2,n3, n4, n5, n6);
+			
+			System.out.println(ConnectedComponent.totalCount);
+		}
 } // class Node3D
