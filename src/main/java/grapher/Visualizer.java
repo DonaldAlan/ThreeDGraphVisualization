@@ -880,6 +880,7 @@ public class Visualizer extends Application {
 	// --------------------------
 	private void displayNodes() {
 		// If we are focused on a node, then ignore the importance limit
+		System.out.println(nodesToDisplay.length + " nodes to display");
 		for (int i = 0; i < nodesToDisplay.length; i++) {
 			Node3D node = nodesToDisplay[i];
 			node.setIsVisible(true);

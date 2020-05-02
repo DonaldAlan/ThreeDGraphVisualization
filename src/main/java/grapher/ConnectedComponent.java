@@ -127,7 +127,7 @@ public class ConnectedComponent {
 		int iteration=0;
 		final long startTime = System.currentTimeMillis();
 		do {
-			if (stochasticModelAux(iteration)==0) {
+			if (stochasticModelAuxRandomMoves(iteration)==0) {
 				break;
 			}
 			iteration++;
@@ -136,7 +136,7 @@ public class ConnectedComponent {
 			System.out.println("Exited springModel() after " + iteration + " iterations");
 		}
 	}
-	public int stochasticModelAux(int iteration) {
+	public int stochasticModelAuxRandomMoves(int iteration) {
 		int lessCount = 0;
 		int delta = nodeMatrix.length/2;
 		while (delta > 0) {
@@ -188,18 +188,68 @@ public class ConnectedComponent {
 //			}
 			delta--;
 		} // while
-		for(Node3D node:nodes) {
-			Sphere sphere = node.getSphere();
-			if (sphere!=null) {
-				sphere.setTranslateX(node.getX());
-				sphere.setTranslateY(node.getY());
-				sphere.setTranslateZ(node.getZ());
+		return lessCount;
+	}
+
+	private int stochasticModelAuxSystematicMoves(int iteration) {
+		int lessCount = 0;
+		int delta = nodeMatrix.length / 2;
+		final int maxIndexMinus1 = nodeMatrix.length-1;
+		while (delta > 0) {
+			for (int i = 0; i < numberOfNodesToShow; i++) {
+				final Node3D node = nodes.get(i);
+				final int nodeIndexX = node.getXIndex();
+				final int nodeIndexY = node.getYIndex();
+				final int nodeIndexZ = node.getZIndex();
+				double cost = node.getCost();
+				for (int nx = Math.max(0, nodeIndexX-delta); nx <= Math.min(nodeIndexX+delta,maxIndexMinus1); nx++) {
+					final int rxAbs = Math.abs(nx);
+					final int limitY = delta-rxAbs;
+					for (int ny = Math.max(0,nodeIndexY-limitY); ny <= Math.min(nodeIndexY+limitY,maxIndexMinus1); ny++) {
+						final int ryAbs = Math.abs(ny);
+						final int limitZ = delta-rxAbs-ryAbs;
+						for (int nz = Math.max(nodeIndexZ-limitZ,0); nz <= Math.min(nodeIndexZ+limitZ, maxIndexMinus1); nz++) {
+							Node3D nodeRxRyRz = nodeMatrix[nx][ny][nz];
+							if (nodeRxRyRz == node) {
+								continue;
+							} else if (nodeRxRyRz == null) {
+								double rc = node.getCostIfWeWereAtXYZ(10 * nx, 10 * ny, 10 * nz);
+								if (rc < cost) {
+									lessCount++;
+									node.setCost(rc);
+									cost = rc;
+									nodeMatrix[node.getXIndex()][node.getYIndex()][node.getZIndex()] = null;
+									node.setXYZ(10 * nx, 10 * ny, 10 * nz);
+									node.setIndices(nx, ny, nz);
+									nodeMatrix[nx][ny][nz] = node;
+								}
+							} else { // See if swapping lowers cost.
+								final double startCostNodeRxRyRz = nodeRxRyRz.getCost();
+								final double swappedCostNodeRxRyRz = nodeRxRyRz.getCostIfWeWereAtXYZ(
+										10 * node.getXIndex(), 10 * node.getYIndex(), 10 * node.getZIndex());
+								double rc = node.getCostIfWeWereAtXYZ(10 * nx, 10 * ny, 10 * nz);
+								if (rc + swappedCostNodeRxRyRz < cost + startCostNodeRxRyRz) {
+									lessCount++;
+									cost = rc;
+									nodeMatrix[node.getXIndex()][node.getYIndex()][node.getZIndex()] = nodeRxRyRz;
+									nodeMatrix[nx][ny][nz] = node;
+									node.setXYZ(10 * nx, 10 * ny, 10 * nz);
+									node.setIndices(nx, ny, nz);
+									node.setCost(rc);
+									nodeRxRyRz.setXYZ(10 * nodeIndexX, 10 * nodeIndexY, 10 * nodeIndexZ);
+									nodeRxRyRz.setIndices(nodeIndexX, nodeIndexY, nodeIndexZ);
+									nodeRxRyRz.setCost(swappedCostNodeRxRyRz);
+								}
+							}
+						}
+					}
+				}
+			} // for
+			if (nodes.size()>10) {
+				System.out.println(lessCount + " updates for iteration " +iteration);
 			}
-		}
-		if (nodes.get(0).getSphere()!=null) {
-			nodes.get(0).getSphere().getParent().requestLayout();
-//			/System.out.println("Redrawing for " + nodes.get(0).getId());
-		}
+			delta--;
+		} // while
 		return lessCount;
 	}
 	public Point3D computeCentroid() {
