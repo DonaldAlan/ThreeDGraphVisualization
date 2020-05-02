@@ -2,8 +2,10 @@ package grapher;
 
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
@@ -237,6 +239,32 @@ public class GraphGenerators {
 				}
 			}
 		}
+	}
+	public static Node3D[] makeComponents(int count, int meanSize, double std, double probabilityOfEdge) {
+		final List<Node3D> nodes= new ArrayList<>();
+		for(int i=0;i<count;i++) {
+			final int size= Math.max(1,(int) Math.round(random.nextGaussian()*std + meanSize));
+			int start=nodes.size();
+			for(int j=0;j<size;j++) {
+				Node3D node = new Node3D(""+ (start+j));
+				nodes.add(node);
+			}
+			if (start>0) {
+				nodes.get(start-1).addEdge(nodes.get(start));
+				nodes.get(start).addEdge(nodes.get(start-1));
+			}
+			for(int j=start+1;j<start+size;j++) {
+				for(int k=start;k<j;k++) {
+					if (random.nextDouble()<probabilityOfEdge) {
+						nodes.get(j).addEdge(nodes.get(k));
+						nodes.get(k).addEdge(nodes.get(j));
+					}
+				}
+			}
+		}
+		Node3D[] array = new Node3D[nodes.size()];
+		nodes.toArray(array);
+		return array;
 	}
 	public static Node3D[] makeGraph(final int n, final double probabilityOfEdgeAtDistanceOne, final boolean squareDistance) {
 		final Node3D[] nodes = new Node3D[n];
