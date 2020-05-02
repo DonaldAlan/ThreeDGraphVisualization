@@ -61,8 +61,8 @@ import javafx.stage.Stage;
 public class Visualizer extends Application {
 	public static int preferredCountOfNodesShown = 1000; // The slider can override this value.
 	//--------------------
-	public static enum Layout { Stochastic,Spring,Barrycenter,FruchtermanAndReingold, Simple;}
-	public static Layout layout = Layout.Spring;
+	public static enum Layout { Stochastic,Spring,Barrycenter,FruchtermanAndReingold, Systematic;}
+	public static Layout layout = Layout.Systematic;
 	public static Node3D[] nodesToDisplay = null;
 	public static Node3D[] savedAllNodes=null;
 	public static double distanceForOneEdge = 10;
@@ -114,7 +114,20 @@ public class Visualizer extends Application {
 	private final Slider importanceSlider=new Slider();
 	private final ComboBox<String> importanceAlgorithmComboBox = new ComboBox<>();
 	private final ComboBox<String> stochasticCountComboBox = new ComboBox<>();
+	private final ComboBox<String> graphingAlgorithmComboBox = new ComboBox<>();
 	private int limitIndexForNodesTaoDisplay;
+	private volatile long requestPlaceOnePassTimeInMls=0;
+	private final String unrestrictedForcesText = "Unrestricted Forces";
+	private final String redrawing="(Redrawing)";
+	private final String approximateForcesText = "Approximate Forces";
+	private final BackgroundFill backgroundFillNormal = new BackgroundFill(Color.MOCCASIN, CornerRadii.EMPTY, Insets.EMPTY);
+	private final BackgroundFill backgroundFillRedrawing = new BackgroundFill(Color.YELLOW, CornerRadii.EMPTY, Insets.EMPTY);
+	private final Background backgroundNormal =new Background(backgroundFillNormal);
+	private final Background backgroundRedrawing =new Background(backgroundFillRedrawing);
+	private final BackgroundFill controlBackgroundFill = new BackgroundFill(Color.SKYBLUE, CornerRadii.EMPTY, Insets.EMPTY);
+	private final Background controlBackground = new Background(controlBackgroundFill);
+
+	private final Button redoLayoutButton=new Button("Redraw");
 	// --------------
 	static {
 		numberFormat.setMaximumFractionDigits(3);
@@ -153,10 +166,7 @@ public class Visualizer extends Application {
 		return false;
 	}
 	private void requestReplaceOnePass() {
-		approximationButton.setBackground(backgroundRedrawing);
-		approximationButton.setText(redrawing);
 		requestPlaceOnePassTimeInMls=System.nanoTime();
-		approximationButton.requestLayout();
 	}
 	private void randomizeNodePlacements() {
 		System.out.println("Entering randomizeNodePlacements");
@@ -195,8 +205,8 @@ public class Visualizer extends Application {
 			case FruchtermanAndReingold:
 				System.err.println("FruchtermanAndReingold not implemented");
 				break;
-			case Simple:
-				connectedComponent.simple();
+			case Systematic:
+				connectedComponent.systematicModel();
 				break;
 			}
 			connectedComponent.getMaxWidthHeightDepth();
@@ -210,10 +220,11 @@ public class Visualizer extends Application {
 		System.out.println(numberFormat.format(seconds)
 				+ ", start cost = " + numberFormat.format(startTotalCost)
 				+ ", final cost = " + numberFormat.format(newTotalCost)
-				+ " seconds, cost change = " + numberFormat.format(startTotalCost-newTotalCost)
+				+ " cost change = " + numberFormat.format(startTotalCost-newTotalCost)
 				//+ ",\n totalCost again = " + numberFormat.format(getTotalCost())
 				+ ", totalCountViaConnectedComponents = " + totalCountViaConnectedComponents
 				+ ", nodesToDisplay.length = " + nodesToDisplay.length
+				+ " in " + numberFormat.format(seconds) + " seconds"
 				 );
 		refreshNodes();
 		seconds = 0.001*(System.currentTimeMillis() - middle);
@@ -224,9 +235,7 @@ public class Visualizer extends Application {
 		importanceAlgorithmComboBox.setTranslateX(-660);
 		importanceAlgorithmComboBox.setTranslateY(-410);
 		importanceAlgorithmComboBox.setTranslateZ(1600);
-		final BackgroundFill backgroundFill = new BackgroundFill(Color.MOCCASIN, CornerRadii.EMPTY, Insets.EMPTY);
-		final Background background = new Background(backgroundFill);
-		importanceAlgorithmComboBox.setBackground(background);
+		importanceAlgorithmComboBox.setBackground(controlBackground);
 		Tooltip tooltip = new Tooltip("Importance algorithm");
 		importanceAlgorithmComboBox.setTooltip(tooltip);
 		  // Use Java Collections to create the List.
@@ -256,14 +265,30 @@ public class Visualizer extends Application {
 			});
 		root.getChildren().add(importanceAlgorithmComboBox);
 	}
+	private void buildGraphPlacementAlgorithmComboBox(Group root) {
+		graphingAlgorithmComboBox.setTranslateX(380);
+		graphingAlgorithmComboBox.setTranslateY(-335);
+		graphingAlgorithmComboBox.setTranslateZ(1300);
+		graphingAlgorithmComboBox.setBackground(controlBackground);
+		final List<String> itemList = new ArrayList<String>();
+		itemList.add(Layout.Stochastic.name());
+		itemList.add(Layout.Systematic.name());
+		final ObservableList<String> observableList = FXCollections.observableList(itemList);
+		graphingAlgorithmComboBox.setItems(observableList);
+		graphingAlgorithmComboBox.setValue(Layout.Systematic.name());
+		graphingAlgorithmComboBox.setOnAction( e -> {
+        	String value=graphingAlgorithmComboBox.getValue();
+        	layout = Layout.valueOf(value);
+		});
+		root.getChildren().add(graphingAlgorithmComboBox);
+	}
 	@SuppressWarnings("unchecked")
 	private void buildStochasticCountComboBox(Group root) {
 		stochasticCountComboBox.setTranslateX(-750);
 		stochasticCountComboBox.setTranslateY(-410);
 		stochasticCountComboBox.setTranslateZ(1600);
-		final BackgroundFill backgroundFill = new BackgroundFill(Color.MOCCASIN, CornerRadii.EMPTY, Insets.EMPTY);
-		final Background background = new Background(backgroundFill);
-		stochasticCountComboBox.setBackground(background);
+	
+		stochasticCountComboBox.setBackground(controlBackground);
 		Tooltip tooltip = new Tooltip("Choose count of stochastic placements. Higher values result in better layouts but are slower.");
 		stochasticCountComboBox.setTooltip(tooltip);
 		  // Use Java Collections to create the List.
@@ -343,42 +368,12 @@ public class Visualizer extends Application {
 	        };
 	        root.addEventFilter(KeyEvent.KEY_PRESSED, filter);
 	    }
-	private volatile long requestPlaceOnePassTimeInMls=0;
-	private final String unrestrictedForcesText = "Unrestricted Forces";
-	private final String redrawing="(Redrawing)";
-	private final String approximateForcesText = "Approximate Forces";
-	private Button approximationButton;
-	private final BackgroundFill backgroundFillNormal = new BackgroundFill(Color.MOCCASIN, CornerRadii.EMPTY, Insets.EMPTY);
-	private final BackgroundFill backgroundFillRedrawing = new BackgroundFill(Color.YELLOW, CornerRadii.EMPTY, Insets.EMPTY);
-	private final Background backgroundNormal =new Background(backgroundFillNormal);
-	private final Background backgroundRedrawing =new Background(backgroundFillRedrawing);
-	private void buildApproximateOnlyButton(Group root) {
-		approximationButton = new Button(ConnectedComponent.approximateForces? approximateForcesText: unrestrictedForcesText);
-		approximationButton.setTranslateX(380);
-		approximationButton.setTranslateY(-335);
-		approximationButton.setTranslateZ(1300);
-		approximationButton.setBackground(backgroundNormal);
-		Tooltip tooltip = new Tooltip("Click to change between Approximate Forces (faster) and Unrestricted Forces (slower). ");
-		approximationButton.setTooltip(tooltip); 
-		root.getChildren().add(approximationButton);
-		approximationButton.setOnAction( e -> {
-			if (requestPlaceOnePassTimeInMls>0) {
-				return;
-			} else if (approximationButton.getText().equals(approximateForcesText)) {
-				ConnectedComponent.approximateForces=false;
-			} else {
-				ConnectedComponent.approximateForces=true;
-			}
-			requestReplaceOnePass();
-			//placeOnePass(); Do this in animate() so that the button shows progress.
-		});
-	}
-	private final Button redoLayoutButton=new Button("Redraw");
+	
 	private void buildRedoLayoutButton(Group root) {
 		redoLayoutButton.setTranslateX(540);
 		redoLayoutButton.setTranslateY(-335);
 		redoLayoutButton.setTranslateZ(1300);
-		redoLayoutButton.setBackground(backgroundNormal);
+		redoLayoutButton.setBackground(controlBackground);
 		redoLayoutButton.setOnAction( e -> {
 			if (requestPlaceOnePassTimeInMls>0) {
 				return;
@@ -930,8 +925,6 @@ public class Visualizer extends Application {
 				if (requestPlaceOnePassTimeInMls>0 && diff>50*ONE_MILLISECOND_IN_NANOSECONDS) {
 					requestPlaceOnePassTimeInMls=0;
 					placeOnePass(false);
-					approximationButton.setBackground(backgroundNormal);
-					approximationButton.setText(ConnectedComponent.approximateForces? approximateForcesText: unrestrictedForcesText);
 				}
 			}};
 		timer.start();
@@ -970,7 +963,7 @@ public class Visualizer extends Application {
 			buildStochasticCountComboBox(root);
 			buildSlider(root);
 			//handleKeyEvents(scene);
-			buildApproximateOnlyButton(root);
+			buildGraphPlacementAlgorithmComboBox(root);
 			buildRedoLayoutButton(root);
 			scene.setCamera(camera);
 

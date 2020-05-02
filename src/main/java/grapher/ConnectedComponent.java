@@ -121,19 +121,7 @@ public class ConnectedComponent {
 		};
 		new Thread(runnable).start();
 	}
-	public void springModel() {
-		int iteration=0;
-		final long startTime = System.currentTimeMillis();
-		do {
-			if (springModel(iteration)==0) {
-				break;
-			}
-			iteration++;
-		} while (System.currentTimeMillis()-startTime< secondsToWaitPerIteration*1000);
-		if (nodes.size()>500 && iteration>2) {
-			System.out.println("Exited springModel() after " + iteration + " iterations");
-		}
-	}
+
 	public void stochasticModel() {
 		int iteration=0;
 		final long startTime = System.currentTimeMillis();
@@ -143,8 +131,10 @@ public class ConnectedComponent {
 			}
 			iteration++;
 		} while (System.currentTimeMillis()-startTime< secondsToWaitPerIteration*1000);
-		if (nodes.size()>500 && iteration>2) {
-			System.out.println("Exited springModel() after " + iteration + " iterations");
+		if (nodes.size()>200 && iteration>2) {
+			double seconds = 0.001*(System.currentTimeMillis()-startTime); 
+			System.out.println("Exited stochasticModel() after " + iteration 
+					+ " iterations in " + numberFormat.format(seconds)  +  " seconds");
 		}
 	}
 	public int stochasticModelAuxRandomMoves(int iteration) {
@@ -201,8 +191,22 @@ public class ConnectedComponent {
 		} // while
 		return lessCount;
 	}
-
-	private int springModel(int iteration) {
+	public void systematicModel() {
+		int iteration=0;
+		final long startTime = System.currentTimeMillis();
+		do {
+			if (systematicModelAux(iteration)==0) {
+				break;
+			}
+			iteration++;
+		} while (System.currentTimeMillis()-startTime< secondsToWaitPerIteration*1000);
+		if (nodes.size()>500 && iteration>2) {
+			double seconds = 0.001*(System.currentTimeMillis()-startTime); 
+			System.out.println("Exited systematicModel() after " + iteration + " iterations, in " + 
+			numberFormat.format(seconds) + " seconds");
+		}
+	}
+	private int systematicModelAux(int iteration) {
 		int lessCount = 0;
 		int delta = nodeMatrix.length / 2;
 		final int maxIndexMinus1 = nodeMatrix.length-1;
@@ -274,6 +278,18 @@ public class ConnectedComponent {
 		} // while
 		return lessCount;
 	}
+	
+	//----------------------
+		public void springModel() {
+			final double maxXYZ = Node3D.windowSize;
+			for(Node3D node: nodes) {
+				node.setXYZ(maxXYZ*random.nextDouble(), maxXYZ*random.nextDouble(), maxXYZ*random.nextDouble());
+			}
+			double distanceToMove = maxXYZ;
+			while (distanceToMove> 1) {
+				distanceToMove *= simpleDecayFactor;
+			}
+		}
 	public Point3D computeCentroid() {
 		double x=0;
 		double y=0;
@@ -490,17 +506,7 @@ public class ConnectedComponent {
 		return (k*k)/(d);  // d*d?    d?
 	}
 
-	//----------------------
-	public void simple() {
-		final double maxXYZ = Node3D.windowSize;
-		for(Node3D node: nodes) {
-			node.setXYZ(maxXYZ*random.nextDouble(), maxXYZ*random.nextDouble(), maxXYZ*random.nextDouble());
-		}
-		double distanceToMove = maxXYZ;
-		while (distanceToMove> 1) {
-			distanceToMove *= simpleDecayFactor;
-		}
-	}
+	
 	
 	private static String toString(double x, double y, double z) {
 		return "(" + toString(x) + ", " + toString(x) + ", " + toString(z) + ")";
@@ -592,7 +598,7 @@ public class ConnectedComponent {
 		return false;
 	}
 
-	public static void main(String [] args) {
+	public static void main3(String [] args) {
 			final int nodeIndexX = 4;
 			final int nodeIndexY = 4;
 			final int nodeIndexZ = 4;
