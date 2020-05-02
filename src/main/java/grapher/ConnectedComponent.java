@@ -127,7 +127,7 @@ public class ConnectedComponent {
 		int iteration=0;
 		final long startTime = System.currentTimeMillis();
 		do {
-			if (stochasticModelAuxRandomMoves(iteration)==0) {
+			if (stochasticModelAuxSystematicMoves(iteration)==0) {
 				break;
 			}
 			iteration++;
@@ -198,17 +198,22 @@ public class ConnectedComponent {
 		while (delta > 0) {
 			for (int i = 0; i < numberOfNodesToShow; i++) {
 				final Node3D node = nodes.get(i);
-				final int nodeIndexX = node.getXIndex();
-				final int nodeIndexY = node.getYIndex();
-				final int nodeIndexZ = node.getZIndex();
+				int nodeIndexX = node.getXIndex();
+				int nodeIndexY = node.getYIndex();
+				int nodeIndexZ = node.getZIndex();
 				double cost = node.getCost();
 				for (int nx = Math.max(0, nodeIndexX-delta); nx <= Math.min(nodeIndexX+delta,maxIndexMinus1); nx++) {
-					final int rxAbs = Math.abs(nx);
-					final int limitY = delta-rxAbs;
+					final int deltaXAbs = Math.abs(nodeIndexX-nx);
+					final int limitY = delta-deltaXAbs;
 					for (int ny = Math.max(0,nodeIndexY-limitY); ny <= Math.min(nodeIndexY+limitY,maxIndexMinus1); ny++) {
-						final int ryAbs = Math.abs(ny);
-						final int limitZ = delta-rxAbs-ryAbs;
+						final int deltaYAbs = Math.abs(nodeIndexY-ny);
+						final int limitZ = delta-deltaXAbs-deltaYAbs;
 						for (int nz = Math.max(nodeIndexZ-limitZ,0); nz <= Math.min(nodeIndexZ+limitZ, maxIndexMinus1); nz++) {
+							final int deltaZAbs= Math.abs(nodeIndexZ-nz);
+							int diff=deltaXAbs + deltaYAbs + deltaZAbs;
+							if (diff!=delta) {
+								continue;
+							}
 							Node3D nodeRxRyRz = nodeMatrix[nx][ny][nz];
 							if (nodeRxRyRz == node) {
 								continue;
@@ -222,6 +227,9 @@ public class ConnectedComponent {
 									node.setXYZ(10 * nx, 10 * ny, 10 * nz);
 									node.setIndices(nx, ny, nz);
 									nodeMatrix[nx][ny][nz] = node;
+									nodeIndexX=nx;
+									nodeIndexY=ny;
+									nodeIndexZ=nz;
 								}
 							} else { // See if swapping lowers cost.
 								final double startCostNodeRxRyRz = nodeRxRyRz.getCost();
@@ -239,6 +247,9 @@ public class ConnectedComponent {
 									nodeRxRyRz.setXYZ(10 * nodeIndexX, 10 * nodeIndexY, 10 * nodeIndexZ);
 									nodeRxRyRz.setIndices(nodeIndexX, nodeIndexY, nodeIndexZ);
 									nodeRxRyRz.setCost(swappedCostNodeRxRyRz);
+									nodeIndexX=nx;
+									nodeIndexY=ny;
+									nodeIndexZ=nz;
 								}
 							}
 						}
@@ -246,7 +257,7 @@ public class ConnectedComponent {
 				}
 			} // for
 			if (nodes.size()>10) {
-				System.out.println(lessCount + " updates for iteration " +iteration);
+//				System.out.println(lessCount + " updates for iteration " +iteration);
 			}
 			delta--;
 		} // while
@@ -527,7 +538,7 @@ public class ConnectedComponent {
 	}
 	
 	//------------
-	public static void main(String [] args) {
+	public static void main2(String [] args) {
 		Node3D.windowSize=100;
 		Node3D n1=new Node3D("n1","n1");
 		Node3D n2=new Node3D("n2","n2");
@@ -570,4 +581,27 @@ public class ConnectedComponent {
 		return false;
 	}
 
+	public static void main(String [] args) {
+			final int nodeIndexX = 4;
+			final int nodeIndexY = 4;
+			final int nodeIndexZ = 4;
+			int delta=4;
+			int maxIndexMinus1 = 7;
+			for (int nx = Math.max(0, nodeIndexX-delta); nx <= Math.min(nodeIndexX+delta,maxIndexMinus1); nx++) {
+				final int deltaXAbs = Math.abs(nodeIndexX-nx);
+				final int limitY = delta-deltaXAbs;
+				for (int ny = Math.max(0,nodeIndexY-limitY); ny <= Math.min(nodeIndexY+limitY,maxIndexMinus1); ny++) {
+					final int deltaYAbs = Math.abs(nodeIndexY-ny);
+					final int limitZ = delta-deltaXAbs-deltaYAbs;
+					for (int nz = Math.max(nodeIndexZ-limitZ,0); nz <= Math.min(nodeIndexZ+limitZ, maxIndexMinus1); nz++) {
+						final int deltaZAbs= Math.abs(nodeIndexZ-nz);
+						int diff=deltaXAbs + deltaYAbs + deltaZAbs;
+						if (diff  == 1) {
+							System.out.println(deltaXAbs + " " + deltaYAbs + " " + deltaZAbs 
+									 + ", limitY = " + limitY + ", limitZ = " + limitZ);
+						}
+					}
+				}
+			}
+	}
 }
