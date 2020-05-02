@@ -33,6 +33,7 @@ import javafx.scene.shape.Sphere;
  *  
  */
 public class ConnectedComponent {
+	public double positionFactor=20;
 	public int innerReps=20;
 	private final List<Node3D> nodes = new ArrayList<>();
 	private Node3D[][][] nodeMatrix;
@@ -143,6 +144,7 @@ public class ConnectedComponent {
 	public void randomizePositions(double probabilityOfMoving) {
 		for(Node3D node: nodes) {
 			if (random.nextDouble()<probabilityOfMoving) {
+				int count=0;
 				while (true) {
 					int x = random.nextInt(nodeMatrix.length);
 					int y = random.nextInt(nodeMatrix.length);
@@ -151,7 +153,12 @@ public class ConnectedComponent {
 						nodeMatrix[x][y][z]=node;
 						nodeMatrix[node.getXIndex()][node.getYIndex()][node.getZIndex()]=null;
 						node.setIndices(x,y,z);
-						node.setXYZ(10*x, 10*y, 10*z); 
+						node.setXYZ(positionFactor*x, positionFactor*y, positionFactor*z); 
+						break;
+					}
+					count++;
+					if (count==30) {
+						System.err.println("Couldn't find a move");
 						break;
 					}
 				}
@@ -185,7 +192,7 @@ public class ConnectedComponent {
 						}
 					} else { // See if swapping lowers cost.
 						final double startCostNodeRxRyRz = nodeRxRyRz.getCost();
-						final double swappedCostNodeRxRyRz = nodeRxRyRz.getCostIfWeWereAtXYZ(10*node.getXIndex(), 10*node.getYIndex(), 10*node.getZIndex());
+						final double swappedCostNodeRxRyRz = nodeRxRyRz.getCostIfWeWereAtXYZ(positionFactor*node.getXIndex(), positionFactor*node.getYIndex(), positionFactor*node.getZIndex());
 						double rc = node.getCostIfWeWereAtXYZ(10 * rx, 10 * ry, 10 * rz);
 						if (rc+swappedCostNodeRxRyRz < cost + startCostNodeRxRyRz) {
 							final int nodeIndexX = node.getXIndex();
@@ -198,7 +205,7 @@ public class ConnectedComponent {
 							node.setXYZ(10 * rx, 10 * ry, 10 * rz);
 							node.setIndices(rx, ry, rz);
 							node.setCost(rc);
-							nodeRxRyRz.setXYZ(10*nodeIndexX, 10*nodeIndexY, 10*nodeIndexZ);
+							nodeRxRyRz.setXYZ(positionFactor*nodeIndexX, positionFactor*nodeIndexY, positionFactor*nodeIndexZ);
 							nodeRxRyRz.setIndices(nodeIndexX, nodeIndexY, nodeIndexZ);
 							nodeRxRyRz.setCost(swappedCostNodeRxRyRz);
 						}
@@ -301,16 +308,57 @@ public class ConnectedComponent {
 	}
 	
 	//----------------------
-		public void springModel() {
-			final double maxXYZ = Node3D.windowSize;
-			for(Node3D node: nodes) {
-				node.setXYZ(maxXYZ*random.nextDouble(), maxXYZ*random.nextDouble(), maxXYZ*random.nextDouble());
+	public void springModel() {
+		final long startTime = System.currentTimeMillis();
+		long lastCheckTime = startTime;
+		double cost=getCost();
+		while (true) {
+			final long now=System.currentTimeMillis();
+			double seconds = 0.001*(now-startTime);
+			if (seconds>secondsToWaitPerIteration) {
+				break;
 			}
-			double distanceToMove = maxXYZ;
-			while (distanceToMove> 1) {
-				distanceToMove *= simpleDecayFactor;
+			if (now-lastCheckTime>1000) {
+				double localCost=getCost();
+				if (localCost>= cost) {
+					break;
+				}
+				cost=localCost;
+				lastCheckTime=now;
+			}
+			for(Node3D node:nodes) {
+				int xIndexSum=0;
+				int yIndexSum=0;
+				int zIndexSum=0;
+				int count=0;
+				for(Node3D n:node.getNeighbors()) {
+					xIndexSum+= n.getXIndex();
+					yIndexSum+= n.getYIndex();
+					zIndexSum+= n.getZIndex();
+					count++;
+				}
+				int x=limit((int) Math.round(0.0+xIndexSum)/count);
+				int y=limit((int) Math.round(0.0+yIndexSum)/count);
+				int z=limit((int) Math.round(0.0+zIndexSum)/count);
+				for(int i=0;i<20;i++) {
+					if (nodeMatrix[x][y][z]==null) {
+						nodeMatrix[x][y][z]=node;
+						nodeMatrix[node.getXIndex()][node.getYIndex()][node.getZIndex()]=null;
+						node.setIndices(x, y,z);
+						node.setXYZ(positionFactor*x,positionFactor*y,positionFactor*z);
+						break;
+					}
+					x=  limit(x+random.nextInt(6)-3);
+					y=  limit(y+random.nextInt(6)-3);
+					z=  limit(z+random.nextInt(6)-3);
+				}
 			}
 		}
+		if (nodes.size()>100) {
+			System.out.println("Exited spring Model");
+		}
+	}
+	//----------------------
 	public Point3D computeCentroid() {
 		double x=0;
 		double y=0;
@@ -618,7 +666,15 @@ public class ConnectedComponent {
 		}
 		return false;
 	}
-
+	private int limit(int index) {
+		if (index<0) {
+			return 0;
+		} else if (index>= nodeMatrix.length) {
+			return nodeMatrix.length-1;
+		} else {
+			return index;
+		}
+	}
 	public static void main3(String [] args) {
 			final int nodeIndexX = 4;
 			final int nodeIndexY = 4;

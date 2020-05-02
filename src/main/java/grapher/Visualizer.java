@@ -167,6 +167,8 @@ public class Visualizer extends Application {
 	}
 	private void requestReplaceOnePass() {
 		requestPlaceOnePassTimeInMls=System.nanoTime();
+		redoLayoutButton.setBackground(backgroundRedrawing);
+		redoLayoutButton.setText("Redrawing");
 	}
 	private void randomizeNodePlacements() {
 		System.out.println("Entering randomizeNodePlacements");
@@ -228,6 +230,8 @@ public class Visualizer extends Application {
 				 );
 		refreshNodes();
 		seconds = 0.001*(System.currentTimeMillis() - middle);
+		redoLayoutButton.setBackground(controlBackground);
+		redoLayoutButton.setText("Redraw");
 	}
 
 	@SuppressWarnings("unchecked")
@@ -271,11 +275,12 @@ public class Visualizer extends Application {
 		graphingAlgorithmComboBox.setTranslateZ(1300);
 		graphingAlgorithmComboBox.setBackground(controlBackground);
 		final List<String> itemList = new ArrayList<String>();
+		itemList.add(Layout.Spring.name());
 		itemList.add(Layout.Stochastic.name());
 		itemList.add(Layout.Systematic.name());
 		final ObservableList<String> observableList = FXCollections.observableList(itemList);
 		graphingAlgorithmComboBox.setItems(observableList);
-		graphingAlgorithmComboBox.setValue(Layout.Systematic.name());
+		graphingAlgorithmComboBox.setValue(layout.name());
 		graphingAlgorithmComboBox.setOnAction( e -> {
         	String value=graphingAlgorithmComboBox.getValue();
         	layout = Layout.valueOf(value);
@@ -655,11 +660,13 @@ public class Visualizer extends Application {
 				System.exit(0);
 				break;
 			case R:
+				System.out.println("Randomize");
 				for(ConnectedComponent c:connectedComponents) {
 					c.randomizePositions(0.1);
 				}
 				System.out.println("Total cost = " + getTotalCost());
 				refreshNodes();
+				System.out.println("Randomize done");
 				break;
 			case ESCAPE:
 				if (ke.isShiftDown()) {
