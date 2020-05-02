@@ -164,13 +164,23 @@ public class Visualizer extends Application {
 			nodesToDisplay[i].randomizePlacement();
 		}
 	}
-	public void placeOnePass(boolean recreateSpheres) {
+	public double getTotalCost() {
+		double startTotalCost=0;
+		for (ConnectedComponent connectedComponent : connectedComponents) {
+			startTotalCost+= connectedComponent.getCost();
+		}
+		return startTotalCost;
+	}
+	public void placeOnePass(boolean initialize) {
 		long startTime=System.currentTimeMillis();
 	//	randomizeNodePlacements();
 		computeConnectedComponents();
-		double totalCostChange=0.0;
+		double startTotalCost=getTotalCost();
+		double newTotalCost=0;
+		System.out.println("Using layout " + layout);
+		int totalCountViaConnectedComponents=0;
 		for (ConnectedComponent connectedComponent : connectedComponents) {
-			final double startCost = connectedComponent.getCost();
+			totalCountViaConnectedComponents+= connectedComponent.size();
 			switch (layout) {
 			case Spring:
 				connectedComponent.springModel();
@@ -190,29 +200,23 @@ public class Visualizer extends Application {
 				break;
 			}
 			connectedComponent.getMaxWidthHeightDepth();
-			totalCostChange += (startCost - connectedComponent.getCost());
+			newTotalCost+= connectedComponent.getCost();
 		}
 		moveConnectedComponentsAwayFromEachOther();
-		movePointsSoCenterOfMassIsAtOrigin();
+		//TODO: moveCameraToPointToCenterOfMass();
 		
 		long middle = System.currentTimeMillis();
 		double seconds=0.001*(middle-startTime);
-		System.out.println(numberFormat.format(seconds) + " seconds, cost change = " + totalCostChange);
+		System.out.println(numberFormat.format(seconds)
+				+ ", start cost = " + numberFormat.format(startTotalCost)
+				+ ", final cost = " + numberFormat.format(newTotalCost)
+				+ " seconds, cost change = " + numberFormat.format(startTotalCost-newTotalCost)
+				//+ ",\n totalCost again = " + numberFormat.format(getTotalCost())
+				+ ", totalCountViaConnectedComponents = " + totalCountViaConnectedComponents
+				+ ", nodesToDisplay.length = " + nodesToDisplay.length
+				 );
 		refreshNodes();
 		seconds = 0.001*(System.currentTimeMillis() - middle);
-	}
-
-	private void movePointsSoCenterOfMassIsAtOrigin() {
-		Point3D centerOfMass = findCenterOfMass();
-		double xDelta=centerOfMass.getX();
-		double yDelta=centerOfMass.getY();
-		double zDelta=centerOfMass.getZ();
-		for(Node3D node:nodesToDisplay) {
-			if (node.isVisible()) {
-				node.setXYZ(node.getX()-xDelta, node.getY()-yDelta,(node.getZ()-zDelta));
-			}
-		}
-		centerOfMass = findCenterOfMass();
 	}
 
 	@SuppressWarnings("unchecked")

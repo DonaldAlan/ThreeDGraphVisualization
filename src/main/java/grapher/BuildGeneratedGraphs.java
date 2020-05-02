@@ -11,7 +11,7 @@ package grapher;
 public class BuildGeneratedGraphs {
 
 	private static void processNodes(Node3D[] nodes, String title) {
-		ReadGraphAndVisualize.processNodes(nodes, title, Visualizer.Layout.Stochastic); 
+		ReadGraphAndVisualize.processNodes(nodes, title); 
 	}
 	// -------------------------------------------
 		public static void main(String[] args) {

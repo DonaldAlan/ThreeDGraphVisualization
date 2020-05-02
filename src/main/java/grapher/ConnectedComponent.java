@@ -97,6 +97,7 @@ public class ConnectedComponent {
 				}
 			}
 			minX=Double.MAX_VALUE;
+			System.out.println("Placed initially on grid");
 		}
 	private int moveRandom(int index, int delta) {
 		int v = index+random.nextInt(delta+delta)-delta;
@@ -121,13 +122,23 @@ public class ConnectedComponent {
 		new Thread(runnable).start();
 	}
 	public void springModel() {
-		throw new RuntimeException("SpringModel not implemented yet");
+		int iteration=0;
+		final long startTime = System.currentTimeMillis();
+		do {
+			if (springModel(iteration)==0) {
+				break;
+			}
+			iteration++;
+		} while (System.currentTimeMillis()-startTime< secondsToWaitPerIteration*1000);
+		if (nodes.size()>500 && iteration>2) {
+			System.out.println("Exited springModel() after " + iteration + " iterations");
+		}
 	}
 	public void stochasticModel() {
 		int iteration=0;
 		final long startTime = System.currentTimeMillis();
 		do {
-			if (stochasticModelAuxSystematicMoves(iteration)==0) {
+			if (stochasticModelAuxRandomMoves(iteration)==0) {
 				break;
 			}
 			iteration++;
@@ -191,7 +202,7 @@ public class ConnectedComponent {
 		return lessCount;
 	}
 
-	private int stochasticModelAuxSystematicMoves(int iteration) {
+	private int springModel(int iteration) {
 		int lessCount = 0;
 		int delta = nodeMatrix.length / 2;
 		final int maxIndexMinus1 = nodeMatrix.length-1;

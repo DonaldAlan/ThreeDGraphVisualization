@@ -19,7 +19,9 @@ public final class ChooseGraphFileAndVisualize {
 		final JFileChooser fileChooser = // new JFileChooser("d:/tmp"); 
 		   new JFileChooser("graphs");
 		fileChooser.setSelectedFile(new File("Collatz.gml")); // COllatz  graph.gml
-		fileChooser.showOpenDialog(null);
+		if (fileChooser.showOpenDialog(null) == JFileChooser.CANCEL_OPTION) {
+			System.exit(0);
+		}
 		File file = fileChooser.getSelectedFile();
 		if (file==null) {
 			System.exit(0);
@@ -27,7 +29,7 @@ public final class ChooseGraphFileAndVisualize {
 			System.out.println("Selected file is " + file.getAbsolutePath());
 			ReadGraphAndVisualize read = new ReadGraphAndVisualize(file.getAbsolutePath());
 			try {
-				read.readGraphAndVisualize(Visualizer.Layout.Stochastic);
+				read.readGraphAndVisualize();
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
