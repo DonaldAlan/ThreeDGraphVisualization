@@ -288,8 +288,6 @@ public class ReadGraphAndVisualize {
 		}
 		Node3D.windowSize=(int)Math.max(100*Math.pow(nodes.length,0.333),200);
 		Visualizer.distanceForOneEdge = 0.2*Math.pow(Math.pow(Node3D.windowSize,3)/nodes.length,1.0/3.0);
-		System.out.println("windowSize = " + Node3D.windowSize + ", distanceForOneEdge = " + Visualizer.distanceForOneEdge
-				+ ", decayFactor = " + ConnectedComponent.decayFactor + ", " + nodes.length + " nodes");
 		Visualizer.sphereRadius = 1; //10/Math.log(nodes.length);
 		Visualizer.cylinderRadius = 0.1 * Visualizer.sphereRadius;
 		Visualizer.title=title;

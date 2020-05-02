@@ -8,6 +8,9 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
+
+import com.sun.javafx.geom.Matrix3f;
+
 import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.List;
@@ -135,6 +138,24 @@ public class ConnectedComponent {
 			double seconds = 0.001*(System.currentTimeMillis()-startTime); 
 			System.out.println("Exited stochasticModel() after " + iteration 
 					+ " iterations in " + numberFormat.format(seconds)  +  " seconds");
+		}
+	}
+	public void randomizePositions(double probabilityOfMoving) {
+		for(Node3D node: nodes) {
+			if (random.nextDouble()<probabilityOfMoving) {
+				while (true) {
+					int x = random.nextInt(nodeMatrix.length);
+					int y = random.nextInt(nodeMatrix.length);
+					int z = random.nextInt(nodeMatrix.length);
+					if (nodeMatrix[x][y][z]==null) {
+						nodeMatrix[x][y][z]=node;
+						nodeMatrix[node.getXIndex()][node.getYIndex()][node.getZIndex()]=null;
+						node.setIndices(x,y,z);
+						node.setXYZ(10*x, 10*y, 10*z); 
+						break;
+					}
+				}
+			}
 		}
 	}
 	public int stochasticModelAuxRandomMoves(int iteration) {

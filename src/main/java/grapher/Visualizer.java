@@ -654,8 +654,14 @@ public class Visualizer extends Application {
 			case Q:
 				System.exit(0);
 				break;
-			case ESCAPE:
 			case R:
+				for(ConnectedComponent c:connectedComponents) {
+					c.randomizePositions(0.1);
+				}
+				System.out.println("Total cost = " + getTotalCost());
+				refreshNodes();
+				break;
+			case ESCAPE:
 				if (ke.isShiftDown()) {
 					requestReplaceOnePass();
 					break;
