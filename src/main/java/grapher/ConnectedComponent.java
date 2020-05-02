@@ -307,54 +307,59 @@ public class ConnectedComponent {
 		return lessCount;
 	}
 	
-	//----------------------
+	// ----------------------
 	public void springModel() {
 		final long startTime = System.currentTimeMillis();
 		long lastCheckTime = startTime;
-		double cost=getCost();
+		double cost = getCost();
 		while (true) {
-			final long now=System.currentTimeMillis();
-			double seconds = 0.001*(now-startTime);
-			if (seconds>secondsToWaitPerIteration) {
+			final long now = System.currentTimeMillis();
+			if (now-startTime > 1000*secondsToWaitPerIteration) {
+				System.out.println("Timed out after " + numberFormat.format(0.001*(now-startTime)) + " seconds");
 				break;
 			}
-			if (now-lastCheckTime>1000) {
-				double localCost=getCost();
-				if (localCost>= cost) {
+			if (now - lastCheckTime > 1000) {
+				double localCost = getCost();
+				if (localCost >= cost) {
+					System.out.println("Cost increased after " + numberFormat.format(0.001*(now-startTime)) + " seconds");
 					break;
 				}
-				cost=localCost;
-				lastCheckTime=now;
+				cost = localCost;
+				lastCheckTime = now;
 			}
-			for(Node3D node:nodes) {
-				int xIndexSum=0;
-				int yIndexSum=0;
-				int zIndexSum=0;
-				int count=0;
-				for(Node3D n:node.getNeighbors()) {
-					xIndexSum+= n.getXIndex();
-					yIndexSum+= n.getYIndex();
-					zIndexSum+= n.getZIndex();
+			for (Node3D node : nodes) {
+				int xIndexSum = 0;
+				int yIndexSum = 0;
+				int zIndexSum = 0;
+				int count = 0;
+				for (Node3D n : node.getNeighbors()) {
+					xIndexSum += n.getXIndex();
+					yIndexSum += n.getYIndex();
+					zIndexSum += n.getZIndex();
 					count++;
 				}
-				int x=limit((int) Math.round(0.0+xIndexSum)/count);
-				int y=limit((int) Math.round(0.0+yIndexSum)/count);
-				int z=limit((int) Math.round(0.0+zIndexSum)/count);
-				for(int i=0;i<20;i++) {
-					if (nodeMatrix[x][y][z]==null) {
-						nodeMatrix[x][y][z]=node;
-						nodeMatrix[node.getXIndex()][node.getYIndex()][node.getZIndex()]=null;
-						node.setIndices(x, y,z);
-						node.setXYZ(positionFactor*x,positionFactor*y,positionFactor*z);
-						break;
+				final int centerX = limit((int) Math.round((0.0 + xIndexSum) / count));
+				final int centerY = limit((int) Math.round((0.0 + yIndexSum) / count));
+				final int centerZ = limit((int) Math.round((0.0 + zIndexSum) / count));
+				label:
+				for (int delta = 1; delta < 8; delta++) {
+					for (int x = Math.max(0, centerX - delta); x <= limit(centerX + delta); x++) {
+						for (int y = Math.max(0, centerY - delta); y <= limit(centerY + delta); y++) {
+							for (int z = Math.max(0, centerZ - delta); z <= limit(centerZ + delta); z++) {
+								if (nodeMatrix[x][y][z] == null) {
+									nodeMatrix[x][y][z] = node;
+									nodeMatrix[node.getXIndex()][node.getYIndex()][node.getZIndex()] = null;
+									node.setIndices(x, y, z);
+									node.setXYZ(positionFactor * x, positionFactor * y, positionFactor * z);
+									break label;
+								}
+							}
+						}
 					}
-					x=  limit(x+random.nextInt(6)-3);
-					y=  limit(y+random.nextInt(6)-3);
-					z=  limit(z+random.nextInt(6)-3);
 				}
 			}
 		}
-		if (nodes.size()>100) {
+		if (nodes.size() > 100) {
 			System.out.println("Exited spring Model");
 		}
 	}

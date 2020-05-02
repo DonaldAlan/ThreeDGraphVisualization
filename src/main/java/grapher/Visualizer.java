@@ -62,7 +62,7 @@ public class Visualizer extends Application {
 	public static int preferredCountOfNodesShown = 1000; // The slider can override this value.
 	//--------------------
 	public static enum Layout { Stochastic,Spring,Barrycenter,FruchtermanAndReingold, Systematic;}
-	public static Layout layout = Layout.Systematic;
+	public static Layout layout = Layout.Stochastic;
 	public static Node3D[] nodesToDisplay = null;
 	public static Node3D[] savedAllNodes=null;
 	public static double distanceForOneEdge = 10;
