@@ -9,6 +9,9 @@ import java.awt.Event;
  * See README.txt for more documentation. 
  * 
  * TODO 1: First layout the most important nodes. Then fix their positions and layout the less important nodes, in stages.
+ * TODO 2: Allow the relaxation algorithms to run in the background while the UI updates, with a STOP button.
+ * TODO 3: Allow different scales. It's OK if the user needs to ZOOM into see substructure.
+ * TODO 4: Compare Gephi's Yifan Hu, Force Atlas
  */
 
 import java.text.NumberFormat;
@@ -63,7 +66,7 @@ public class Visualizer extends Application {
 	public static double repulsionFactor = 1.2;
 	//--------------------
 	public static enum Layout { Stochastic,Spring,Barrycenter,FruchtermanAndReingold, Systematic;}
-	public static Layout layout = Layout.Stochastic;
+	public static Layout layout = Layout.FruchtermanAndReingold;
 	public static Node3D[] nodesToDisplay = null;
 	public static Node3D[] savedAllNodes=null;
 	public static double distanceForOneEdge = 10;
@@ -206,7 +209,8 @@ public class Visualizer extends Application {
 				//connectedComponent.placeUsingBarrycenter();
 				//break;
 			case FruchtermanAndReingold:
-				System.err.println("FruchtermanAndReingold not implemented");
+				//System.err.println("FruchtermanAndReingold not implemented");
+				connectedComponent.fruchtermanAndReingold();
 				break;
 			case Systematic:
 				connectedComponent.systematicModel();
@@ -273,11 +277,12 @@ public class Visualizer extends Application {
 		root.getChildren().add(importanceAlgorithmComboBox);
 	}
 	private void buildGraphPlacementAlgorithmComboBox(Group root) {
-		graphingAlgorithmComboBox.setTranslateX(380);
+		graphingAlgorithmComboBox.setTranslateX(350);
 		graphingAlgorithmComboBox.setTranslateY(-335);
 		graphingAlgorithmComboBox.setTranslateZ(1300);
 		graphingAlgorithmComboBox.setBackground(controlBackground);
 		final List<String> itemList = new ArrayList<String>();
+		itemList.add(Layout.FruchtermanAndReingold.name());
 		itemList.add(Layout.Spring.name());
 		itemList.add(Layout.Stochastic.name());
 		itemList.add(Layout.Systematic.name());
