@@ -30,7 +30,6 @@ public class Node3D implements Comparable<Node3D> {
 	private static double importanceDelta = 0.1;
 	public static int maxDegree=0;
 	//------------------------
-	private Vector3 displacement= new Vector3(0,0,0); // Used in fruchtermanAndReingold() in ConnectedComponent.java
 	private final String id;
 	private final Map<Node3D,Double> edges = new HashMap<>(); // maps node to edge weight
 	private final Map<String,Object> attributes= new TreeMap<>();
@@ -52,7 +51,14 @@ public class Node3D implements Comparable<Node3D> {
 		this.id=id;
 		attributes.put("description",description);
 		connectedComponent=new ConnectedComponent(this);
-		randomizePlacement();		
+	}
+	@Override
+	public String toString() {
+		//	return getIdAndDescription(); //":c" + connectedComponent.getFirst().id + "@" + this.position;
+		return "n" + id + " (" 
+	+ numberFormat.format(x) + ", " 
+	+ numberFormat.format(y) + ", " 
+	+ numberFormat.format(z) + ")";
 	}
 	
 	public void setIndices(int xIndex,int yIndex, int zIndex) {
@@ -326,11 +332,7 @@ public class Node3D implements Comparable<Node3D> {
 			}
 		}
 	}
-	@Override
-	public String toString() {
-		return getIdAndDescription(); //":c" + connectedComponent.getFirst().id + "@" + this.position;
-	}
-	@Override
+		@Override
 	public boolean equals(Object obj) {
 		Node3D other= (Node3D)obj;
 		return other.id.equals(id);
@@ -558,14 +560,6 @@ public class Node3D implements Comparable<Node3D> {
     	else if (d>maxXYZ) {return maxXYZ;}
     	return d;
     }
-	public void setDisplacement(double x, double y, double z) {
-		displacement.setX(x);
-		displacement.setY(y);
-		displacement.setZ(z);
-	}
-	public Vector3 getDisplacement() {
-		return displacement; 
-	}
 	public void addNearbyNodes(final Set<Node3D> nearNodes,final int maxDistance) {
 		nearNodes.add(this);
 		if (maxDistance>0) {
@@ -591,11 +585,6 @@ public class Node3D implements Comparable<Node3D> {
 	}
 	public void setMaterial(PhongMaterial material) {
 		sphere.setMaterial(material);
-	}
-	public void randomizePlacement() {
-		x=random.nextDouble()*windowSize;
-		y=random.nextDouble()*windowSize;
-		z=random.nextDouble()*windowSize;
 	}
 	public void setXYZ(double d, double e, double f) {
 		this.x=d;

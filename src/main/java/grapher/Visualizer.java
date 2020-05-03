@@ -174,12 +174,6 @@ public class Visualizer extends Application {
 		redrawButton.setBackground(backgroundRedrawing);
 		redrawButton.setText("Redrawing");
 	}
-	private void randomizeNodePlacements() {
-		System.out.println("Entering randomizeNodePlacements");
-		for(int i=0;i<nodesToDisplay.length;i++) {
-			nodesToDisplay[i].randomizePlacement();
-		}
-	}
 	public double getTotalCost() {
 		double startTotalCost=0;
 		for (ConnectedComponent connectedComponent : connectedComponents) {

@@ -756,6 +756,21 @@ public class ConnectedComponent {
 		}
 	}
 
+	private void showMinMaxXYZ() {
+		double minX = Double.MAX_VALUE, maxX = Double.NEGATIVE_INFINITY;
+		double minY = Double.MAX_VALUE, maxY = Double.NEGATIVE_INFINITY;
+		double minZ = Double.MAX_VALUE, maxZ = Double.NEGATIVE_INFINITY;
+		for(Node3D n:nodes) {
+			minX=Math.min(n.getX(), minX);
+			minY=Math.min(n.getY(), minY);
+			minZ=Math.min(n.getZ(), minZ);
+			maxX=Math.max(n.getX(), maxX);
+			maxY=Math.max(n.getY(), maxY);
+			maxZ=Math.max(n.getZ(), maxZ);
+		}
+		System.out.print("Min = (" + numberFormat.format(minX) + ", " + numberFormat.format(minY) + ", " + numberFormat.format(minZ) + ")");
+		System.out.println(", max = (" + numberFormat.format(maxX) + ", " + numberFormat.format(maxY) + ", " + numberFormat.format(maxZ) + ")");
+	}
 	public void fruchtermanAndReingold() {
 		if (nodes.size() <= 1) {
 			return;
@@ -763,32 +778,32 @@ public class ConnectedComponent {
 		final double volume = Math.pow(Node3D.windowSize, 3);
 		final double C = 0.1;
 		final double k = C * Math.pow(volume / nodes.size(), 0.33333);
-		double maxXYZ = Node3D.windowSize;
-		Vector3 delta = new Vector3(0, 0, 0);
+		final double maxXYZ = Node3D.windowSize;
+		final Vector3 delta = new Vector3(0, 0, 0);
 		final int n = nodes.size();
 		double startTemperature = 0.5 * maxXYZ;
 		System.out.println("maxXYZ= " + maxXYZ + " for " + nodes.size() + " stochasticDecayFactor = " + decayFactor
 				+ " vertices, startTemperature = " + startTemperature + ", k = " + toString(k) + "\n");
 		int iteration = 0;
+		final Vector3 displacementI = new Vector3(0,0,0);
 		for (double temperature = startTemperature; temperature > 0.1; temperature *= decayFactor) {
 			iteration++;
 			// Attractive forces are between vertices connected by an edge. f_a(d) = d*d/k.
 			// All pairs of vertices have repulsive forces. f_r(d) = -k*k/d;
-			for (int i = 0; i < n; i++) {
+			for (int i = 0; i < n-1; i++) {
 				final Node3D nodeI = nodes.get(i);
-				nodeI.setDisplacement(0, 0, 0);
+				displacementI.set(0, 0, 0);
 				for (int j = 0; j < n; j++) {
-					if (i == j) {
+					if (i==j) {
 						continue;
 					}
 					final Node3D nodeJ = nodes.get(j);
 					// Calculate repulsive forces
 					delta.setToMinus(nodeI.getPoint3D(), nodeJ.getPoint3D());
 					final double lengthDelta = delta.length();
-					final boolean edge = nodeJ.getNeighbors().contains(nodeI);
+					final boolean isEdge = nodeJ.getNeighbors().contains(nodeI);
 					if (lengthDelta == 0.0) {
-						double newDistance = // PlotCylindersAndSpheres.distanceForOneEdge*random.nextDouble() +
-								(edge ? Visualizer.distanceForOneEdge : 4 * Visualizer.distanceForOneEdge);
+						double newDistance = (isEdge ? Visualizer.distanceForOneEdge : 16 * Visualizer.distanceForOneEdge);
 						Point3D directionVector = randomNormalizedDirectionVector();
 						Point3D newPoint3D = nodeJ.getPoint3D().add(directionVector.multiply(newDistance));
 						// System.out.println(" ZERO!!! Moving u : " + toString(u.getPoint3D()) + " -->
@@ -797,41 +812,37 @@ public class ConnectedComponent {
 						nodeJ.setXYZ(newPoint3D.getX(), newPoint3D.getY(), newPoint3D.getZ());
 						continue;
 					}
-					delta.multiply(repulsive(lengthDelta, k) / lengthDelta);
-					nodeI.getDisplacement().add(delta);
-					if (trace) {
-						System.out.println(", repulsiveDelt= = " + delta + " with length " + toString(delta.length())
-								+ ", new v displacement = " + nodeI.getDisplacement());
-					}
+					double repulsiveForce = repulsive(lengthDelta,k);
+					delta.multiply(repulsiveForce);
+					displacementI.add(delta);
+					
+					delta.setToMinus(nodeI.getPoint3D(), nodeJ.getPoint3D());
+					
 					// Calculate attractive forces
-					if (i < j && edge) {
+					if (isEdge) {
 						delta.setToMinus(nodeI.getPoint3D(), nodeJ.getPoint3D());
 						delta.multiply(attractive(lengthDelta, k) / lengthDelta);
-						nodeI.getDisplacement().substract(delta);
-						nodeJ.getDisplacement().add(delta);
-						if (trace) {
-							System.out.println("Due to edge between v and u delta2= " + delta + ", |delta| = "
-									+ toString(delta.length()) + ", new v displ = " + nodeI.getDisplacement()
-									+ ", new u displ = " + nodeJ.getDisplacement() + "\n");
-						}
+						displacementI.substract(delta);
 					}
 				} // for j
-				if (trace) {
-					System.out.println();
-				}
+				nodeI.setXYZ(
+						nodeI.getX()+displacementI.getX(),
+						nodeI.getY()+displacementI.getY(),
+						nodeI.getZ()+displacementI.getZ());
 			} // for i
-				// Limit max displacement to temperature and prevent going outside frame
-			for (Node3D v : nodes) {
-				Vector3 displ = v.getDisplacement();
-				// System.out.print(displ + " ");
-				double length = displ.length();
-				displ.multiply(Math.min(length, temperature) / length);
-				displ.add(v.getX(), v.getY(), v.getZ());
-				double x = Node3D.limit(displ.getX(), maxXYZ);
-				double y = Node3D.limit(displ.getY(), maxXYZ);
-				double z = Node3D.limit(displ.getZ(), maxXYZ);
-				v.setXYZ(x, y, z);
-			}
+			showMinMaxXYZ();
+//				// Limit max displacement to temperature and prevent going outside frame
+//			for (Node3D v : nodes) {
+//				Vector3 displ = v.getDisplacement();
+//				// System.out.print(displ + " ");
+//				double length = displ.length();
+//				displ.multiply(Math.min(length, temperature) / length);
+//				displ.add(v.getX(), v.getY(), v.getZ());
+//				double x = Node3D.limit(displ.getX(), maxXYZ);
+//				double y = Node3D.limit(displ.getY(), maxXYZ);
+//				double z = Node3D.limit(displ.getZ(), maxXYZ);
+//				v.setXYZ(x, y, z);
+//			}
 			// System.out.println();
 			// break;
 		}
