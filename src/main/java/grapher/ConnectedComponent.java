@@ -26,8 +26,8 @@ import javafx.scene.shape.Sphere;
  * 
  * @author Don Smith, ThinkerFeeler@gmail.com
  *
- *TODO:  to keep nodes separated, place them ONLY on a 3d grid at regular intervals.
- *   During relaxation, move a node to an empty position if that lowers the cost.
+ *  To keep nodes separated, we place them ONLY on a 3d grid at regular intervals.
+ *  During relaxation, move a node to a position if that lowers the cost.
  *   
  * See README.txt for more documentation. 
  *  
@@ -76,7 +76,7 @@ public class ConnectedComponent {
 	}
 	public void done() {
 		int m=4*(int)Math.ceil(Math.pow(nodes.size(),0.33333));
-		System.out.println("m = " + m + ", m*m*m = " + (m*m*m) + ", nodes.size() = " + nodes.size());
+		//System.out.println("m = " + m + ", m*m*m = " + (m*m*m) + ", nodes.size() = " + nodes.size());
 		nodeMatrix = new Node3D[m][m][m];
 		numberOfNodesToShow = nodes.size();
 		//placeInitiallyInGrid(m);

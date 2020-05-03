@@ -9,7 +9,6 @@ import java.awt.Event;
  * See README.txt for more documentation. 
  * 
  * TODO 1: First layout the most important nodes. Then fix their positions and layout the less important nodes, in stages.
- * TODO 2: Divide the (3D) Euclidean space into regions and restrict forces to local regions, to optimize UnrestrictedForces.
  */
 
 import java.text.NumberFormat;
@@ -129,7 +128,7 @@ public class Visualizer extends Application {
 	private final BackgroundFill controlBackgroundFill = new BackgroundFill(Color.SKYBLUE, CornerRadii.EMPTY, Insets.EMPTY);
 	private final Background controlBackground = new Background(controlBackgroundFill);
 
-	private final Button redoLayoutButton=new Button("Redraw");
+	private final Button redrawButton=new Button("Redraw");
 	// --------------
 	static {
 		numberFormat.setMaximumFractionDigits(3);
@@ -169,8 +168,8 @@ public class Visualizer extends Application {
 	}
 	private void requestReplaceOnePass() {
 		requestPlaceOnePassTimeInMls=System.nanoTime();
-		redoLayoutButton.setBackground(backgroundRedrawing);
-		redoLayoutButton.setText("Redrawing");
+		redrawButton.setBackground(backgroundRedrawing);
+		redrawButton.setText("Redrawing");
 	}
 	private void randomizeNodePlacements() {
 		System.out.println("Entering randomizeNodePlacements");
@@ -234,8 +233,8 @@ public class Visualizer extends Application {
 				 );
 		refreshNodes();
 		seconds = 0.001*(System.currentTimeMillis() - middle);
-		redoLayoutButton.setBackground(controlBackground);
-		redoLayoutButton.setText("Redraw");
+		redrawButton.setBackground(controlBackground);
+		redrawButton.setText("Redraw");
 	}
 
 	@SuppressWarnings("unchecked")
@@ -378,19 +377,19 @@ public class Visualizer extends Application {
 	        root.addEventFilter(KeyEvent.KEY_PRESSED, filter);
 	    }
 	
-	private void buildRedoLayoutButton(Group root) {
-		redoLayoutButton.setTranslateX(540);
-		redoLayoutButton.setTranslateY(-335);
-		redoLayoutButton.setTranslateZ(1300);
-		redoLayoutButton.setBackground(controlBackground);
-		redoLayoutButton.setOnAction( e -> {
+	private void buildRedrawButton(Group root) {
+		redrawButton.setTranslateX(540);
+		redrawButton.setTranslateY(-335);
+		redrawButton.setTranslateZ(1300);
+		redrawButton.setBackground(controlBackground);
+		redrawButton.setOnAction( e -> {
 			if (requestPlaceOnePassTimeInMls>0) {
 				return;
 			} else {
 				requestReplaceOnePass();
 			}
 		});
-		root.getChildren().add(redoLayoutButton);
+		root.getChildren().add(redrawButton);
 	}
 	private void refreshNodes() {
 		world.getChildren().clear();
@@ -1006,7 +1005,7 @@ public class Visualizer extends Application {
 			buildSlider(root);
 			//handleKeyEvents(scene);
 			buildGraphPlacementAlgorithmComboBox(root);
-			buildRedoLayoutButton(root);
+			buildRedrawButton(root);
 			scene.setCamera(camera);
 
 			placeOnePass(true);

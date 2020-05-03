@@ -1,6 +1,11 @@
 package grapher;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
 
 import javax.swing.JFileChooser;
 
@@ -15,10 +20,44 @@ import javax.swing.JFileChooser;
  * See README.txt for more documentation. 
  */
 public final class ChooseGraphFileAndVisualize {
+	private static final String lastFilePathPath = "lastFilePath.txt";
+	private static String getLastPath() {
+		File file = new File(lastFilePathPath);
+		if (!file.exists()) {
+			return null;
+		}
+		try {
+			FileInputStream fis = new FileInputStream(file);
+			BufferedReader reader = new BufferedReader(new InputStreamReader(fis));
+			String line=reader.readLine();
+			reader.close();
+			return line;
+		} catch (IOException exc) {
+			System.err.println("Couldn't read from " + lastFilePathPath + " due to " + exc.getMessage());
+			return null;
+		}
+	}
+	private static void savePath(String path) {
+		try {
+			PrintWriter writer = new PrintWriter(lastFilePathPath);
+			writer.println(path);
+			writer.close();
+		} catch (IOException exc) {
+			exc.printStackTrace();
+		}
+	}
 	private static void test() {
+		String dirPath = "graphs";
+		String fileName = "graphs/collatz.gml";
+		String filePath = getLastPath();
+		if (filePath!=null) {
+			File file = new File(filePath);
+			dirPath = file.getParent();
+			fileName = file.getName();
+		}
 		final JFileChooser fileChooser = // new JFileChooser("d:/tmp"); 
-		   new JFileChooser("graphs");
-		fileChooser.setSelectedFile(new File("Collatz.gml")); // COllatz  graph.gml
+		   new JFileChooser(dirPath);
+		fileChooser.setSelectedFile(new File(fileName)); 
 		if (fileChooser.showOpenDialog(null) == JFileChooser.CANCEL_OPTION) {
 			System.exit(0);
 		}
@@ -27,6 +66,7 @@ public final class ChooseGraphFileAndVisualize {
 			System.exit(0);
 		} else {
 			System.out.println("Selected file is " + file.getAbsolutePath());
+			savePath(file.getAbsolutePath());
 			ReadGraphAndVisualize read = new ReadGraphAndVisualize(file.getAbsolutePath());
 			try {
 				read.readGraphAndVisualize();
