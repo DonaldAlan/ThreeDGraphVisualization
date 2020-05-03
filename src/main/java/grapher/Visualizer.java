@@ -672,6 +672,7 @@ public class Visualizer extends Application {
 
 	private EventHandler<KeyEvent> keyEventHandler = new EventHandler<KeyEvent>() {
 		public void handle(KeyEvent ke) {
+			final int factor=ke.isShiftDown() ? 10: 1;
 			switch (ke.getCode()) {
 			case Q:
 				System.exit(0);
@@ -718,24 +719,25 @@ public class Visualizer extends Application {
 					refreshNodes();
 				}
 				break;
-			case LEFT:
-				world.setTranslateX(world.getTranslateX() + 10);
+			case LEFT: {
+				world.setTranslateX(world.getTranslateX() + factor*10);
+			}
 				break;
 			case RIGHT:
-				world.setTranslateX(world.getTranslateX() - 10);
+				world.setTranslateX(world.getTranslateX() - factor*10);
 				break;
 			case UP:
-				if (ke.isShiftDown()) {
-					world.setTranslateY(world.getTranslateY() + 10);
+				if (ke.isControlDown()) {
+					world.setTranslateY(world.getTranslateY() - factor*10);
 				} else {
-					world.setTranslateZ(world.getTranslateZ() - 10);
+					world.setTranslateZ(world.getTranslateZ() - factor*10);
 				}
 				break;
 			case DOWN:
-				if (ke.isShiftDown()) {
-					world.setTranslateY(world.getTranslateY() - 10);
+				if (ke.isControlDown()) {
+					world.setTranslateY(world.getTranslateY() + factor*10);
 				} else {
-					world.setTranslateZ(world.getTranslateZ() + 10);
+					world.setTranslateZ(world.getTranslateZ() + factor*10);
 				}
 				break;
 			// Doesn't work

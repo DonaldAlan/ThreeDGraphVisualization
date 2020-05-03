@@ -363,6 +363,9 @@ public class ConnectedComponent {
 				lastCheckTime = now;
 			}
 			for (Node3D node : nodes) {
+				final int nodeXIndex=node.getXIndex();
+				final int nodeYIndex=node.getYIndex();
+				final int nodeZIndex=node.getZIndex();
 				int xIndexSum = 0;
 				int yIndexSum = 0;
 				int zIndexSum = 0;
@@ -380,11 +383,20 @@ public class ConnectedComponent {
 					for (int x = Math.max(0, centerX - delta); x <= limit(centerX + delta); x++) {
 						for (int y = Math.max(0, centerY - delta); y <= limit(centerY + delta); y++) {
 							for (int z = Math.max(0, centerZ - delta); z <= limit(centerZ + delta); z++) {
-								if (nodeMatrix[x][y][z] == null) {
+								final Node3D otherNode = nodeMatrix[x][y][z];
+								if (otherNode == null) {
 									nodeMatrix[x][y][z] = node;
-									nodeMatrix[node.getXIndex()][node.getYIndex()][node.getZIndex()] = null;
+									nodeMatrix[nodeXIndex][nodeYIndex][nodeZIndex] = null;
 									node.setIndices(x, y, z);
 									node.setXYZ(positionFactor * x, positionFactor * y, positionFactor * z);
+									break label;
+								} else if (!node.getEdges().containsKey(otherNode)){
+									nodeMatrix[x][y][z]=node;
+									nodeMatrix[nodeXIndex][nodeYIndex][nodeZIndex]=otherNode;
+									node.setIndices(x,y,z);
+									otherNode.setIndices(nodeXIndex, nodeYIndex, nodeZIndex);
+									node.setXYZ(positionFactor*x,positionFactor*y,positionFactor*z);
+									otherNode.setXYZ(positionFactor*nodeXIndex,positionFactor*nodeYIndex,positionFactor*nodeZIndex);
 									break label;
 								}
 							}
