@@ -60,7 +60,7 @@ import javafx.stage.Stage;
 
 public class Visualizer extends Application {
 	public static int preferredCountOfNodesShown = 1000; // The slider can override this value.
-	public static double repulsionFactor = 0.5;
+	public static double repulsionFactor = 1.2;
 	public static double sampleRatioForRepulsiveForces = 0.1;
 	//--------------------
 	public static enum Layout { Stochastic,Spring,Barrycenter,FruchtermanAndReingold, Systematic;}
@@ -217,7 +217,9 @@ public class Visualizer extends Application {
 			newTotalCost+= connectedComponent.getCost();
 		}
 		moveConnectedComponentsAwayFromEachOther();
-		//TODO: moveCameraToPointToCenterOfMass();
+		Point3D centerOfMass = findCenterOfMass();
+		world.rotateAroundAndCenterOn(centerOfMass);
+		//System.out.println("Center of mass = " + centerOfMass);
 		
 		long middle = System.currentTimeMillis();
 		double seconds=0.001*(middle-startTime);
@@ -451,6 +453,21 @@ public class Visualizer extends Application {
 		final Rotate ry = new Rotate(0, 0, 0, 0, Rotate.Y_AXIS);
 		final Rotate rz = new Rotate(0, 0, 0, 0, Rotate.Z_AXIS);
 
+		private void pivot(Rotate r, Point3D point) {
+			r.setPivotX(point.getX());
+			r.setPivotY(point.getY());
+			r.setPivotZ(point.getZ());
+		}
+		public void rotateAroundAndCenterOn(Point3D point) {
+			pivot(rx,point);
+			pivot(ry,point);
+			pivot(rz,point);
+			
+			t.setX(-point.getX());
+			t.setY(-point.getY());
+			t.setZ(-point.getZ());
+			
+		}
 		public XformWorld() {
 			super();
 			this.getTransforms().addAll(t, rx, ry, rz);
