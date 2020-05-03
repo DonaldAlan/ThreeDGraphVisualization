@@ -60,8 +60,8 @@ import javafx.stage.Stage;
 
 public class Visualizer extends Application {
 	public static int preferredCountOfNodesShown = 1000; // The slider can override this value.
+	public static int maxRepulsiveNodesToInclude=50;
 	public static double repulsionFactor = 1.2;
-	public static double sampleRatioForRepulsiveForces = 0.1;
 	//--------------------
 	public static enum Layout { Stochastic,Spring,Barrycenter,FruchtermanAndReingold, Systematic;}
 	public static Layout layout = Layout.Stochastic;

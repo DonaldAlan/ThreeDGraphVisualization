@@ -200,7 +200,6 @@ public class ConnectedComponent {
 						double rc = node.getCostIfWeWereAtXYZ(10 * rx, 10 * ry, 10 * rz);
 						if (rc < cost) {
 							lessCount++;
-							node.setCost(rc);
 							cost=rc;
 							nodeMatrix[node.getXIndex()][node.getYIndex()][node.getZIndex()] = null;
 							node.setXYZ(10 * rx, 10 * ry, 10 * rz);
@@ -221,10 +220,8 @@ public class ConnectedComponent {
 							nodeMatrix[rx][ry][rz] = node;
 							node.setXYZ(10 * rx, 10 * ry, 10 * rz);
 							node.setIndices(rx, ry, rz);
-							node.setCost(rc);
 							nodeRxRyRz.setXYZ(positionFactor*nodeIndexX, positionFactor*nodeIndexY, positionFactor*nodeIndexZ);
 							nodeRxRyRz.setIndices(nodeIndexX, nodeIndexY, nodeIndexZ);
-							nodeRxRyRz.setCost(swappedCostNodeRxRyRz);
 						}
 					}
 				}
@@ -281,7 +278,6 @@ public class ConnectedComponent {
 								double rc = node.getCostIfWeWereAtXYZ(10 * nx, 10 * ny, 10 * nz);
 								if (rc < cost) {
 									lessCount++;
-									node.setCost(rc);
 									cost = rc;
 									nodeMatrix[node.getXIndex()][node.getYIndex()][node.getZIndex()] = null;
 									node.setXYZ(10 * nx, 10 * ny, 10 * nz);
@@ -303,10 +299,8 @@ public class ConnectedComponent {
 									nodeMatrix[nx][ny][nz] = node;
 									node.setXYZ(10 * nx, 10 * ny, 10 * nz);
 									node.setIndices(nx, ny, nz);
-									node.setCost(rc);
 									nodeRxRyRz.setXYZ(10 * nodeIndexX, 10 * nodeIndexY, 10 * nodeIndexZ);
 									nodeRxRyRz.setIndices(nodeIndexX, nodeIndexY, nodeIndexZ);
-									nodeRxRyRz.setCost(swappedCostNodeRxRyRz);
 									nodeIndexX=nx;
 									nodeIndexY=ny;
 									nodeIndexZ=nz;

@@ -154,28 +154,22 @@ public class Node3D implements Comparable<Node3D> {
 		}
 		return Double.MAX_VALUE;
 	}
-	private double cost = -1.0;
-	public void setCost(double c) {
-		cost=c;
-	}
 	public double distance(Node3D other) {
 		return Math.sqrt(square(x-other.x) + square(y-other.y) + square(z-other.z));
 	}
 	public double getCost(final ConnectedComponent component) {
-		if (cost>=0) {
-			return cost;
-		}
-		cost=0.0;
+		double cost=0.0;
 		for(Node3D neighbor: getNeighbors()) {
 			if (neighbor.isVisible) {
 				cost+= distance(neighbor);
 			}
 		}
-		final int n=component.getNodes().size();
 		if (Visualizer.repulsionFactor > 0.01) {
+			final int n=component.getNodes().size();
+			final int countOfNonNeighbors = n-edges.size();
+			final int countOfNonNeighborsToInclude = Math.min(Visualizer.maxRepulsiveNodesToInclude, countOfNonNeighbors);
 			double repulsiveCost = 0.0;
-			int limit = Math.min(50,(int) (Visualizer.sampleRatioForRepulsiveForces*n));
-			for(int i=0;i<limit;i++) {
+			for(int i=0;i<countOfNonNeighborsToInclude;i++) {
 				Node3D nonNeighbor = component.getNodes().get(random.nextInt(n));
 				if (!edges.containsKey(nonNeighbor)) {
 					repulsiveCost -= distance(nonNeighbor);
@@ -604,7 +598,6 @@ public class Node3D implements Comparable<Node3D> {
 		z=random.nextDouble()*windowSize;
 	}
 	public void setXYZ(double d, double e, double f) {
-		cost=-1;
 		this.x=d;
 		this.y=e;
 		this.z=f;
