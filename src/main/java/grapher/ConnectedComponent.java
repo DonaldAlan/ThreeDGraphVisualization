@@ -79,7 +79,24 @@ public class ConnectedComponent {
 		System.out.println("m = " + m + ", m*m*m = " + (m*m*m) + ", nodes.size() = " + nodes.size());
 		nodeMatrix = new Node3D[m][m][m];
 		numberOfNodesToShow = nodes.size();
-		placeInitiallyInGrid(m);
+		//placeInitiallyInGrid(m);
+		placeRandomlyInGrid(m);
+	}
+	//--------------------------------------------
+	private void placeRandomlyInGrid(final int m) {
+		for(Node3D node:nodes) {
+			while (true) {
+				int x=random.nextInt(m);
+				int y=random.nextInt(m);
+				int z=random.nextInt(m);
+				if (nodeMatrix[x][y][z]==null) {
+					nodeMatrix[x][y][z]=node;
+					node.setIndices(x,y,z);
+					node.setXYZ(positionFactor*x,positionFactor*y,positionFactor*z);
+					break;
+				}
+			}
+		}
 	}
 	//--------------------------------------------
 		private void placeInitiallyInGrid(final int m) {
@@ -96,7 +113,7 @@ public class ConnectedComponent {
 						nodeIndex++;
 						nodeMatrix[x][y][z]=node;
 						node.setIndices(x,y,z);
-						node.setXYZ(10.0*x,10.0*y,10.0*z);
+						node.setXYZ(positionFactor*x,positionFactor*y,positionFactor*z);
 					}
 				}
 			}
