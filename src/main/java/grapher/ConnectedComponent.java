@@ -45,10 +45,8 @@ public class ConnectedComponent {
 												// execution. TODO: slider, etc.
 	public static int numberOfSamplesForApproximation = 1000; // The higher, the more approximate the forces using
 																// ApproximateForces.
-	public static boolean approximateForces = false; // Renders much faster with this true, but graphs don't look as
-														// good.
 	public static boolean repulsiveDenonimatorIsSquared = true;
-	public static double decayFactor = 0.9;
+	public static double decayFactorForFruchtermanAndReingold = 0.5;
 	public static boolean trace = false;
 
 	public static int totalCount = 0;
@@ -69,7 +67,15 @@ public class ConnectedComponent {
 		nodes.add(node);
 		totalCount++;
 	}
-
+	public void done() {
+		int m = 4 * (int) Math.ceil(Math.pow(nodes.size(), 0.33333));
+		System.out.println("m = " + m + ", m*m*m = " + (m*m*m) + ", nodes.size() = " + nodes.size());
+		nodeMatrix = new Node3D[m][m][m];
+		numberOfNodesToShow = nodes.size();
+		Node3D.windowSize = (int) Math.ceil(m*positionFactor);
+		// placeInitiallyInGrid(m);
+		placeRandomlyInGrid(m);
+	}
 	public Node3D getFirst() {
 		return nodes.get(0);
 	}
@@ -80,16 +86,6 @@ public class ConnectedComponent {
 			cost += node.getCost(this);
 		}
 		return cost;
-	}
-
-	public void done() {
-		int m = 4 * (int) Math.ceil(Math.pow(nodes.size(), 0.33333));
-		// System.out.println("m = " + m + ", m*m*m = " + (m*m*m) + ", nodes.size() = "
-		// + nodes.size());
-		nodeMatrix = new Node3D[m][m][m];
-		numberOfNodesToShow = nodes.size();
-		// placeInitiallyInGrid(m);
-		placeRandomlyInGrid(m);
 	}
 
 	// --------------------------------------------
@@ -782,21 +778,19 @@ public class ConnectedComponent {
 		final Vector3 delta = new Vector3(0, 0, 0);
 		final int n = nodes.size();
 		double startTemperature = 0.5 * maxXYZ;
-		System.out.println("maxXYZ= " + maxXYZ + " for " + nodes.size() + " stochasticDecayFactor = " + decayFactor
+		System.out.println("maxXYZ= " + maxXYZ + " for " + nodes.size() + " stochasticDecayFactor = " + decayFactorForFruchtermanAndReingold
 				+ " vertices, startTemperature = " + startTemperature + ", k = " + toString(k) + "\n");
 		int iteration = 0;
+		showMinMaxXYZ();
 		final Vector3 displacementI = new Vector3(0,0,0);
-		for (double temperature = startTemperature; temperature > 0.1; temperature *= decayFactor) {
+		for (double temperature = startTemperature; temperature > 0.1; temperature *= decayFactorForFruchtermanAndReingold) {
 			iteration++;
 			// Attractive forces are between vertices connected by an edge. f_a(d) = d*d/k.
 			// All pairs of vertices have repulsive forces. f_r(d) = -k*k/d;
 			for (int i = 0; i < n-1; i++) {
 				final Node3D nodeI = nodes.get(i);
 				displacementI.set(0, 0, 0);
-				for (int j = 0; j < n; j++) {
-					if (i==j) {
-						continue;
-					}
+				for (int j = i+1; j < n; j++) {
 					final Node3D nodeJ = nodes.get(j);
 					// Calculate repulsive forces
 					delta.setToMinus(nodeI.getPoint3D(), nodeJ.getPoint3D());

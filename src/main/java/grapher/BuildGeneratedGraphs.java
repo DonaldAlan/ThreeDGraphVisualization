@@ -1,4 +1,7 @@
 package grapher;
+
+import com.sun.corba.se.impl.orbutil.graph.Graph;
+
 /**
  * 
  * Displays visualizations of some generated (synthetic) graphs. See main(String[]) at the bottom of this file for options.
@@ -15,10 +18,10 @@ public class BuildGeneratedGraphs {
 	}
 	// -------------------------------------------
 		public static void main(String[] args) {
-			ConnectedComponent.approximateForces=false;
 			ConnectedComponent.trace=false;
 			ConnectedComponent.repulsiveDenonimatorIsSquared=true;
 			try {
+				//processNodes(GraphGenerators.makeGraphWithChokePoint(1,1,1.0), "Two");
 	//			processNodes(GraphGenerators.makeComponents(50,40,30.0,0.6), "Clusters");
 				processNodes(GraphGenerators.makeComponents(20,20,15.0,0.5), "Clusters");
 				//processNodes(GraphGenerators.makeGraphWithChokePoint(15, 15, 0.95), "ChokePoint Graph"); System.exit(0);

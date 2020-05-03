@@ -66,7 +66,7 @@ public class Visualizer extends Application {
 	public static double repulsionFactor = 1.2;
 	//--------------------
 	public static enum Layout { Stochastic,Spring,Barrycenter,FruchtermanAndReingold, Systematic;}
-	public static Layout layout = Layout.FruchtermanAndReingold;
+	public static Layout layout = Layout.Stochastic;
 	public static Node3D[] nodesToDisplay = null;
 	public static Node3D[] savedAllNodes=null;
 	public static double distanceForOneEdge = 10;
@@ -203,8 +203,8 @@ public class Visualizer extends Application {
 				//connectedComponent.placeUsingBarrycenter();
 				//break;
 			case FruchtermanAndReingold:
-				//System.err.println("FruchtermanAndReingold not implemented");
-				connectedComponent.fruchtermanAndReingold();
+				System.err.println("FruchtermanAndReingold not implemented");
+				//connectedComponent.fruchtermanAndReingold();
 				break;
 			case Systematic:
 				connectedComponent.systematicModel();
@@ -276,7 +276,7 @@ public class Visualizer extends Application {
 		graphingAlgorithmComboBox.setTranslateZ(1300);
 		graphingAlgorithmComboBox.setBackground(controlBackground);
 		final List<String> itemList = new ArrayList<String>();
-		itemList.add(Layout.FruchtermanAndReingold.name());
+		//itemList.add(Layout.FruchtermanAndReingold.name());
 		itemList.add(Layout.Spring.name());
 		itemList.add(Layout.Stochastic.name());
 		itemList.add(Layout.Systematic.name());
@@ -976,8 +976,7 @@ public class Visualizer extends Application {
 		
 		if (nodesToDisplay.length>preferredCountOfNodesShown) {
 			percentToShow = 100.0*preferredCountOfNodesShown/nodesToDisplay.length;
-			ConnectedComponent.stochasticMovesReps = 4; 
-			ConnectedComponent.decayFactor *= 0.75; 
+			ConnectedComponent.decayFactorForFruchtermanAndReingold *= 0.75; 
 		}
 		try {
 			runCurrentImportanceAlgorithm();

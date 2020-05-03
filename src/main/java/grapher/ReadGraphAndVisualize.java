@@ -271,21 +271,7 @@ public class ReadGraphAndVisualize {
 				nodes.length + " nodes, " + edgeCount + " edges, " + ConnectedComponent.totalCount + " connected components, "
 		+ Node3D.maxDegree + " maxDegree, clusteringCoefficent = " + computeClusteringCoefficient(nodes));
 		//...
-		//Node3D.computeImportanceViaDegree(nodes);
-		//Node3D.computeImportanceViaRandomWalks(nodes, 20, 100);
-		//Node3D.computeImportanceViaJungBetweenessCentrality(nodes);
-		//Node3D.computeImportanceViaJungPageRank(nodes); 
-		//...
-		//standardizeImportances(nodes,100);
-		ConnectedComponent.decayFactor=Math.min(0.99,0.3+3.0/(Math.log(nodes.length)));
-		Node3D.c1=2;
-		Node3D.c2=2;
-		Node3D.c3=8;
-		Node3D.c4=4.0/nodes.length;
 		Visualizer.nodesToDisplay = nodes;
-		if (nodes.length>=1000) {
-			ConnectedComponent.approximateForces=true;
-		}
 		Node3D.windowSize=(int)Math.max(100*Math.pow(nodes.length,0.333),200);
 		Visualizer.distanceForOneEdge = 0.2*Math.pow(Math.pow(Node3D.windowSize,3)/nodes.length,1.0/3.0);
 		Visualizer.sphereRadius = 1; //10/Math.log(nodes.length);
