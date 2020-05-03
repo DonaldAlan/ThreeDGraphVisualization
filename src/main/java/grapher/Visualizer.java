@@ -813,11 +813,11 @@ public class Visualizer extends Application {
 				break;
 			case INSERT:
 				repulsionFactor= Math.min(5.0, 0.05+repulsionFactor);
-				System.out.println("repulsionFactor = " + repulsionFactor);
+				System.out.println("repulsionFactor = " + numberFormat.format(repulsionFactor));
 				break;
 			case DELETE:
 				repulsionFactor= Math.max(0, -0.05+repulsionFactor);
-				System.out.println("repulsionFactor = " + repulsionFactor);
+				System.out.println("repulsionFactor = " + numberFormat.format(repulsionFactor));
 			default:
 			}
 		}

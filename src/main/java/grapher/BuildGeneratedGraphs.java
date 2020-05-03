@@ -19,7 +19,8 @@ public class BuildGeneratedGraphs {
 			ConnectedComponent.trace=false;
 			ConnectedComponent.repulsiveDenonimatorIsSquared=true;
 			try {
-				processNodes(GraphGenerators.makeComponents(50,20,10.0,0.6), "Clusters");
+	//			processNodes(GraphGenerators.makeComponents(50,20,10.0,0.6), "Clusters");
+				processNodes(GraphGenerators.makeComponents(50,40,50.0,0.1), "Clusters");
 				//processNodes(GraphGenerators.makeGraphWithChokePoint(15, 15, 0.95), "ChokePoint Graph"); System.exit(0);
 				//processNodes(GraphGenerators.makeCube(), "Cube"); System.exit(0);
 				//processNodes(GraphGenerators.makeHyperCube1(), "HyperCube"); System.exit(0);

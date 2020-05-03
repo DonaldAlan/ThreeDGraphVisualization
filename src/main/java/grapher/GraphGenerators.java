@@ -240,10 +240,10 @@ public class GraphGenerators {
 			}
 		}
 	}
-	public static Node3D[] makeComponents(int count, int meanSize, double std, double probabilityOfEdge) {
+	public static Node3D[] makeComponents(int countOfClusters, int meanSize, double std, double probabilityOfEdge) {
 		final List<Node3D> nodes= new ArrayList<>();
-		for(int i=0;i<count;i++) {
-			final int size= Math.max(1,(int) Math.round(random.nextGaussian()*std + meanSize));
+		for(int i=0;i<countOfClusters;i++) {
+			final int size= Math.max(5,(int) Math.round(random.nextGaussian()*std + meanSize));
 			int start=nodes.size();
 			for(int j=0;j<size;j++) {
 				Node3D node = new Node3D(""+ (start+j));

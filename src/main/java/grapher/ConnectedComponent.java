@@ -330,7 +330,8 @@ public class ConnectedComponent {
 		final long startTime = System.currentTimeMillis();
 		long lastCheckTime = startTime;
 		double cost = getCost();
-		while (true) {
+		final int limit = 1+ nodes.size()/10;
+		for (int i=0;i<limit;i++) {
 			final long now = System.currentTimeMillis();
 			if (now-startTime > 1000*secondsToWaitPerIteration) {
 				System.out.println("Timed out after " + numberFormat.format(0.001*(now-startTime)) + " seconds");
