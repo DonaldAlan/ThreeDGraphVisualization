@@ -1,8 +1,5 @@
 package grapher;
 
-
-import java.awt.Event;
-
 /*
  * @Author Don Smith, ThinkerFeeler@gmail.com
  * 
@@ -11,7 +8,8 @@ import java.awt.Event;
  * TODO 1: First layout the most important nodes. Then fix their positions and layout the less important nodes, in stages.
  * TODO 2: Allow the relaxation algorithms to run in the background while the UI updates, with a STOP button.
  * TODO 3: Allow different scales. It's OK if the user needs to ZOOM into see substructure.
- * TODO 4: Compare Gephi's Yifan Hu, Force Atlas
+ * TODO 4: Make a slider for specifying repulsive force.
+ * TODO 5: Compare Gephi's Yifan Hu, Force Atlas
  */
 
 import java.text.NumberFormat;
@@ -25,9 +23,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
-
 import javax.swing.JOptionPane;
-
 import javafx.animation.AnimationTimer;
 import javafx.application.Application;
 import javafx.collections.FXCollections;
@@ -63,7 +59,8 @@ import javafx.stage.Stage;
 public class Visualizer extends Application {
 	public static int preferredCountOfNodesShown = 1000; // The slider can override this value.
 	public static int maxRepulsiveNodesToInclude=50;
-	public static double repulsionFactor = 0.6;
+	public static volatile double repulsionFactor = 0.6;
+	public double repulsionSliderValue = -2.0;
 	//--------------------
 	public static enum Layout { Stochastic,Spring,Barrycenter,FruchtermanAndReingold, Systematic;}
 	public static Layout layout = Layout.Stochastic;
@@ -116,6 +113,7 @@ public class Visualizer extends Application {
 	private double percentToShow=100; // 100.0; // display all by default
 	private Font tooltipFont = new Font("Times Roman",20);
 	private final Slider importanceSlider=new Slider();
+	private final Slider repulsionSlider=new Slider();
 	private final ComboBox<String> importanceAlgorithmComboBox = new ComboBox<>();
 	private final ComboBox<String> stochasticCountComboBox = new ComboBox<>();
 	private final ComboBox<String> graphingAlgorithmComboBox = new ComboBox<>();
@@ -276,7 +274,7 @@ public class Visualizer extends Application {
 		graphingAlgorithmComboBox.setTranslateZ(1300);
 		graphingAlgorithmComboBox.setBackground(controlBackground);
 		final List<String> itemList = new ArrayList<String>();
-		//itemList.add(Layout.FruchtermanAndReingold.name());
+		itemList.add(Layout.FruchtermanAndReingold.name());
 		itemList.add(Layout.Spring.name());
 		itemList.add(Layout.Stochastic.name());
 		itemList.add(Layout.Systematic.name());
@@ -344,7 +342,7 @@ public class Visualizer extends Application {
 	}
 
 	@SuppressWarnings("unchecked")
-	private void buildSlider(Group root) {
+	private void buildImportanceSlider(Group root) {
 	        importanceSlider.setTranslateX(-200);
 	        importanceSlider.setTranslateY(-286);
 	        importanceSlider.setTranslateZ(1100);
@@ -375,6 +373,38 @@ public class Visualizer extends Application {
 	        };
 	        root.addEventFilter(KeyEvent.KEY_PRESSED, filter);
 	    }
+	private void buildRepulsionSlider(Group root) {
+        repulsionSlider.setTranslateX(-200);
+        repulsionSlider.setTranslateY(-246);
+        repulsionSlider.setTranslateZ(1100);
+        repulsionSlider.setMin(-10.0);
+        repulsionSlider.setMax(4.0); // logarithmic scale
+        repulsionSlider.setValue(repulsionSliderValue);
+        repulsionSlider.setShowTickLabels(false);
+        repulsionSlider.setShowTickMarks(true);
+        repulsionSlider.setMajorTickUnit(1);
+        repulsionSlider.setTooltip(new Tooltip("Control repulsive force (logarthmic scale)"));
+        BackgroundFill backgroundFill = new BackgroundFill(Color.DARKGREEN, CornerRadii.EMPTY, Insets.EMPTY);
+        Background background = new Background(backgroundFill);
+        repulsionSlider.setBackground(background);
+        repulsionSlider.setMinWidth(width / 4);
+        root.getChildren().add(repulsionSlider);
+        repulsionSlider.setOnMouseReleased( e -> {
+        	repulsionSliderValue=repulsionSlider.getValue();
+        	repulsionFactor = Math.exp(repulsionSliderValue);
+        	System.out.println("RepulsionSliderValue = " + repulsionSliderValue + ", repulsionFactor = " + repulsionFactor);
+        });
+        // We add this to prevent the slider from processing the key event
+        EventHandler filter = new EventHandler<InputEvent>() {
+            public void handle(InputEvent event) {
+            	if (event instanceof KeyEvent) {
+            		keyEventHandler.handle((KeyEvent)event);
+            		event.consume();
+            	}
+            }
+        };
+        root.addEventFilter(KeyEvent.KEY_PRESSED, filter);
+    }
 	
 	private void buildRedrawButton(Group root) {
 		redrawButton.setTranslateX(540);
@@ -1002,7 +1032,8 @@ public class Visualizer extends Application {
 			buildCamera(root);
 			buildImportanceAlgorithmComboBox(root);
 			buildStochasticCountComboBox(root);
-			buildSlider(root);
+			buildImportanceSlider(root);
+			buildRepulsionSlider(root);
 			//handleKeyEvents(scene);
 			buildGraphPlacementAlgorithmComboBox(root);
 			buildRedrawButton(root);

@@ -54,7 +54,6 @@ public class ReadGraphAndVisualize {
 			System.err.println("Couldn't get source");
 			System.exit(1);
 		}
-		System.out.println(source);
 		Sink sink = new SinkAdapter() {
 			@Override
 			public void nodeAdded(String sourceId, long timeId, String nodeId) {

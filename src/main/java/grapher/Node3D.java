@@ -163,6 +163,9 @@ public class Node3D implements Comparable<Node3D> {
 	public double distance(Node3D other) {
 		return Math.sqrt(square(x-other.x) + square(y-other.y) + square(z-other.z));
 	}
+	public double distanceIndex(Node3D other) {
+		return Math.sqrt(square(xIndex-other.xIndex) + square(yIndex-other.yIndex) + square(zIndex-other.zIndex));
+	}
 	public double getCost(final ConnectedComponent component) {
 		double cost=0.0;
 		for(Node3D neighbor: getNeighbors()) {
@@ -186,17 +189,47 @@ public class Node3D implements Comparable<Node3D> {
 		}
 		return cost;
 	}
-	public double getCostIfWeWereAtXYZ(double x,double y, double z) {
+	public double getCostIndex(final ConnectedComponent component) {
 		double cost=0.0;
 		for(Node3D neighbor: getNeighbors()) {
 			if (neighbor.isVisible) {
-				cost+= Math.sqrt(square(x-neighbor.x) + square(y-neighbor.y)+ square(z-neighbor.z));
+				cost+= distanceIndex(neighbor);
 			}
+		}
+		if (Visualizer.repulsionFactor > 0.01) {
+			final int n=component.getNodes().size();
+			final int countOfNonNeighbors = n-edges.size();
+			final int countOfNonNeighborsToInclude = Math.min(Visualizer.maxRepulsiveNodesToInclude, countOfNonNeighbors);
+			double repulsiveCost = 0.0;
+			for(int i=0;i<countOfNonNeighborsToInclude;i++) {
+				Node3D nonNeighbor = component.getNodes().get(random.nextInt(n));
+				if (!edges.containsKey(nonNeighbor)) {
+					repulsiveCost -= distanceIndex(nonNeighbor);
+				}
+			}
+			double ratio = Visualizer.repulsionFactor * (1.0 + edges.size()) / n;
+			cost += ratio * repulsiveCost;
+		}
+		return cost;
+	}
+	public double getCostIfWeWereAtXYZ(double x,double y, double z) {
+		double cost=0.0;
+		for(Node3D neighbor: getNeighbors()) {
+			cost+= Math.sqrt(square(x-neighbor.x) + square(y-neighbor.y)+ square(z-neighbor.z));
+		}
+		return cost;
+	}
+	
+	public double getCostIfWeWereAtIndex(int x,int y, int z) {
+		double cost=0;
+		for(Node3D neighbor: getNeighbors()) {
+			cost+= Math.sqrt(square(x-neighbor.xIndex) + square(y-neighbor.yIndex)+ square(z-neighbor.zIndex));
 		}
 		return cost;
 	}
 	
 	private static double square(double x) {return x*x;}
+	private static double square(int x) {return x*x;}
 	public double xyzDistanceTo(Node3D other) {
 		return Math.abs(x-other.x)+Math.abs(y-other.y)+ Math.abs(z-other.z); 
 	}

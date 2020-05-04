@@ -128,6 +128,30 @@ public class ConnectedComponent {
 		minX = Double.MAX_VALUE;
 		System.out.println("Placed initially on grid");
 	}
+	public void randomizePositions(double probabilityOfMoving) {
+		for (Node3D node : nodes) {
+			if (random.nextDouble() < probabilityOfMoving) {
+				int count = 0;
+				while (true) {
+					int x = random.nextInt(nodeMatrix.length);
+					int y = random.nextInt(nodeMatrix.length);
+					int z = random.nextInt(nodeMatrix.length);
+					if (nodeMatrix[x][y][z] == null) {
+						nodeMatrix[x][y][z] = node;
+						nodeMatrix[node.getXIndex()][node.getYIndex()][node.getZIndex()] = null;
+						node.setIndices(x, y, z);
+						node.setXYZ(positionFactor * x, positionFactor * y, positionFactor * z);
+						break;
+					}
+					count++;
+					if (count == 30) {
+						System.err.println("Couldn't find a move");
+						break;
+					}
+				}
+			}
+		}
+	}
 
 	private int moveRandom(int index, int delta) {
 		int v = index + random.nextInt(delta + delta) - delta;
@@ -169,30 +193,7 @@ public class ConnectedComponent {
 		}
 	}
 
-	public void randomizePositions(double probabilityOfMoving) {
-		for (Node3D node : nodes) {
-			if (random.nextDouble() < probabilityOfMoving) {
-				int count = 0;
-				while (true) {
-					int x = random.nextInt(nodeMatrix.length);
-					int y = random.nextInt(nodeMatrix.length);
-					int z = random.nextInt(nodeMatrix.length);
-					if (nodeMatrix[x][y][z] == null) {
-						nodeMatrix[x][y][z] = node;
-						nodeMatrix[node.getXIndex()][node.getYIndex()][node.getZIndex()] = null;
-						node.setIndices(x, y, z);
-						node.setXYZ(positionFactor * x, positionFactor * y, positionFactor * z);
-						break;
-					}
-					count++;
-					if (count == 30) {
-						System.err.println("Couldn't find a move");
-						break;
-					}
-				}
-			}
-		}
-	}
+
 
 	public int stochasticModelAuxRandomMoves(int iteration) {
 		int lessCount = 0;
@@ -200,7 +201,7 @@ public class ConnectedComponent {
 		while (delta > 0) {
 			for (int i = 0; i < numberOfNodesToShow; i++) {
 				final Node3D node = nodes.get(i);
-				double cost = node.getCost(this);
+				double cost = node.getCostIndex(this);
 				for (int j = 0; j < innerReps; j++) {
 					final int rx = moveRandom(node.getXIndex(), delta);
 					final int ry = moveRandom(node.getYIndex(), delta);
@@ -209,21 +210,19 @@ public class ConnectedComponent {
 					if (nodeRxRyRz == node) {
 						continue;
 					} else if (nodeRxRyRz == null) {
-						double rc = node.getCostIfWeWereAtXYZ(10 * rx, 10 * ry, 10 * rz);
+						double rc = node.getCostIfWeWereAtIndex(rx, ry, rz);
 						if (rc < cost) {
 							lessCount++;
 							cost = rc;
 							nodeMatrix[node.getXIndex()][node.getYIndex()][node.getZIndex()] = null;
-							node.setXYZ(10 * rx, 10 * ry, 10 * rz);
 							node.setIndices(rx, ry, rz);
 							nodeMatrix[rx][ry][rz] = node;
 						}
 					} else { // See if swapping lowers cost.
-						final double startCostNodeRxRyRz = nodeRxRyRz.getCost(this);
-						final double swappedCostNodeRxRyRz = nodeRxRyRz.getCostIfWeWereAtXYZ(
-								positionFactor * node.getXIndex(), positionFactor * node.getYIndex(),
-								positionFactor * node.getZIndex());
-						double rc = node.getCostIfWeWereAtXYZ(10 * rx, 10 * ry, 10 * rz);
+						final double startCostNodeRxRyRz = nodeRxRyRz.getCostIndex(this);
+						final double swappedCostNodeRxRyRz = nodeRxRyRz.getCostIfWeWereAtIndex(
+								node.getXIndex(),node.getYIndex(),node.getZIndex());
+						double rc = node.getCostIfWeWereAtIndex(rx, ry, rz);
 						if (rc + swappedCostNodeRxRyRz < cost + startCostNodeRxRyRz) {
 							final int nodeIndexX = node.getXIndex();
 							final int nodeIndexY = node.getYIndex();
@@ -232,10 +231,7 @@ public class ConnectedComponent {
 							cost = rc;
 							nodeMatrix[node.getXIndex()][node.getYIndex()][node.getZIndex()] = nodeRxRyRz;
 							nodeMatrix[rx][ry][rz] = node;
-							node.setXYZ(10 * rx, 10 * ry, 10 * rz);
 							node.setIndices(rx, ry, rz);
-							nodeRxRyRz.setXYZ(positionFactor * nodeIndexX, positionFactor * nodeIndexY,
-									positionFactor * nodeIndexZ);
 							nodeRxRyRz.setIndices(nodeIndexX, nodeIndexY, nodeIndexZ);
 						}
 					}
@@ -244,6 +240,9 @@ public class ConnectedComponent {
 //			if (nodes.size()>1000) {
 //				System.out.println(lessCount + " updates for iteration " +iteration);
 //			}
+			for(Node3D node:nodes) {
+				node.setXYZ(positionFactor*node.getXIndex(), positionFactor*node.getYIndex(), positionFactor*node.getZIndex());
+			}
 			delta--;
 		} // while
 		return lessCount;
@@ -295,12 +294,12 @@ public class ConnectedComponent {
 							if (nodeRxRyRz == node) {
 								continue;
 							} else if (nodeRxRyRz == null) {
-								double rc = node.getCostIfWeWereAtXYZ(10 * nx, 10 * ny, 10 * nz);
+								double rc = node.getCostIfWeWereAtXYZ(positionFactor * nx, positionFactor * ny, positionFactor * nz);
 								if (rc < cost) {
 									lessCount++;
 									cost = rc;
 									nodeMatrix[node.getXIndex()][node.getYIndex()][node.getZIndex()] = null;
-									node.setXYZ(10 * nx, 10 * ny, 10 * nz);
+									node.setXYZ(positionFactor * nx, positionFactor * ny, positionFactor * nz);
 									node.setIndices(nx, ny, nz);
 									nodeMatrix[nx][ny][nz] = node;
 									nodeIndexX = nx;
@@ -310,16 +309,16 @@ public class ConnectedComponent {
 							} else { // See if swapping lowers cost.
 								final double startCostNodeRxRyRz = nodeRxRyRz.getCost(this);
 								final double swappedCostNodeRxRyRz = nodeRxRyRz.getCostIfWeWereAtXYZ(
-										10 * node.getXIndex(), 10 * node.getYIndex(), 10 * node.getZIndex());
-								double rc = node.getCostIfWeWereAtXYZ(10 * nx, 10 * ny, 10 * nz);
+										positionFactor * node.getXIndex(), positionFactor * node.getYIndex(), positionFactor * node.getZIndex());
+								double rc = node.getCostIfWeWereAtXYZ(positionFactor * nx, positionFactor * ny, positionFactor * nz);
 								if (rc + swappedCostNodeRxRyRz < cost + startCostNodeRxRyRz) {
 									lessCount++;
 									cost = rc;
 									nodeMatrix[node.getXIndex()][node.getYIndex()][node.getZIndex()] = nodeRxRyRz;
 									nodeMatrix[nx][ny][nz] = node;
-									node.setXYZ(10 * nx, 10 * ny, 10 * nz);
+									node.setXYZ(positionFactor * nx, positionFactor * ny, positionFactor * nz);
 									node.setIndices(nx, ny, nz);
-									nodeRxRyRz.setXYZ(10 * nodeIndexX, 10 * nodeIndexY, 10 * nodeIndexZ);
+									nodeRxRyRz.setXYZ(positionFactor * nodeIndexX, positionFactor * nodeIndexY, positionFactor * nodeIndexZ);
 									nodeRxRyRz.setIndices(nodeIndexX, nodeIndexY, nodeIndexZ);
 									nodeIndexX = nx;
 									nodeIndexY = ny;
@@ -783,58 +782,36 @@ public class ConnectedComponent {
 		if (nodes.size() <= 1) {
 			return;
 		}
-		final double volume = Math.pow(Node3D.windowSize, 3);
-		final double C = 0.1;
-		final double k = C * Math.pow(volume / nodes.size(), 0.33333);
-		final double maxXYZ = Node3D.windowSize;
-		final Vector3 delta = new Vector3(0, 0, 0);
 		final int n = nodes.size();
-		double startTemperature = 0.5 * maxXYZ;
-		System.out.println("maxXYZ= " + maxXYZ + " for " + nodes.size() + " stochasticDecayFactor = " + decayFactorForFruchtermanAndReingold
-				+ " vertices, startTemperature = " + startTemperature + ", k = " + toString(k) + "\n");
-		int iteration = 0;
+		double startDistance = Math.sqrt(3*square(positionFactor*nodeMatrix.length));
+		final double startDelta = 0.00001*startDistance/n;
+		final double endDelta = 0.01*startDelta;
+		System.out.println(nodes.size() + "nodes with stochasticDecayFactor = " + decayFactorForFruchtermanAndReingold
+				+ " vertices, startDistance = " + numberFormat.format(startDistance) 
+				+ ", startDelta = " + startDelta + "\n");
+		int iterations = 0;
 		showMinMaxXYZ();
-		final Vector3 displacementI = new Vector3(0,0,0);
-		for (double temperature = startTemperature; temperature > 0.1; temperature *= decayFactorForFruchtermanAndReingold) {
-			iteration++;
-			// Attractive forces are between vertices connected by an edge. f_a(d) = d*d/k.
-			// All pairs of vertices have repulsive forces. f_r(d) = -k*k/d;
-			for (int i = 0; i < n-1; i++) {
-				final Node3D nodeI = nodes.get(i);
-				displacementI.set(0, 0, 0);
-				for (int j = i+1; j < n; j++) {
-					final Node3D nodeJ = nodes.get(j);
-					// Calculate repulsive forces
-					delta.setToMinus(nodeI.getPoint3D(), nodeJ.getPoint3D());
-					final double lengthDelta = delta.length();
-					final boolean isEdge = nodeJ.getNeighbors().contains(nodeI);
-					if (lengthDelta == 0.0) {
-						double newDistance = (isEdge ? Visualizer.distanceForOneEdge : 16 * Visualizer.distanceForOneEdge);
-						Point3D directionVector = randomNormalizedDirectionVector();
-						Point3D newPoint3D = nodeJ.getPoint3D().add(directionVector.multiply(newDistance));
-						// System.out.println(" ZERO!!! Moving u : " + toString(u.getPoint3D()) + " -->
-						// " + toString(newPoint3D) + " at iteration " + iteration);
-						System.out.print('z');
-						nodeJ.setXYZ(newPoint3D.getX(), newPoint3D.getY(), newPoint3D.getZ());
-						continue;
-					}
-					double repulsiveForce = repulsive(lengthDelta,k);
-					delta.multiply(repulsiveForce);
-					displacementI.add(delta);
-					
-					delta.setToMinus(nodeI.getPoint3D(), nodeJ.getPoint3D());
-					
-					// Calculate attractive forces
-					if (isEdge) {
-						delta.setToMinus(nodeI.getPoint3D(), nodeJ.getPoint3D());
-						delta.multiply(attractive(lengthDelta, k) / lengthDelta);
-						displacementI.substract(delta);
-					}
-				} // for j
-				nodeI.setXYZ(
-						nodeI.getX()+displacementI.getX(),
-						nodeI.getY()+displacementI.getY(),
-						nodeI.getZ()+displacementI.getZ());
+		for (double delta = startDelta; delta > endDelta; delta *= decayFactorForFruchtermanAndReingold) {
+			iterations++;
+			// Attractive forces are between vertices connected by an edge. f_a(d) = d*d/k. (Why k in denominator?)
+			// All pairs of vertices have repulsive forces. f_r(d) = -k*k/d; but we do a sample.
+			for (int i = 0; i < n; i++) {
+				final Node3D node = nodes.get(i);
+				double x=node.getX();
+				double y=node.getY();
+				double z=node.getZ();
+				for(Node3D neighbor: node.getNeighbors()) {
+					final double displacementX =neighbor.getX() - node.getX();
+					final double displacementY =neighbor.getY() - node.getY();
+					final double displacementZ =neighbor.getZ() - node.getZ();
+					x +=   delta*(Math.abs(displacementX)*displacementX); // Why in denominator?
+					x -=   delta*delta/displacementX;
+					y +=   delta*(Math.abs(displacementY)*displacementY); // Why in denominator?
+					y -=   delta*delta/displacementY;
+					z +=   delta*(Math.abs(displacementZ)*displacementZ); // Why in denominator?
+					z -=   delta*delta/displacementZ;
+				}
+				node.setXYZ(x, y, z);
 			} // for i
 			showMinMaxXYZ();
 //				// Limit max displacement to temperature and prevent going outside frame
@@ -851,8 +828,8 @@ public class ConnectedComponent {
 //			}
 			// System.out.println();
 			// break;
+			System.out.println(iterations + " iterations");
 		}
-		System.out.println("k = " + k + ", maxXYZ = " + toString(maxXYZ) + ", iterations = " + iteration);
 	}
 
 }
