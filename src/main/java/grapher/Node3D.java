@@ -35,7 +35,7 @@ public class Node3D implements Comparable<Node3D> {
 	private final Map<Node3D,Double> edges = new HashMap<>(); // maps node to edge weight
 	private final Map<String,Object> attributes= new TreeMap<>();
 	private double x,y,z;
-	private ConnectedComponent connectedComponent;
+	private ConnectedComponent connectedComponentForDisplay;
 	private double distance = Double.MAX_VALUE;
 	private double importance=1.0;
 	private int indexInImportanceOrder;
@@ -50,7 +50,6 @@ public class Node3D implements Comparable<Node3D> {
 	public Node3D(String id, String description) {
 		this.id=id;
 		attributes.put("description",description);
-		connectedComponent=new ConnectedComponent(this);
 	}
 	@Override
 	public String toString() {
@@ -58,7 +57,48 @@ public class Node3D implements Comparable<Node3D> {
 		return "n" + id + " (" 
 	+ numberFormat.format(x) + ", " 
 	+ numberFormat.format(y) + ", " 
-	+ numberFormat.format(z) + ")";
+	+ numberFormat.format(z) + ") with connectedComponent first = " + connectedComponentForDisplay.getFirst().getId();
+	}
+
+	public static void computeConnectedComponentsForDisplay(Node3D[] nodesToDisplay) {
+		for (Node3D node : nodesToDisplay) {
+			node.connectedComponentForDisplay = new ConnectedComponent(node);
+		}
+		for (Node3D node : nodesToDisplay) {
+			assert(node.isVisible());
+			for (Node3D otherNode : node.getNeighbors()) {
+				assert(node!=otherNode);
+				if (!otherNode.isVisible()) {
+					continue;
+				}
+				if (node.connectedComponentForDisplay != otherNode.connectedComponentForDisplay) {
+					final Node3D nodeFirstOther = otherNode.connectedComponentForDisplay.getFirst();
+					int comp = node.connectedComponentForDisplay.getFirst().compareTo(nodeFirstOther);
+					if (comp == 0) {
+						System.err.println("node = " + node + ", otherNode = " + otherNode);
+						throw new IllegalStateException();
+					}
+					// Tricky code below.
+					if (comp < 0) {
+						// Merge otherNode into this node
+						node.connectedComponentForDisplay.merge(otherNode.connectedComponentForDisplay);
+						if (ConnectedComponent.totalCount == 0) {
+							System.err.println("totalCount==0 after adding edge " + otherNode + " to " + node);
+						}
+						otherNode.connectedComponentForDisplay = node.connectedComponentForDisplay;
+						for (Node3D n : otherNode.connectedComponentForDisplay.getNodes()) {
+							n.connectedComponentForDisplay = node.connectedComponentForDisplay;
+						}
+					} else {
+						otherNode.connectedComponentForDisplay.merge(node.connectedComponentForDisplay);
+						node.connectedComponentForDisplay = otherNode.connectedComponentForDisplay;
+						for (Node3D n : node.connectedComponentForDisplay.getNodes()) {
+							n.connectedComponentForDisplay = otherNode.connectedComponentForDisplay;
+						}
+					}
+				}
+			}
+		}
 	}
 	
 	public void setIndices(int xIndex,int yIndex, int zIndex) {
@@ -109,7 +149,7 @@ public class Node3D implements Comparable<Node3D> {
 	
 	public Map<Node3D,Double> getEdges() {return edges;}
 
-	public ConnectedComponent getConnectedComponent() {return connectedComponent;}
+	public ConnectedComponent getConnectedComponent() {return connectedComponentForDisplay;}
 	public double getX() {return x;}
 	public double getY() {return y;}
 	public double getZ() {return z;}
@@ -118,29 +158,7 @@ public class Node3D implements Comparable<Node3D> {
 		edges.put(otherNode,weight);
 		if (edges.size()>maxDegree) {
 			maxDegree = edges.size();
-		}
-		if (connectedComponent!=otherNode.connectedComponent) {
-			int comp=connectedComponent.getFirst().compareTo(otherNode.connectedComponent.getFirst());
-			if (comp==0) {
-				throw new IllegalStateException();
-			}
-			// Tricky code below.
-			if (comp <0) {
-				// Merge otherNode into this node
-				connectedComponent.merge(otherNode.connectedComponent);
-				if (ConnectedComponent.totalCount==0) {
-					System.err.println("totalCount==0 after adding edge " + otherNode + " to " + this);
-				}
-				for(Node3D n: otherNode.connectedComponent.getNodes()) {
-					n.connectedComponent=connectedComponent;
-				}
-			} else {
-				otherNode.connectedComponent.merge(connectedComponent);
-				for(Node3D n: connectedComponent.getNodes()) {
-					n.connectedComponent=otherNode.connectedComponent;
-				}
-			}
-		}
+		}		
 	}
 	private static double edgeDistanceTo(PriorityQueue<Node3D> queue, Node3D target) {
 		while (!queue.isEmpty()) {
@@ -251,7 +269,7 @@ public class Node3D implements Comparable<Node3D> {
 		Set<Node3D> neighbors = edges.keySet();
 		int count=0;
 		double sum=0.0;
-		for(Node3D other: connectedComponent.getNodes()) {
+		for(Node3D other: connectedComponentForDisplay.getNodes()) {
 			if (!neighbors.contains(other)) {
 				sum+= xyzDistanceTo(other);
 				count++;
@@ -259,6 +277,10 @@ public class Node3D implements Comparable<Node3D> {
 		}
 		return sum/count;
 	}
+	/**
+	 * 
+	 * @return set of neighbors regardless of visibility
+	 */
 	public Set<Node3D> getNeighbors() {return edges.keySet();}
 	
 	public Iterable<Node3D> getVisibleNeighborsIterable() {
@@ -723,6 +745,7 @@ public class Node3D implements Comparable<Node3D> {
 		}
 	}
 	public boolean isVisible() {
+		//System.out.println("indexInImportanceOrder for " + id + " is " + indexInImportanceOrder);
 		return indexInImportanceOrder < Visualizer.countToShow;
 	}
 	public void setSphere(Sphere sphere) {
@@ -770,4 +793,5 @@ public class Node3D implements Comparable<Node3D> {
 			
 			System.out.println(ConnectedComponent.totalCount);
 		}
+
 } // class Node3D

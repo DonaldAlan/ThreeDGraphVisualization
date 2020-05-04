@@ -370,10 +370,12 @@ public class ConnectedComponent {
 				int zIndexSum = 0;
 				int count = 0;
 				for (Node3D n : node.getNeighbors()) {
-					xIndexSum += n.getXIndex();
-					yIndexSum += n.getYIndex();
-					zIndexSum += n.getZIndex();
-					count++;
+					if (n.isVisible()) {
+						xIndexSum += n.getXIndex();
+						yIndexSum += n.getYIndex();
+						zIndexSum += n.getZIndex();
+						count++;
+					}
 				}
 				final int centerX = limitForIndex((int) Math.round((0.0 + xIndexSum) / count));
 				final int centerY = limitForIndex((int) Math.round((0.0 + yIndexSum) / count));
@@ -508,13 +510,17 @@ public class ConnectedComponent {
 			components[0] = oldColor.getRed();
 			components[1] = oldColor.getGreen();
 			components[2] = oldColor.getBlue();
+			int countVisibleNeighbors=0;
 			for (Node3D neighbor : node.getNeighbors()) {
-				Color color = neighbor.getMaterial().getDiffuseColor();
-				components[0] += color.getRed();
-				components[1] += color.getGreen();
-				components[2] += color.getBlue();
+				if (neighbor.isVisible()) {
+					countVisibleNeighbors++;
+					Color color = neighbor.getMaterial().getDiffuseColor();
+					components[0] += color.getRed();
+					components[1] += color.getGreen();
+					components[2] += color.getBlue();
+				}
 			}
-			int cnt = 1 + node.getNeighbors().size();
+			int cnt = 1 + countVisibleNeighbors;
 			components[0] /= cnt;
 			components[1] /= cnt;
 			components[2] /= cnt;
@@ -689,7 +695,7 @@ public class ConnectedComponent {
 
 	private static boolean hasEdgeTo(Node3D node, Set<Node3D> nodes) {
 		for (Node3D other : nodes) {
-			if (node.getNeighbors().contains(other)) {
+			if (other.isVisible() && node.getNeighbors().contains(other)) {
 				return true;
 			}
 		}
@@ -794,15 +800,17 @@ public class ConnectedComponent {
 				double y=node.getY();
 				double z=node.getZ();
 				for(Node3D neighbor: node.getNeighbors()) {
-					final double displacementX =neighbor.getX() - node.getX();
-					final double displacementY =neighbor.getY() - node.getY();
-					final double displacementZ =neighbor.getZ() - node.getZ();
-					x +=   delta*(Math.abs(displacementX)*displacementX); // Why in denominator?
-					x -=   delta*delta/displacementX;
-					y +=   delta*(Math.abs(displacementY)*displacementY); // Why in denominator?
-					y -=   delta*delta/displacementY;
-					z +=   delta*(Math.abs(displacementZ)*displacementZ); // Why in denominator?
-					z -=   delta*delta/displacementZ;
+					if (neighbor.isVisible()) {
+						final double displacementX = neighbor.getX() - node.getX();
+						final double displacementY = neighbor.getY() - node.getY();
+						final double displacementZ = neighbor.getZ() - node.getZ();
+						x += delta * (Math.abs(displacementX) * displacementX); // Why in denominator?
+						x -= delta * delta / displacementX;
+						y += delta * (Math.abs(displacementY) * displacementY); // Why in denominator?
+						y -= delta * delta / displacementY;
+						z += delta * (Math.abs(displacementZ) * displacementZ); // Why in denominator?
+						z -= delta * delta / displacementZ;
+					}
 				}
 				node.setXYZ(x, y, z);
 			} // for i

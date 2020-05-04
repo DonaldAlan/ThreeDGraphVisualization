@@ -109,7 +109,7 @@ public class Visualizer extends Application {
 	private Stage primaryStage;
 	private MessageBox messageBox;
 	private double percentToShow=100; // 100.0; // display all by default
-	static int countToShow = 0; // used
+	static volatile int countToShow = 0; // used
 	private Font tooltipFont = new Font("Times Roman",20);
 	private final Slider importanceSlider=new Slider();
 	private final Slider repulsionSlider=new Slider();
@@ -152,7 +152,7 @@ public class Visualizer extends Application {
 		}
 		return startTotalCost;
 	}
-	public void placeOnePass(boolean initialize) {
+	public void placeOnePassAndRefreshNodes(boolean initialize) {
 		long startTime=System.currentTimeMillis();
 	//	randomizeNodePlacements();
 		double startTotalCost=getTotalCost();
@@ -231,13 +231,17 @@ public class Visualizer extends Application {
 			if (newAlgorithm.equals(currentImportanceAlgorithm)) {
 				return;
 			}
-			currentImportanceAlgorithm=newAlgorithm;
-			runCurrentImportanceAlgorithm();
-			assignImportanceIndicesAndSortSavedAllNodes();
-			makeNodesToDisplayFromSavedNodesAndCountToShow();
-			computeConnectedComponentsFromNodesToDisplay();
-			placeOnePass(true);
-			refreshNodes();
+			try {
+				currentImportanceAlgorithm = newAlgorithm;
+				runCurrentImportanceAlgorithm();
+				assignImportanceIndicesAndSortSavedAllNodes();
+				makeNodesToDisplayFromSavedNodesAndCountToShow();
+				computeConnectedComponentsFromNodesToDisplay();
+				placeOnePassAndRefreshNodes(true);
+			} catch (Throwable thr) {
+				thr.printStackTrace();
+				System.exit(1);
+			}
 			});
 		root.getChildren().add(importanceAlgorithmComboBox);
 	}
@@ -365,10 +369,14 @@ public class Visualizer extends Application {
 	        	percentToShow=importanceSlider.getValue();
 	        	countToShow = Math.min(savedAllNodes.length,(int) Math.round(0.01*savedAllNodes.length*percentToShow));
 	        	System.out.println("Showing " + countToShow);
-	        	makeNodesToDisplayFromSavedNodesAndCountToShow();
-	        	computeConnectedComponentsFromNodesToDisplay();
-	        	placeOnePass(true);
-	        	refreshNodes();
+	        	try {
+	        		makeNodesToDisplayFromSavedNodesAndCountToShow();
+	        		computeConnectedComponentsFromNodesToDisplay();
+	        		placeOnePassAndRefreshNodes(true);
+	        	} catch (Throwable thr) {
+	        		thr.printStackTrace();
+	        		System.exit(1);
+	        	}
 	        });
 	        // We add this to prevent the slider from processing the key event
 	        EventHandler filter = new EventHandler<InputEvent>() {
@@ -472,8 +480,9 @@ public class Visualizer extends Application {
 	 */
 	private void computeConnectedComponentsFromNodesToDisplay() {
 		connectedComponents = new HashSet<>();
-		for (int i = 0; i < nodesToDisplay.length; i++) {
-			connectedComponents.add(nodesToDisplay[i].getConnectedComponent());
+		Node3D.computeConnectedComponentsForDisplay(nodesToDisplay);
+		for(Node3D node:nodesToDisplay) {
+			connectedComponents.add(node.getConnectedComponent());
 		}
 		for (ConnectedComponent conn : connectedComponents) {
 			conn.done();
@@ -547,7 +556,7 @@ public class Visualizer extends Application {
 	}
 
 	// From http://netzwerg.ch/blog/2015/03/22/javafx-3d-line/
-	public Cylinder createCylinderBetween(Point3D origin, Point3D target,Node3D sourceNode) {
+	private Cylinder createCylinderBetween(Point3D origin, Point3D target,Node3D sourceNode) {
 		Point3D diff = target.subtract(origin);
 		double height = diff.magnitude();
 		Point3D mid = target.midpoint(origin);
@@ -692,7 +701,7 @@ public class Visualizer extends Application {
 		connectedComponents=null;
 		
 		nodesToDisplay=getNodesNear(node,maxFocusDistance);
-		placeOnePass(true);
+		placeOnePassAndRefreshNodes(true);
 	}
 
 	private Node3D[] getNodesNear(Node3D node, int maxDistance) {
@@ -783,7 +792,7 @@ public class Visualizer extends Application {
 				}
 				break;
 			case P:
-				placeOnePass(false);
+				placeOnePassAndRefreshNodes(false);
 				//showAverageDistances();
 				break;
 			case H:  {
@@ -874,7 +883,13 @@ public class Visualizer extends Application {
 			public int compare(Node3D node1, Node3D node2) {
 				return -Double.compare(node1.getImportance(), node2.getImportance());
 			}};
-		Arrays.sort(savedAllNodes,comparator );
+		Arrays.sort(savedAllNodes,comparator);
+		int index=0;
+		for(Node3D node: savedAllNodes) {
+			node.setIndexInImportanceOrder(index);
+			index++;
+		}
+		index++;
 	}
 
 	
@@ -978,7 +993,7 @@ public class Visualizer extends Application {
 				final long diff=nowInNanoSeconds-requestPlaceOnePassTimeInMls;
 				if (requestPlaceOnePassTimeInMls>0 && diff>50*ONE_MILLISECOND_IN_NANOSECONDS) {
 					requestPlaceOnePassTimeInMls=0;
-					placeOnePass(false);
+					placeOnePassAndRefreshNodes(false);
 				}
 			}};
 		timer.start();
@@ -993,11 +1008,7 @@ public class Visualizer extends Application {
 			ConnectedComponent.decayFactorForFruchtermanAndReingold *= 0.75; 
 		}
 		try {
-			runCurrentImportanceAlgorithm();
-			assignImportanceIndicesAndSortSavedAllNodes();
-			makeNodesToDisplayFromSavedNodesAndCountToShow();
-			computeConnectedComponentsFromNodesToDisplay();
-
+		
 //			PhongMaterial mat = new PhongMaterial(Color.GOLD);
 //			Sphere sp=new Sphere(15); 
 //			sp.setMaterial(mat);
@@ -1022,9 +1033,13 @@ public class Visualizer extends Application {
 			buildRedrawButton(root);
 			scene.setCamera(camera);
 
-			placeOnePass(true);
+			runCurrentImportanceAlgorithm();
+			assignImportanceIndicesAndSortSavedAllNodes();
+			makeNodesToDisplayFromSavedNodesAndCountToShow();
+			computeConnectedComponentsFromNodesToDisplay();
+			placeOnePassAndRefreshNodes(true);
 			randomizeColors(2);
-			displayNodes();
+			
 			//showAverageDistances();
 			world.setTranslateZ(0.5*Node3D.windowSize);
 			animate();
