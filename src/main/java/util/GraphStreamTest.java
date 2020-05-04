@@ -13,13 +13,13 @@ public class GraphStreamTest {
 		DorogovtsevMendesGenerator gen = new DorogovtsevMendesGenerator();
 		gen.addSink(graph);
 		gen.begin();
-		int n=1000;
+		int n=5000;
 		for(int i=0; i<n; i++) {
 			gen.nextEvents();
 		}
 		System.out.println(graph.getNodeCount() + " nodes");
 		System.out.println(graph.getEdgeCount() + " edges");
-		graph.write("d:/tmp/DorogovtsevMendesGenerator" + n + ".gml");
+		graph.write("/tmp/DorogovtsevMendesGenerator" + n + ".gml");
 
 		gen.end();
 		graph.display();

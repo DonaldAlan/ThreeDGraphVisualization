@@ -108,7 +108,6 @@ public class Visualizer extends Application {
 	
 	private Stage primaryStage;
 	private MessageBox messageBox;
-	private double percentToShow=100; // 100.0; // display all by default
 	static volatile int countToShow = 0; // used
 	private Font tooltipFont = new Font("Times Roman",20);
 	private final Slider importanceSlider=new Slider();
@@ -123,13 +122,13 @@ public class Visualizer extends Application {
 	private final Background controlBackground = new Background(controlBackgroundFill);
 
 	private final Button redrawButton=new Button("Redraw");
+	private volatile boolean newImportanceAlgorithm = false;
 	// --------------
 	static {
 		numberFormat.setMaximumFractionDigits(3);
 	}
 
 	public Visualizer() {
-		importanceSlider.setValue(percentToShow);
 	}
 	
 	private boolean intersectsSomeOtherConnectedComponent(ConnectedComponent component, Set<ConnectedComponent> set) {
@@ -141,6 +140,9 @@ public class Visualizer extends Application {
 		return false;
 	}
 	private void requestReplaceOnePass() {
+		if (requestPlaceOnePassTimeInMls>0) {
+			return;
+		}
 		requestPlaceOnePassTimeInMls=System.nanoTime();
 		redrawButton.setBackground(backgroundRedrawing);
 		redrawButton.setText("Redrawing");
@@ -152,7 +154,7 @@ public class Visualizer extends Application {
 		}
 		return startTotalCost;
 	}
-	public void placeOnePassAndRefreshNodes(boolean initialize) {
+	public void placeOnePassAndRefreshNodes() {
 		long startTime=System.currentTimeMillis();
 	//	randomizeNodePlacements();
 		double startTotalCost=getTotalCost();
@@ -207,7 +209,7 @@ public class Visualizer extends Application {
 
 	@SuppressWarnings("unchecked")
 	private void buildImportanceAlgorithmComboBox(Group root) {
-		importanceAlgorithmComboBox.setTranslateX(-660);
+		importanceAlgorithmComboBox.setTranslateX(-750);
 		importanceAlgorithmComboBox.setTranslateY(-410);
 		importanceAlgorithmComboBox.setTranslateZ(1600);
 		importanceAlgorithmComboBox.setBackground(controlBackground);
@@ -233,11 +235,8 @@ public class Visualizer extends Application {
 			}
 			try {
 				currentImportanceAlgorithm = newAlgorithm;
-				runCurrentImportanceAlgorithm();
-				assignImportanceIndicesAndSortSavedAllNodes();
-				makeNodesToDisplayFromSavedNodesAndCountToShow();
-				computeConnectedComponentsFromNodesToDisplay();
-				placeOnePassAndRefreshNodes(true);
+				newImportanceAlgorithm=true;
+				requestReplaceOnePass();
 			} catch (Throwable thr) {
 				thr.printStackTrace();
 				System.exit(1);
@@ -353,26 +352,34 @@ public class Visualizer extends Application {
 	        importanceSlider.setTranslateX(-200);
 	        importanceSlider.setTranslateY(-286);
 	        importanceSlider.setTranslateZ(1100);
-	        importanceSlider.setMin(0);
-	        importanceSlider.setMax(100); // logarithmic scale
-	        importanceSlider.setValue(percentToShow);
+	        double min=-Math.log(savedAllNodes.length);
+	        importanceSlider.setMin(min);
+	        importanceSlider.setMax(1); // logarithmic scale
+	        {double proportionToShow = (0.0+countToShow)/savedAllNodes.length;
+	        importanceSlider.setValue(Math.log(proportionToShow)); 
+	        }
 	        importanceSlider.setShowTickLabels(false);
 	        importanceSlider.setShowTickMarks(true);
 	        importanceSlider.setMajorTickUnit(5);
-	        importanceSlider.setTooltip(new Tooltip("Control how many nodes to display, ordered by importance."));
+	        importanceSlider.setTooltip(new Tooltip("Control how many nodes to display, ordered by importance (logarithmic)."));
 	        BackgroundFill backgroundFill = new BackgroundFill(Color.DARKGREEN, CornerRadii.EMPTY, Insets.EMPTY);
 	        Background background = new Background(backgroundFill);
 	        importanceSlider.setBackground(background);
 	        importanceSlider.setMinWidth(width / 4);
 	        root.getChildren().add(importanceSlider);
 	        importanceSlider.setOnMouseReleased( e -> {
-	        	percentToShow=importanceSlider.getValue();
-	        	countToShow = Math.min(savedAllNodes.length,(int) Math.round(0.01*savedAllNodes.length*percentToShow));
-	        	System.out.println("Showing " + countToShow);
+	        	double logProportionToShow=importanceSlider.getValue();
+	        	double proportionToShow=Math.exp(logProportionToShow);
+	        	countToShow = Math.min(savedAllNodes.length,(int)Math.round(proportionToShow*savedAllNodes.length) );
+	        	if (countToShow<4) {
+	        		countToShow=4;
+	        	}
+	        	double percent = 100.0*proportionToShow;
+	        	System.out.println("Showing " + countToShow + " (" + numberFormat.format(percent) + "%)");
 	        	try {
 	        		makeNodesToDisplayFromSavedNodesAndCountToShow();
 	        		computeConnectedComponentsFromNodesToDisplay();
-	        		placeOnePassAndRefreshNodes(true);
+	        		requestReplaceOnePass();
 	        	} catch (Throwable thr) {
 	        		thr.printStackTrace();
 	        		System.exit(1);
@@ -428,11 +435,7 @@ public class Visualizer extends Application {
 		redrawButton.setTranslateZ(1300);
 		redrawButton.setBackground(controlBackground);
 		redrawButton.setOnAction( e -> {
-			if (requestPlaceOnePassTimeInMls>0) {
-				return;
-			} else {
-				requestReplaceOnePass();
-			}
+			requestReplaceOnePass();
 		});
 		root.getChildren().add(redrawButton);
 	}
@@ -487,6 +490,7 @@ public class Visualizer extends Application {
 		for (ConnectedComponent conn : connectedComponents) {
 			conn.done();
 		}
+		System.out.println(connectedComponents.size() + " connected components");
 	}
 	//----------------------------------
 	private void makeNodesToDisplayFromSavedNodesAndCountToShow() {
@@ -701,7 +705,7 @@ public class Visualizer extends Application {
 		connectedComponents=null;
 		
 		nodesToDisplay=getNodesNear(node,maxFocusDistance);
-		placeOnePassAndRefreshNodes(true);
+		placeOnePassAndRefreshNodes();
 	}
 
 	private Node3D[] getNodesNear(Node3D node, int maxDistance) {
@@ -740,7 +744,6 @@ public class Visualizer extends Application {
 				world.rx.setAngle(0);
 				world.ry.setAngle(0);
 				world.setTranslateZ(0.75*Node3D.windowSize);
-				percentToShow=100.0;
 				if (focusedNode!=null || ke.isShiftDown()) {
 					for(Node3D n:savedAllNodes) {
 						n.setXYZ(Node3D.windowSize*random.nextDouble(),Node3D.windowSize*random.nextDouble(),Node3D.windowSize*random.nextDouble());
@@ -792,15 +795,15 @@ public class Visualizer extends Application {
 				}
 				break;
 			case P:
-				placeOnePassAndRefreshNodes(false);
+				placeOnePassAndRefreshNodes();
 				//showAverageDistances();
 				break;
 			case H:  {
 				String message="\n\n Navigate in 3D space by dragging the mouse, or by pressing the arrow keys."
-						+ "\n Use the drop-down at the top left to choose the count of stochastic placements; higher values result in nicer graphs."
-						+ "\n Use the next drop-down to choose the importance algorithm that's used to rank nodes."
+						+ "\n Use the drop-down at the top left to choose the importance algorithm that's used to rank nodes."
+						//+ "\n Use the drop-down at the top left to choose the count of stochastic placements; higher values result in nicer graphs."
 						+ "\n Use the slider at the top to adjust how many nodes to display, ordered by importance."
-						+ "\n The button on the upper right controls whether to approximate forces (faster).  "
+						+ "\n Use the next slider to adjust how the repulsive force (how spread out the graph is)."
 						+ "\n For large graphs, it defaults to Approximate Forces; for smaller graphs it defaults to Unrestricted Forces"
 						+ "\n Left-click on a node to see details. Right click to focus on that node."
 						+ "\n Press Ctrl-F to search for a node by id. If found, the program will focus on that node."
@@ -813,17 +816,6 @@ public class Visualizer extends Application {
 				break;
 			}
 			case I: {
-					double delta=1.1;
-					percentToShow*=  ke.isShiftDown() ? delta : 1.0/delta;
-					if (percentToShow>100) {
-						percentToShow=100;
-					} else if (percentToShow<0) {
-						percentToShow=0;
-					} else {
-						//System.out.println("New percentToShow = " + percentToShow);
-					}
-					importanceSlider.setValue(percentToShow);
-					refreshNodes();
 				}
 				break;
 			case PAGE_UP:
@@ -993,7 +985,14 @@ public class Visualizer extends Application {
 				final long diff=nowInNanoSeconds-requestPlaceOnePassTimeInMls;
 				if (requestPlaceOnePassTimeInMls>0 && diff>50*ONE_MILLISECOND_IN_NANOSECONDS) {
 					requestPlaceOnePassTimeInMls=0;
-					placeOnePassAndRefreshNodes(false);
+					if (newImportanceAlgorithm) {
+						newImportanceAlgorithm=false;
+						runCurrentImportanceAlgorithm();
+						assignImportanceIndicesAndSortSavedAllNodes();
+						makeNodesToDisplayFromSavedNodesAndCountToShow();
+						computeConnectedComponentsFromNodesToDisplay();
+					}
+					placeOnePassAndRefreshNodes();
 				}
 			}};
 		timer.start();
@@ -1004,8 +1003,8 @@ public class Visualizer extends Application {
 		primaryStage = stage;		
 		countToShow = savedAllNodes.length;
 		if (savedAllNodes.length>preferredCountOfNodesShown) {
-			percentToShow = 100.0*preferredCountOfNodesShown/savedAllNodes.length;
-			ConnectedComponent.decayFactorForFruchtermanAndReingold *= 0.75; 
+			countToShow = Math.min(savedAllNodes.length,preferredCountOfNodesShown);
+			System.out.println("Showing " + countToShow + " nodes");
 		}
 		try {
 		
@@ -1025,7 +1024,7 @@ public class Visualizer extends Application {
 			handleMouse(scene);
 			buildCamera(root);
 			buildImportanceAlgorithmComboBox(root);
-			buildStochasticCountComboBox(root);
+			//buildStochasticCountComboBox(root); TODO
 			buildImportanceSlider(root);
 			buildRepulsionSlider(root);
 			//handleKeyEvents(scene);
@@ -1037,7 +1036,7 @@ public class Visualizer extends Application {
 			assignImportanceIndicesAndSortSavedAllNodes();
 			makeNodesToDisplayFromSavedNodesAndCountToShow();
 			computeConnectedComponentsFromNodesToDisplay();
-			placeOnePassAndRefreshNodes(true);
+			placeOnePassAndRefreshNodes();
 			randomizeColors(2);
 			
 			//showAverageDistances();

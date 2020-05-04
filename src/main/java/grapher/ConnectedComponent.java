@@ -40,7 +40,7 @@ public class ConnectedComponent {
 	private Node3D[][][] nodeMatrix;
 	private int numberOfNodesToShow;
 	public double simpleDecayFactor = 0.75;
-	public static int secondsToWaitPerIteration = 4;
+	public static int secondsToWaitPerIterationPer1000 = 4;
 	public static int stochasticMovesReps = 14; // Raising this will result in prettier graphs, at the cost of slower
 												// execution. TODO: slider, etc.
 	public static int numberOfSamplesForApproximation = 1000; // The higher, the more approximate the forces using
@@ -69,7 +69,9 @@ public class ConnectedComponent {
 	}
 	public void done() {
 		int m = 4 * (int) Math.ceil(Math.pow(nodes.size(), 0.33333));
-		System.out.println("m = " + m + ", m*m*m = " + (m*m*m) + ", nodes.size() = " + nodes.size());
+		if (nodes.size()>10) {
+			System.out.println("m = " + m + ", m*m*m = " + (m*m*m) + ", nodes.size() = " + nodes.size());
+		}
 		nodeMatrix = new Node3D[m][m][m];
 		numberOfNodesToShow = nodes.size();
 		Node3D.windowSize = (int) Math.ceil(m*positionFactor);
@@ -180,6 +182,7 @@ public class ConnectedComponent {
 	public void stochasticModel() {
 		int iteration = 0;
 		final long startTime = System.currentTimeMillis();
+		final double secondsToWaitPerIteration = Math.max(0.002, secondsToWaitPerIterationPer1000*nodes.size()/1000.0);
 		do {
 			if (stochasticModelAuxRandomMoves(iteration) == 0) {
 				break;
@@ -251,6 +254,7 @@ public class ConnectedComponent {
 	public void systematicModel() {
 		int iteration = 0;
 		final long startTime = System.currentTimeMillis();
+		final double secondsToWaitPerIteration = Math.max(0.002, secondsToWaitPerIterationPer1000*nodes.size()/1000.0);
 		do {
 			if (systematicModelAux(iteration) == 0) {
 				break;
@@ -345,6 +349,7 @@ public class ConnectedComponent {
 		long lastCheckTime = startTime;
 		double cost = getCost();
 		final int limit = 1 + nodes.size() / 10;
+		final double secondsToWaitPerIteration = Math.max(0.002, secondsToWaitPerIterationPer1000*nodes.size()/1000.0);
 		for (int i = 0; i < limit; i++) {
 			final long now = System.currentTimeMillis();
 			if (now - startTime > 1000 * secondsToWaitPerIteration) {

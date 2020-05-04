@@ -267,7 +267,7 @@ public class ReadGraphAndVisualize {
 	public static void processNodes(Node3D[] nodes, String title) {
 		int edgeCount=countEdges(nodes);
 		System.out.println(
-				nodes.length + " nodes, " + edgeCount + " edges, " + ConnectedComponent.totalCount + " connected components, "
+				nodes.length + " nodes, " + edgeCount + " edges, "
 		+ Node3D.maxDegree + " maxDegree, clusteringCoefficent = " + computeClusteringCoefficient(nodes));
 		//...
 		Visualizer.savedAllNodes = nodes;
