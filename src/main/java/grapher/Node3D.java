@@ -4,6 +4,7 @@ import java.text.NumberFormat;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.PriorityQueue;
 import java.util.Random;
@@ -38,7 +39,6 @@ public class Node3D implements Comparable<Node3D> {
 	private double distance = Double.MAX_VALUE;
 	private double importance=1.0;
 	private int indexInImportanceOrder;
-	private boolean isVisible=true;
 	private Sphere sphere=null;
 	//-----------------------------------
 	static {
@@ -169,7 +169,7 @@ public class Node3D implements Comparable<Node3D> {
 	public double getCost(final ConnectedComponent component) {
 		double cost=0.0;
 		for(Node3D neighbor: getNeighbors()) {
-			if (neighbor.isVisible) {
+			if (neighbor.isVisible()) {
 				cost+= distance(neighbor);
 			}
 		}
@@ -189,12 +189,13 @@ public class Node3D implements Comparable<Node3D> {
 		}
 		return cost;
 	}
+	public int getDegree() {
+		return edges.size();
+	}
 	public double getCostIndex(final ConnectedComponent component) {
 		double cost=0.0;
 		for(Node3D neighbor: getNeighbors()) {
-			if (neighbor.isVisible) {
-				cost+= distanceIndex(neighbor);
-			}
+			cost+= distanceIndex(neighbor);
 		}
 		if (Visualizer.repulsionFactor > 0.01) {
 			final int n=component.getNodes().size();
@@ -204,7 +205,7 @@ public class Node3D implements Comparable<Node3D> {
 			int countRepulsive=0;
 			for(int i=0;i<countOfNonNeighborsToInclude;i++) {
 				Node3D nonNeighbor = component.getNodes().get(random.nextInt(n));
-				if (!edges.containsKey(nonNeighbor)) {
+				if (nonNeighbor.isVisible() && !edges.containsKey(nonNeighbor)) {
 					repulsiveCost -= distanceIndex(nonNeighbor);
 					countRepulsive++;
 				}
@@ -246,11 +247,11 @@ public class Node3D implements Comparable<Node3D> {
 		return sum/edges.size();
 		
 	}
-	public double meanXYZDistanceToNonNeighbors(Node3D[] nodesToDisplay) {
+	public double meanXYZDistanceToNonNeighbors() {
 		Set<Node3D> neighbors = edges.keySet();
 		int count=0;
 		double sum=0.0;
-		for(Node3D other: nodesToDisplay) {
+		for(Node3D other: connectedComponent.getNodes()) {
 			if (!neighbors.contains(other)) {
 				sum+= xyzDistanceTo(other);
 				count++;
@@ -274,7 +275,7 @@ public class Node3D implements Comparable<Node3D> {
 						}
 						while (iteratorAux.hasNext()) {
 							Node3D node=iteratorAux.next();
-							if (node.isVisible) {
+							if (node.isVisible()) {
 								nextNodeCached=node;
 								return true;
 							}
@@ -448,7 +449,12 @@ public class Node3D implements Comparable<Node3D> {
 			node.setImportance(1+node.getEdges().size());
 		}
 	}
-	public static void computeImportanceViaRandomWalks(Node3D[] nodes,int walkLength, int numberOfWalksPerNode) {
+	public static void computeImportanceViaDegree(List<Node3D> nodes) {
+		for(Node3D node:nodes) {
+			node.setImportance(1+node.getEdges().size());
+		}
+	}
+	public static void computeImportanceViaRandomWalks(final Node3D[] nodes,int walkLength, int numberOfWalksPerNode) {
 		long startTime=System.currentTimeMillis();
 		importanceDelta = 100.0/(nodes.length*numberOfWalksPerNode);
 		System.out.println("importanceDelta = " + importanceDelta);
@@ -462,6 +468,44 @@ public class Node3D implements Comparable<Node3D> {
 		System.out.println(seconds + " seconds to computeImportanceViaRandomWalks");
 	}
 	
+	public static void computeImportanceViaRandomWalks(List<Node3D> nodes,int walkLength, int numberOfWalksPerNode) {
+		long startTime=System.currentTimeMillis();
+		importanceDelta = 100.0/(nodes.size()*numberOfWalksPerNode);
+		System.out.println("importanceDelta = " + importanceDelta);
+		final Node3D[] path=new Node3D[walkLength];
+		for(Node3D node:nodes) {
+			for(int walk=0;walk<numberOfWalksPerNode;walk++) {
+				node.randomWalk(walkLength,0,path);
+			}
+		}
+		double seconds = 0.001*(System.currentTimeMillis()-startTime);
+		System.out.println(seconds + " seconds to computeImportanceViaRandomWalks");
+	}
+	
+	public static void computeImportanceViaJungBetweenessCentrality(List<Node3D> nodes) {
+		long startTime=System.currentTimeMillis();
+		Graph<Node3D,Integer> graph = new UndirectedSparseGraph<>();
+		BetweennessCentrality<Node3D,Integer> ranker = new BetweennessCentrality<>(graph);
+		for(Node3D node:nodes) {
+			graph.addVertex(node);
+		}
+		int edgeCount=0;
+		for(Node3D node:nodes) {
+			for(Node3D neighbor:node.getNeighbors()) {
+				graph.addEdge(new Integer(edgeCount),node,neighbor);
+				edgeCount++;
+			}
+		}
+		ranker.setRemoveRankScoresOnFinalize(false);
+		ranker.evaluate();
+	//	ranker.printRankings(true, true); 
+		for(Node3D node:nodes) {
+			node.setImportance(1+ranker.getVertexRankScore(node));
+			//System.out.println(node + " has importance " + node.getImportance());
+		}
+		double seconds = 0.001*(System.currentTimeMillis()-startTime);
+		System.out.println(seconds + " seconds to compute importance via Jung's BetweennessCentrality");
+	}
 	public static void computeImportanceViaJungBetweenessCentrality(Node3D[] nodes) {
 		long startTime=System.currentTimeMillis();
 		Graph<Node3D,Integer> graph = new UndirectedSparseGraph<>();
@@ -489,6 +533,30 @@ public class Node3D implements Comparable<Node3D> {
 	
 	
 
+	public static void computeImportanceViaJungPageRank(List<Node3D> nodes) {
+		long startTime=System.currentTimeMillis();
+		UndirectedSparseGraph<Node3D,Integer> graph = new UndirectedSparseGraph<>();
+		PageRank<Node3D,Integer> scorer = new PageRank<>(graph,0.15);
+		for(Node3D node:nodes) {
+			graph.addVertex(node);
+		}
+		int edgeCount=0;
+		for(Node3D node:nodes) {
+			for(Node3D neighbor:node.getNeighbors()) {
+				graph.addEdge(new Integer(edgeCount),node,neighbor);
+				edgeCount++;
+			}
+		}
+		scorer.initialize();
+		scorer.evaluate();
+	//	ranker.printRankings(true, true); 
+		for(Node3D node:nodes) {
+			node.setImportance(1+scorer.getVertexScore(node));
+			//System.out.println(node + " has importance " + node.getImportance());
+		}
+		double seconds = 0.001*(System.currentTimeMillis()-startTime);
+		System.out.println(seconds + " seconds to compute importance via Jung's PageRank");
+	}
 	public static void computeImportanceViaJungPageRank(Node3D[] nodes) {
 		long startTime=System.currentTimeMillis();
 		UndirectedSparseGraph<Node3D,Integer> graph = new UndirectedSparseGraph<>();
@@ -513,6 +581,29 @@ public class Node3D implements Comparable<Node3D> {
 		double seconds = 0.001*(System.currentTimeMillis()-startTime);
 		System.out.println(seconds + " seconds to compute importance via Jung's PageRank");
 	}
+	public static void computeImportanceViaJungMarkovCentrality(List<Node3D> nodes) {
+		long startTime=System.currentTimeMillis();
+		UndirectedSparseGraph<Node3D,Integer> graph = new UndirectedSparseGraph<>();
+		RandomWalkBetweenness<Node3D,Integer> scorer = new RandomWalkBetweenness<Node3D,Integer>(graph);
+		for(Node3D node:nodes) {
+			graph.addVertex(node);
+		}
+		int edgeCount=0;
+		for(Node3D node:nodes) {
+			for(Node3D neighbor:node.getNeighbors()) {
+				graph.addEdge(new Integer(edgeCount),node,neighbor);
+				edgeCount++;
+			}
+		}
+		scorer.evaluate();
+	//	ranker.printRankings(true, true); 
+		for(Node3D node:nodes) {
+			node.setImportance(1+scorer.getVertexRankScore(node));
+			//System.out.println(node + " has importance " + node.getImportance());
+		}
+		double seconds = 0.001*(System.currentTimeMillis()-startTime);
+		System.out.println(seconds + " seconds to compute importance via Jung's MarkovCentrality");
+	}
 	public static void computeImportanceViaJungMarkovCentrality(Node3D[] nodes) {
 		long startTime=System.currentTimeMillis();
 		UndirectedSparseGraph<Node3D,Integer> graph = new UndirectedSparseGraph<>();
@@ -536,7 +627,30 @@ public class Node3D implements Comparable<Node3D> {
 		double seconds = 0.001*(System.currentTimeMillis()-startTime);
 		System.out.println(seconds + " seconds to compute importance via Jung's MarkovCentrality");
 	}
-	public static void computeImportanceViaJungRandomWalkBetweenness(Node3D[] nodes) {
+	public static void computeImportanceViaJungRandomWalkBetweenness(List<Node3D> nodes) {
+		long startTime=System.currentTimeMillis();
+		UndirectedSparseGraph<Node3D,Integer> graph = new UndirectedSparseGraph<>();
+		RandomWalkBetweenness<Node3D,Integer> scorer = new RandomWalkBetweenness<Node3D,Integer>(graph);
+		for(Node3D node:nodes) {
+			graph.addVertex(node);
+		}
+		int edgeCount=0;
+		for(Node3D node:nodes) {
+			for(Node3D neighbor:node.getNeighbors()) {
+				graph.addEdge(new Integer(edgeCount),node,neighbor);
+				edgeCount++;
+			}
+		}
+		scorer.evaluate();
+	//	ranker.printRankings(true, true); 
+		for(Node3D node:nodes) {
+			node.setImportance(1+scorer.getVertexRankScore(node));
+			//System.out.println(node + " has importance " + node.getImportance());
+		}
+		double seconds = 0.001*(System.currentTimeMillis()-startTime);
+		System.out.println(seconds + " seconds to compute importance via Jung's RandomWalkBetweenness");
+	}
+	public static void computeImportanceViaJungRandomWalkBetweenness(final Node3D[] nodes) {
 		long startTime=System.currentTimeMillis();
 		UndirectedSparseGraph<Node3D,Integer> graph = new UndirectedSparseGraph<>();
 		RandomWalkBetweenness<Node3D,Integer> scorer = new RandomWalkBetweenness<Node3D,Integer>(graph);
@@ -561,7 +675,12 @@ public class Node3D implements Comparable<Node3D> {
 	}
 	
 	//WeightedNIPaths  requires rootSet
-	public static void computeImportanceViaJungClosenessCentrality(Node3D[] nodes) {
+	public static void computeImportanceViaJungClosenessCentrality(List<Node3D> nodesList) {
+		final Node3D[] nodes = new Node3D[nodesList.size()];
+		nodesList.toArray(nodes);
+		computeImportanceViaJungClosenessCentrality(nodes);
+	}
+	public static void computeImportanceViaJungClosenessCentrality(final Node3D[] nodes) {
 		long startTime=System.currentTimeMillis();
 		UndirectedSparseGraph<Node3D,Integer> graph = new UndirectedSparseGraph<>();
 		ClosenessCentrality<Node3D,Integer> scorer = new ClosenessCentrality<Node3D,Integer>(graph);
@@ -603,11 +722,8 @@ public class Node3D implements Comparable<Node3D> {
 			}
 		}
 	}
-	public void setIsVisible(boolean b) {
-		isVisible=b;
-	}
 	public boolean isVisible() {
-		return isVisible;
+		return indexInImportanceOrder < Visualizer.countToShow;
 	}
 	public void setSphere(Sphere sphere) {
 		this.sphere=sphere;

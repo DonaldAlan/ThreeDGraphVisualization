@@ -64,7 +64,7 @@ public class Visualizer extends Application {
 	//--------------------
 	public static enum Layout { Stochastic,Spring,Barrycenter,FruchtermanAndReingold, Systematic;}
 	public static Layout layout = Layout.Stochastic;
-	public static Node3D[] nodesToDisplay = null;
+	private Node3D[] nodesToDisplay = null;
 	public static Node3D[] savedAllNodes=null;
 	public static double distanceForOneEdge = 10;
 	public static double sphereRadius = 5;
@@ -108,23 +108,16 @@ public class Visualizer extends Application {
 	
 	private Stage primaryStage;
 	private MessageBox messageBox;
-	private double minImportance=Double.MAX_VALUE;
-	private double maxImportance=Double.NEGATIVE_INFINITY;
 	private double percentToShow=100; // 100.0; // display all by default
+	static int countToShow = 0; // used
 	private Font tooltipFont = new Font("Times Roman",20);
 	private final Slider importanceSlider=new Slider();
 	private final Slider repulsionSlider=new Slider();
 	private final ComboBox<String> importanceAlgorithmComboBox = new ComboBox<>();
 	private final ComboBox<String> stochasticCountComboBox = new ComboBox<>();
 	private final ComboBox<String> graphingAlgorithmComboBox = new ComboBox<>();
-	private int limitIndexForNodesTaoDisplay;
 	private volatile long requestPlaceOnePassTimeInMls=0;
-	private final String unrestrictedForcesText = "Unrestricted Forces";
-	private final String redrawing="(Redrawing)";
-	private final String approximateForcesText = "Approximate Forces";
-	private final BackgroundFill backgroundFillNormal = new BackgroundFill(Color.MOCCASIN, CornerRadii.EMPTY, Insets.EMPTY);
 	private final BackgroundFill backgroundFillRedrawing = new BackgroundFill(Color.YELLOW, CornerRadii.EMPTY, Insets.EMPTY);
-	private final Background backgroundNormal =new Background(backgroundFillNormal);
 	private final Background backgroundRedrawing =new Background(backgroundFillRedrawing);
 	private final BackgroundFill controlBackgroundFill = new BackgroundFill(Color.SKYBLUE, CornerRadii.EMPTY, Insets.EMPTY);
 	private final Background controlBackground = new Background(controlBackgroundFill);
@@ -138,30 +131,10 @@ public class Visualizer extends Application {
 	public Visualizer() {
 		importanceSlider.setValue(percentToShow);
 	}
-	// Return cost of using point3D for node i
-	private double getCost(int i, Point3D point3d, Node3D nodeI) {
-		double sumCosts = 0;
-		for (int j = 0; j < nodesToDisplay.length; j++) {
-			if (i != j) {
-				Node3D nodeJ = nodesToDisplay[j];
-				double distance = point3d.distance(nodeJ.getPoint3D());
-				if (distance < distanceForOneEdge) { // Prevent crowding
-					return Double.MAX_VALUE;
-				}
-				if (nodeI.getEdges().containsKey(nodeJ) || nodeJ.getEdges().containsKey(nodeI)) {
-					sumCosts += square(distance - distanceForOneEdge);
-				}
-			}
-		}
-		return sumCosts;
-	}
-
+	
 	private boolean intersectsSomeOtherConnectedComponent(ConnectedComponent component, Set<ConnectedComponent> set) {
 		for (ConnectedComponent other : set) {
 			if (other != component && other.intersects(component)) {
-				if (nodesToDisplay.length <= 10) {
-					System.out.println(component + " intersects \n" + other + "\n");
-				}
 				return true;
 			}
 		}
@@ -182,7 +155,6 @@ public class Visualizer extends Application {
 	public void placeOnePass(boolean initialize) {
 		long startTime=System.currentTimeMillis();
 	//	randomizeNodePlacements();
-		computeConnectedComponents();
 		double startTotalCost=getTotalCost();
 		double newTotalCost=0;
 		System.out.println("Using layout " + layout);
@@ -261,8 +233,9 @@ public class Visualizer extends Application {
 			}
 			currentImportanceAlgorithm=newAlgorithm;
 			runCurrentImportanceAlgorithm();
-			calculateMinMaxImportance();
-			assignImportanceIndices();
+			assignImportanceIndicesAndSortSavedAllNodes();
+			makeNodesToDisplayFromSavedNodesAndCountToShow();
+			computeConnectedComponentsFromNodesToDisplay();
 			placeOnePass(true);
 			refreshNodes();
 			});
@@ -315,29 +288,59 @@ public class Visualizer extends Application {
 	}
 
 	private void runCurrentImportanceAlgorithm() {
-		switch (currentImportanceAlgorithm) {
-		case betweennessCentralityAlgorithm:
-			Node3D.computeImportanceViaJungBetweenessCentrality(nodesToDisplay);
-			break;
-		case  pageRankAlgorithm:
-			Node3D.computeImportanceViaJungPageRank(nodesToDisplay); 
-			break;
-		case degreeAlgorithm:
-			Node3D.computeImportanceViaDegree(nodesToDisplay);
-			break;
-		case randomWalkVisits:
-			Node3D.computeImportanceViaRandomWalks(nodesToDisplay, 20, 100);
-			break;
-		case randomWalkCentralityJung:
-			Node3D.computeImportanceViaJungRandomWalkBetweenness(nodesToDisplay);
-			break;
-		case markovCentralityJung:
-			Node3D.computeImportanceViaJungMarkovCentrality(nodesToDisplay); 
-			break;
-		case closenessCentrality:
-			Node3D.computeImportanceViaJungClosenessCentrality(nodesToDisplay);
-			break;
-		  default: throw new IllegalStateException();
+			switch (currentImportanceAlgorithm) {
+			case betweennessCentralityAlgorithm:
+				Node3D.computeImportanceViaJungBetweenessCentrality(savedAllNodes);
+				break;
+			case pageRankAlgorithm:
+				Node3D.computeImportanceViaJungPageRank(savedAllNodes);
+				break;
+			case degreeAlgorithm:
+				Node3D.computeImportanceViaDegree(savedAllNodes);
+				break;
+			case randomWalkVisits:
+				Node3D.computeImportanceViaRandomWalks(savedAllNodes, 20, 100);
+				break;
+			case randomWalkCentralityJung:
+				Node3D.computeImportanceViaJungRandomWalkBetweenness(savedAllNodes);
+				break;
+			case markovCentralityJung:
+				Node3D.computeImportanceViaJungMarkovCentrality(savedAllNodes);
+				break;
+			case closenessCentrality:
+				Node3D.computeImportanceViaJungClosenessCentrality(savedAllNodes);
+				break;
+			default:
+				throw new IllegalStateException();
+			}
+	}
+	private void runCurrentImportanceAlgorithmPerComponent() {
+		for (ConnectedComponent component : connectedComponents) {
+			switch (currentImportanceAlgorithm) {
+			case betweennessCentralityAlgorithm:
+				Node3D.computeImportanceViaJungBetweenessCentrality(component.getNodes());
+				break;
+			case pageRankAlgorithm:
+				Node3D.computeImportanceViaJungPageRank(component.getNodes());
+				break;
+			case degreeAlgorithm:
+				Node3D.computeImportanceViaDegree(component.getNodes());
+				break;
+			case randomWalkVisits:
+				Node3D.computeImportanceViaRandomWalks(component.getNodes(), 20, 100);
+				break;
+			case randomWalkCentralityJung:
+				Node3D.computeImportanceViaJungRandomWalkBetweenness(component.getNodes());
+				break;
+			case markovCentralityJung:
+				Node3D.computeImportanceViaJungMarkovCentrality(component.getNodes());
+				break;
+			case closenessCentrality:
+				Node3D.computeImportanceViaJungClosenessCentrality(component.getNodes());
+				break;
+			default:
+				throw new IllegalStateException();
+			}
 		}
 	}
 
@@ -360,6 +363,11 @@ public class Visualizer extends Application {
 	        root.getChildren().add(importanceSlider);
 	        importanceSlider.setOnMouseReleased( e -> {
 	        	percentToShow=importanceSlider.getValue();
+	        	countToShow = Math.min(savedAllNodes.length,(int) Math.round(0.01*savedAllNodes.length*percentToShow));
+	        	System.out.println("Showing " + countToShow);
+	        	makeNodesToDisplayFromSavedNodesAndCountToShow();
+	        	computeConnectedComponentsFromNodesToDisplay();
+	        	placeOnePass(true);
 	        	refreshNodes();
 	        });
 	        // We add this to prevent the slider from processing the key event
@@ -462,18 +470,22 @@ public class Visualizer extends Application {
 	/**
 	 * Ignores isVisible. Only needs to be done once
 	 */
-	private void computeConnectedComponents() {
-		if (connectedComponents==null) {
-			connectedComponents = new HashSet<>();
-			for (int i=0;i<nodesToDisplay.length;i++) {
-				connectedComponents.add(nodesToDisplay[i].getConnectedComponent());
-			}
-			for(ConnectedComponent conn:connectedComponents) {
-				conn.done();
-			}
+	private void computeConnectedComponentsFromNodesToDisplay() {
+		connectedComponents = new HashSet<>();
+		for (int i = 0; i < nodesToDisplay.length; i++) {
+			connectedComponents.add(nodesToDisplay[i].getConnectedComponent());
+		}
+		for (ConnectedComponent conn : connectedComponents) {
+			conn.done();
 		}
 	}
-
+	//----------------------------------
+	private void makeNodesToDisplayFromSavedNodesAndCountToShow() {
+		nodesToDisplay = new Node3D[countToShow];
+		for(int i=0;i<countToShow;i++) {
+			nodesToDisplay[i]=savedAllNodes[i];
+		}
+	}
 	// -------------------------
 	private static class XformWorld extends Group {
 		final Translate t = new Translate(0.0, 0.0, 0.0);
@@ -623,7 +635,7 @@ public class Visualizer extends Application {
 
 	private void spherePopup(Node3D node) {
 		double meanDistanceToNeighbors = node.meanXYZDistanceToNeighbors();
-		double meanDistanceToNonNeighbors = node.meanXYZDistanceToNonNeighbors(nodesToDisplay);
+		double meanDistanceToNonNeighbors = node.meanXYZDistanceToNonNeighbors();
 		StringBuilder sb = new StringBuilder();
 		sb.append('\n');
 		int rowCnt = 0;
@@ -678,17 +690,8 @@ public class Visualizer extends Application {
 	/* package*/ void focus(Node3D node) {
 		focusedNode=node;
 		connectedComponents=null;
-		if (savedAllNodes==null) {
-			savedAllNodes=nodesToDisplay;
-		}
 		
-		for(Node3D n:savedAllNodes) {
-			n.setIsVisible(false);
-		}
 		nodesToDisplay=getNodesNear(node,maxFocusDistance);
-		for(Node3D n: nodesToDisplay) {
-			n.setIsVisible(true); 
-		}
 		placeOnePass(true);
 	}
 
@@ -729,9 +732,6 @@ public class Visualizer extends Application {
 				world.ry.setAngle(0);
 				world.setTranslateZ(0.75*Node3D.windowSize);
 				percentToShow=100.0;
-				if (savedAllNodes==null) {
-					savedAllNodes=nodesToDisplay;
-				}
 				if (focusedNode!=null || ke.isShiftDown()) {
 					for(Node3D n:savedAllNodes) {
 						n.setXYZ(Node3D.windowSize*random.nextDouble(),Node3D.windowSize*random.nextDouble(),Node3D.windowSize*random.nextDouble());
@@ -741,9 +741,6 @@ public class Visualizer extends Application {
 					focusedNode=null;
 					nodesToDisplay=savedAllNodes;
 					connectedComponents=null;
-					for(Node3D n:nodesToDisplay) {
-						n.setIsVisible(true);
-					}
 					requestReplaceOnePass();
 				} else {
 					refreshNodes();
@@ -871,30 +868,16 @@ public class Visualizer extends Application {
 	private void handleKeyEvents(Scene scene) {
 		scene.setOnKeyPressed(keyEventHandler);
 	}
-	private void assignImportanceIndices() {
+	private void assignImportanceIndicesAndSortSavedAllNodes() {
 		Comparator<Node3D> comparator = new Comparator<Node3D>() {
 			@Override
 			public int compare(Node3D node1, Node3D node2) {
 				return -Double.compare(node1.getImportance(), node2.getImportance());
 			}};
-		Arrays.sort(nodesToDisplay,comparator );
-		for(int i=0;i<nodesToDisplay.length;i++) {
-			nodesToDisplay[i].setIndexInImportanceOrder(i);
-		}
+		Arrays.sort(savedAllNodes,comparator );
 	}
 
-	private void calculateMinMaxImportance() {
-		for(Node3D node: nodesToDisplay) {
-			double imp=node.getImportance();
-			if (imp<minImportance) {
-				minImportance=imp;
-			}
-			if (imp>maxImportance) {
-				maxImportance=imp;
-			}
-		}
-		System.out.println("minImportance = " + minImportance + ", maxImportance = " + maxImportance);
-	}
+	
 	private void randomizeColors(int mergeCount) {
 		for (ConnectedComponent c : connectedComponents) {
 			c.randomizeColors(mergeCount);
@@ -951,10 +934,9 @@ public class Visualizer extends Application {
 	// --------------------------
 	private void displayNodes() {
 		// If we are focused on a node, then ignore the importance limit
-		System.out.println(nodesToDisplay.length + " nodes to display");
-		for (int i = 0; i < nodesToDisplay.length; i++) {
+		System.out.println(countToShow + " nodes to display");
+		for (int i = 0; i < countToShow; i++) {
 			Node3D node = nodesToDisplay[i];
-			node.setIsVisible(true);
 			double radius = node == focusedNode?  3*sphereRadius: sphereRadius;
 			Sphere sphere = drawSphere(node.getX(), node.getY(), node.getZ(), radius, randomMaterial(), 
 					node.toString() + ", imp=" + numberFormat.format(node.getImportance()));
@@ -962,7 +944,7 @@ public class Visualizer extends Application {
 			node.setSphere(sphere);
 			shapes.add(sphere);
 		}
-		for (int i = 0; i < nodesToDisplay.length; i++) {
+		for (int i = 0; i < countToShow; i++) {
 			Node3D node = nodesToDisplay[i];
 			Point3D p1 = node.getPoint3D();
 			for (Node3D neighbor : node.getNeighbors()) {
@@ -1005,15 +987,16 @@ public class Visualizer extends Application {
 	@Override
 	public void start(Stage stage) throws Exception {
 		primaryStage = stage;		
-		
-		if (nodesToDisplay.length>preferredCountOfNodesShown) {
-			percentToShow = 100.0*preferredCountOfNodesShown/nodesToDisplay.length;
+		countToShow = savedAllNodes.length;
+		if (savedAllNodes.length>preferredCountOfNodesShown) {
+			percentToShow = 100.0*preferredCountOfNodesShown/savedAllNodes.length;
 			ConnectedComponent.decayFactorForFruchtermanAndReingold *= 0.75; 
 		}
 		try {
 			runCurrentImportanceAlgorithm();
-			calculateMinMaxImportance();
-			assignImportanceIndices();
+			assignImportanceIndicesAndSortSavedAllNodes();
+			makeNodesToDisplayFromSavedNodesAndCountToShow();
+			computeConnectedComponentsFromNodesToDisplay();
 
 //			PhongMaterial mat = new PhongMaterial(Color.GOLD);
 //			Sphere sp=new Sphere(15); 

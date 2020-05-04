@@ -36,7 +36,7 @@ import javafx.scene.shape.Sphere;
 public class ConnectedComponent {
 	public double positionFactor = 20;
 	public int innerReps = 20;
-	private final List<Node3D> nodes = new ArrayList<>();
+	private final List<Node3D> nodes = new ArrayList<>(); // These are always visible!
 	private Node3D[][][] nodeMatrix;
 	private int numberOfNodesToShow;
 	public double simpleDecayFactor = 0.75;
@@ -490,9 +490,7 @@ public class ConnectedComponent {
 	// --------------------------------------------
 	public void randomizeColors(int mergeCount) {
 		for (Node3D node : nodes) {
-			if (!node.isVisible()) {
-				continue;
-			}
+			assert(node.isVisible());
 			PhongMaterial material = new PhongMaterial(randomColor());
 			node.setMaterial(material);
 		}
@@ -504,18 +502,13 @@ public class ConnectedComponent {
 	// --------------------------------------------
 	public void mergeNearbyColors() {
 		for (Node3D node : nodes) {
-			if (!node.isVisible()) {
-				continue;
-			}
+			assert(node.isVisible());
 			Color oldColor = node.getMaterial().getDiffuseColor();
 			double components[] = new double[3];
 			components[0] = oldColor.getRed();
 			components[1] = oldColor.getGreen();
 			components[2] = oldColor.getBlue();
 			for (Node3D neighbor : node.getNeighbors()) {
-				if (!neighbor.isVisible()) {
-					continue;
-				}
 				Color color = neighbor.getMaterial().getDiffuseColor();
 				components[0] += color.getRed();
 				components[1] += color.getGreen();
