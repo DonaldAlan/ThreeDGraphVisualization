@@ -63,7 +63,7 @@ import javafx.stage.Stage;
 public class Visualizer extends Application {
 	public static int preferredCountOfNodesShown = 1000; // The slider can override this value.
 	public static int maxRepulsiveNodesToInclude=50;
-	public static double repulsionFactor = 1.2;
+	public static double repulsionFactor = 0.6;
 	//--------------------
 	public static enum Layout { Stochastic,Spring,Barrycenter,FruchtermanAndReingold, Systematic;}
 	public static Layout layout = Layout.Stochastic;
@@ -812,11 +812,11 @@ public class Visualizer extends Application {
 				}
 				break;
 			case INSERT:
-				repulsionFactor= Math.min(5.0, 0.05+repulsionFactor);
+				repulsionFactor= Math.min(25.0, factor*0.05+repulsionFactor);
 				System.out.println("repulsionFactor = " + numberFormat.format(repulsionFactor));
 				break;
 			case DELETE:
-				repulsionFactor= Math.max(0, -0.05+repulsionFactor);
+				repulsionFactor= Math.max(0, factor*-0.05+repulsionFactor);
 				System.out.println("repulsionFactor = " + numberFormat.format(repulsionFactor));
 			default:
 			}
