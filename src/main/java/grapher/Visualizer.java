@@ -59,8 +59,8 @@ import javafx.stage.Stage;
 public class Visualizer extends Application {
 	public static int preferredCountOfNodesShown = 1000; // The slider can override this value.
 	public static int maxRepulsiveNodesToInclude=50;
-	public static volatile double repulsionFactor = 0.6;
-	public double repulsionSliderValue = -2.0;
+	public static double repulsionSliderValue = -4.0;
+	public static volatile double repulsionFactor = Math.exp(repulsionSliderValue);
 	//--------------------
 	public static enum Layout { Stochastic,Spring,Barrycenter,FruchtermanAndReingold, Systematic;}
 	public static Layout layout = Layout.Stochastic;
@@ -377,8 +377,8 @@ public class Visualizer extends Application {
         repulsionSlider.setTranslateX(-200);
         repulsionSlider.setTranslateY(-246);
         repulsionSlider.setTranslateZ(1100);
-        repulsionSlider.setMin(-10.0);
-        repulsionSlider.setMax(4.0); // logarithmic scale
+        repulsionSlider.setMin(-12.0);
+        repulsionSlider.setMax(2.0); // logarithmic scale
         repulsionSlider.setValue(repulsionSliderValue);
         repulsionSlider.setShowTickLabels(false);
         repulsionSlider.setShowTickMarks(true);

@@ -201,13 +201,15 @@ public class Node3D implements Comparable<Node3D> {
 			final int countOfNonNeighbors = n-edges.size();
 			final int countOfNonNeighborsToInclude = Math.min(Visualizer.maxRepulsiveNodesToInclude, countOfNonNeighbors);
 			double repulsiveCost = 0.0;
+			int countRepulsive=0;
 			for(int i=0;i<countOfNonNeighborsToInclude;i++) {
 				Node3D nonNeighbor = component.getNodes().get(random.nextInt(n));
 				if (!edges.containsKey(nonNeighbor)) {
 					repulsiveCost -= distanceIndex(nonNeighbor);
+					countRepulsive++;
 				}
 			}
-			double ratio = Visualizer.repulsionFactor * (1.0 + edges.size()) / n;
+			double ratio = Visualizer.repulsionFactor * ((1.0 + edges.size())/countRepulsive);
 			cost += ratio * repulsiveCost;
 		}
 		return cost;

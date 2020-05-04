@@ -375,13 +375,13 @@ public class ConnectedComponent {
 					zIndexSum += n.getZIndex();
 					count++;
 				}
-				final int centerX = limit((int) Math.round((0.0 + xIndexSum) / count));
-				final int centerY = limit((int) Math.round((0.0 + yIndexSum) / count));
-				final int centerZ = limit((int) Math.round((0.0 + zIndexSum) / count));
+				final int centerX = limitForIndex((int) Math.round((0.0 + xIndexSum) / count));
+				final int centerY = limitForIndex((int) Math.round((0.0 + yIndexSum) / count));
+				final int centerZ = limitForIndex((int) Math.round((0.0 + zIndexSum) / count));
 				label: for (int delta = 1; delta < 8; delta++) {
-					for (int x = Math.max(0, centerX - delta); x <= limit(centerX + delta); x++) {
-						for (int y = Math.max(0, centerY - delta); y <= limit(centerY + delta); y++) {
-							for (int z = Math.max(0, centerZ - delta); z <= limit(centerZ + delta); z++) {
+					for (int x = Math.max(0, centerX - delta); x <= limitForIndex(centerX + delta); x++) {
+						for (int y = Math.max(0, centerY - delta); y <= limitForIndex(centerY + delta); y++) {
+							for (int z = Math.max(0, centerZ - delta); z <= limitForIndex(centerZ + delta); z++) {
 								final Node3D otherNode = nodeMatrix[x][y][z];
 								if (otherNode == null) {
 									nodeMatrix[x][y][z] = node;
@@ -753,7 +753,7 @@ public class ConnectedComponent {
 		return false;
 	}
 
-	private int limit(int index) {
+	private int limitForIndex(int index) {
 		if (index < 0) {
 			return 0;
 		} else if (index >= nodeMatrix.length) {
