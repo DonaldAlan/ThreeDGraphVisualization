@@ -461,7 +461,8 @@ public class ConnectedComponent {
 	}
 
 	private static Color randomColor() {
-		return Color.rgb(random.nextInt(256), random.nextInt(256), random.nextInt(256), 1);
+		return Color.hsb(360.0*random.nextDouble(), random.nextDouble(), 1.0);
+		//return Color.rgb(64+random.nextInt(128), 128+random.nextInt(128), 128+random.nextInt(128), 0.8);
 	}
 
 	private static Point3D randomVectorOfLengthDistancePlusPoint(double distance, Point3D point) {

@@ -5,11 +5,11 @@ package grapher;
  * 
  * See README.txt for more documentation. 
  * 
+ * TODO 0: Fix moving intersecting clusters. Put clusters in Groups so we can move them easily.
  * TODO 1: First layout the most important nodes. Then fix their positions and layout the less important nodes, in stages.
  * TODO 2: Allow the relaxation algorithms to run in the background while the UI updates, with a STOP button.
  * TODO 3: Allow different scales. It's OK if the user needs to ZOOM into see substructure.
- * TODO 4: Make a slider for specifying repulsive force.
- * TODO 5: Compare Gephi's Yifan Hu, Force Atlas
+ * TODO 4: Compare Gephi's Yifan Hu, Force Atlas
  */
 
 import java.text.NumberFormat;
