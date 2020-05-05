@@ -209,14 +209,16 @@ public class Node3D implements Comparable<Node3D> {
 			final int countOfNonNeighbors = n-edges.size();
 			final int countOfNonNeighborsToInclude = Math.min(Visualizer.maxRepulsiveNodesToInclude, countOfNonNeighbors);
 			double repulsiveCost = 0.0;
+			int countRepulsive=0;
 			for(int i=0;i<countOfNonNeighborsToInclude;i++) {
 				Node3D nonNeighbor = component.getNodes().get(random.nextInt(n));
 				if (nonNeighbor.isVisible() && !edges.containsKey(nonNeighbor)) {
 					repulsiveCost -= distance(x,y,z,nonNeighbor);
+					countRepulsive++;
 				}
 			}
 			//double ratio = Visualizer.repulsionFactor * (1.0 + edges.size()) / n;
-			cost += Visualizer.repulsionFactor * repulsiveCost;
+			cost += Visualizer.repulsionFactor * repulsiveCost/ countRepulsive;
 		}
 		return cost;
 	}
@@ -238,14 +240,16 @@ public class Node3D implements Comparable<Node3D> {
 			final int countOfNonNeighbors = n-edges.size();
 			final int countOfNonNeighborsToInclude = Math.min(Visualizer.maxRepulsiveNodesToInclude, countOfNonNeighbors);
 			double repulsiveCost = 0.0;
+			int countRepulsive=0;
 			for(int i=0;i<countOfNonNeighborsToInclude;i++) {
 				Node3D nonNeighbor = component.getNodes().get(random.nextInt(n));
 				if (nonNeighbor.isVisible() && !edges.containsKey(nonNeighbor)) {
 					repulsiveCost -= distanceIndex(xIndex,yIndex,zIndex,nonNeighbor);
+					countRepulsive++;
 				}
 			}
 			//double ratio = Visualizer.repulsionFactor * ((1.0 + edges.size())/countRepulsive);
-			cost += Visualizer.repulsionFactor * repulsiveCost;
+			cost += Visualizer.repulsionFactor * repulsiveCost/ countRepulsive;
 		}
 		return cost;
 	}

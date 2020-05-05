@@ -59,8 +59,8 @@ import javafx.stage.Stage;
 
 public class Visualizer extends Application {
 	public static int preferredCountOfNodesShown = 1000; // The slider can override this value.
-	public static int maxRepulsiveNodesToInclude=50;
-	public static double repulsionSliderValue = -4.0;
+	public static volatile int maxRepulsiveNodesToInclude=50;
+	public static double repulsionSliderValue = -2.0;
 	public static volatile double repulsionFactor = Math.exp(repulsionSliderValue);
 	//--------------------
 	public static enum Layout { Stochastic,Spring,Barrycenter,FruchtermanReingold, Systematic;}
@@ -75,13 +75,13 @@ public class Visualizer extends Application {
 	private final static int width = 1600;
 	private final static int height = 900;
 	//..
-	private final static String betweennessCentralityAlgorithm="BetweennessCentrality (Jung)";
-    private final static String pageRankAlgorithm= "Page Rank (Jung)";
+	private final static String betweennessCentralityAlgorithm="BetweennessCentrality";
+    private final static String pageRankAlgorithm= "Page Rank";
     private final static String degreeAlgorithm="Degree";
-    private final static String closenessCentrality = "Closeness Centrality (Jung)";
+    private final static String closenessCentrality = "Closeness Centrality";
     private final static String randomWalkVisits="Random walk visit count";
-    private final static String markovCentralityJung="Markov Centrality(Jung)"; // throws exception "Matrix is singular"
-    private final static String randomWalkCentralityJung="Random Walk Centrality(Jung)"; 
+    private final static String markovCentralityJung="Markov Centrality"; // throws exception "Matrix is singular"
+    private final static String randomWalkCentralityJung="Random Walk Centrality"; 
     //...
     private int maxFocusDistance=3;
 	private String currentImportanceAlgorithm=degreeAlgorithm;
@@ -269,27 +269,26 @@ public class Visualizer extends Application {
 		root.getChildren().add(graphingAlgorithmComboBox);
 	}
 	@SuppressWarnings("unchecked")
-	private void buildStochasticCountComboBox(Group root) {
-		stochasticCountComboBox.setTranslateX(-750);
+	private void buildRepulsiveCountComboBox(Group root) {
+		stochasticCountComboBox.setTranslateX(-550);
 		stochasticCountComboBox.setTranslateY(-410);
 		stochasticCountComboBox.setTranslateZ(1600);
 	
 		stochasticCountComboBox.setBackground(controlBackground);
-		Tooltip tooltip = new Tooltip("Choose count of stochastic placements. Higher values result in better layouts but are slower.");
+		Tooltip tooltip = new Tooltip("Choose count of random nodes for repulsive force. Higher values result in better layouts but are slower.");
 		stochasticCountComboBox.setTooltip(tooltip);
 		  // Use Java Collections to create the List.
         final List<String> itemList = new ArrayList<String>();
-        for(int i=2;i<=40;i++) {
+        for(int i=0;i<=400;i+=10) {
         	itemList.add(""+i);
         }
         final ObservableList<String> observableList = FXCollections.observableList(itemList);
         stochasticCountComboBox.setItems(observableList);
-        stochasticCountComboBox.setValue(""+ConnectedComponent.stochasticMovesReps);
+        stochasticCountComboBox.setValue(""+maxRepulsiveNodesToInclude);
         stochasticCountComboBox.setOnAction( e -> {
         	String value=stochasticCountComboBox.getValue();
-        	int anInt=Integer.parseInt(value);
-        	ConnectedComponent.stochasticMovesReps=anInt;
-        	System.out.println("Settingcount of stochastic placements to " + anInt);
+        	maxRepulsiveNodesToInclude=Integer.parseInt(value);
+        	System.out.println("Setting repulsiveCount to " + maxRepulsiveNodesToInclude);
         	//requestReplaceOnePass();
 			});
 		root.getChildren().add(stochasticCountComboBox);
@@ -410,8 +409,8 @@ public class Visualizer extends Application {
         repulsionSlider.setTranslateX(-200);
         repulsionSlider.setTranslateY(-246);
         repulsionSlider.setTranslateZ(1100);
-        repulsionSlider.setMin(-12.0);
-        repulsionSlider.setMax(2.0); // logarithmic scale
+        repulsionSlider.setMin(-10.0);
+        repulsionSlider.setMax(4.0); // logarithmic scale
         repulsionSlider.setValue(repulsionSliderValue);
         repulsionSlider.setShowTickLabels(false);
         repulsionSlider.setShowTickMarks(true);
@@ -1067,7 +1066,7 @@ public class Visualizer extends Application {
 			handleMouse(scene);
 			buildCamera(root);
 			buildImportanceAlgorithmComboBox(root);
-			//buildStochasticCountComboBox(root); TODO
+			buildRepulsiveCountComboBox(root); 
 			buildImportanceSlider(root);
 			buildRepulsionSlider(root);
 			//handleKeyEvents(scene);
@@ -1083,7 +1082,7 @@ public class Visualizer extends Application {
 			randomizeColors(2);
 			
 			//showAverageDistances();
-			world.setTranslateZ(0.5*Node3D.windowSize);
+			world.setTranslateZ(0.7*Node3D.windowSize);
 			animate();
 			primaryStage.show();
 		} catch (Throwable exc) {
