@@ -5,6 +5,7 @@ package grapher;
  * 
  * See README.txt for more documentation. 
  * 
+ * TODO 0: Let user change diameter of edges, or hide them.
  * TODO 1: First layout the most important nodes. Then fix their positions and layout the less important nodes, in stages.
  * TODO 2: Allow the relaxation algorithms to run in the background while the UI updates, with a STOP button.
  * TODO 3: Allow different scales. It's OK if the user needs to ZOOM into see substructure.
@@ -62,7 +63,7 @@ public class Visualizer extends Application {
 	public static double repulsionSliderValue = -4.0;
 	public static volatile double repulsionFactor = Math.exp(repulsionSliderValue);
 	//--------------------
-	public static enum Layout { Stochastic,Spring,Barrycenter,FruchtermanAndReingold, Systematic;}
+	public static enum Layout { Stochastic,Spring,Barrycenter,FruchtermanReingold, Systematic;}
 	public static Layout layout = Layout.Stochastic;
 	private Node3D[] nodesToDisplay = null;
 	public static Node3D[] savedAllNodes=null;
@@ -178,7 +179,7 @@ public class Visualizer extends Application {
 					System.exit(1);
 				}
 				break;
-			case FruchtermanAndReingold:
+			case FruchtermanReingold:
 				System.err.println("FruchtermanAndReingold not implemented");
 				//connectedComponent.fruchtermanAndReingold();
 				break;
@@ -253,8 +254,8 @@ public class Visualizer extends Application {
 		graphingAlgorithmComboBox.setTranslateZ(1300);
 		graphingAlgorithmComboBox.setBackground(controlBackground);
 		final List<String> itemList = new ArrayList<String>();
-		//itemList.add(Layout.Barrycenter.name());
-		itemList.add(Layout.FruchtermanAndReingold.name());
+		itemList.add(Layout.Barrycenter.name());
+		itemList.add(Layout.FruchtermanReingold.name());
 		itemList.add(Layout.Spring.name());
 		itemList.add(Layout.Stochastic.name());
 		itemList.add(Layout.Systematic.name());
@@ -383,6 +384,11 @@ public class Visualizer extends Application {
 	        	try {
 	        		makeNodesToDisplayFromSavedNodesAndCountToShow();
 	        		computeConnectedComponentsFromNodesToDisplay();
+	        		if (e.isShiftDown()) {
+	            		for(ConnectedComponent c:connectedComponents) {
+	            			c.randomizePositions(1.0);
+	            		}
+	            	}
 	        		requestReplaceOnePass();
 	        	} catch (Throwable thr) {
 	        		thr.printStackTrace();
@@ -420,6 +426,12 @@ public class Visualizer extends Application {
         	repulsionSliderValue=repulsionSlider.getValue();
         	repulsionFactor = Math.exp(repulsionSliderValue);
         	System.out.println("RepulsionSliderValue = " + repulsionSliderValue + ", repulsionFactor = " + repulsionFactor);
+        	if (e.isShiftDown()) {
+        		for(ConnectedComponent c:connectedComponents) {
+        			c.randomizePositions(1.0);
+        		}
+        	}
+    		requestReplaceOnePass();
         });
         // We add this to prevent the slider from processing the key event
         EventHandler filter = new EventHandler<InputEvent>() {

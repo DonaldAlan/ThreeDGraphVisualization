@@ -181,32 +181,42 @@ public class Node3D implements Comparable<Node3D> {
 		}
 		return Double.MAX_VALUE;
 	}
-	public double distance(Node3D other) {
+	public static double distance(double x, double y, double z, Node3D other) {
 		return Math.sqrt(square(x-other.x) + square(y-other.y) + square(z-other.z));
 	}
-	public double distanceIndex(Node3D other) {
+	public double distance(Node3D other) {
+		return distance(x,y,z, other);
+	}
+
+	private static double distanceIndex(int xIndex, int yIndex, int zIndex, Node3D other) {
 		return Math.sqrt(square(xIndex-other.xIndex) + square(yIndex-other.yIndex) + square(zIndex-other.zIndex));
 	}
+	public double distanceIndex(Node3D other) {
+		return distanceIndex(xIndex,yIndex,zIndex,other);
+	}
 	public double getCost(final ConnectedComponent component) {
+		return getCost(component, x,y,z);
+	}
+	public double getCost(final ConnectedComponent component, double x, double y, double z) {
 		double cost=0.0;
 		for(Node3D neighbor: getNeighbors()) {
 			if (neighbor.isVisible()) {
-				cost+= distance(neighbor);
+				cost+= distance(x,y,z,neighbor);
 			}
 		}
-		if (Visualizer.repulsionFactor > 0.01) {
+		if (Visualizer.repulsionFactor > 0) {
 			final int n=component.getNodes().size();
 			final int countOfNonNeighbors = n-edges.size();
 			final int countOfNonNeighborsToInclude = Math.min(Visualizer.maxRepulsiveNodesToInclude, countOfNonNeighbors);
 			double repulsiveCost = 0.0;
 			for(int i=0;i<countOfNonNeighborsToInclude;i++) {
 				Node3D nonNeighbor = component.getNodes().get(random.nextInt(n));
-				if (!edges.containsKey(nonNeighbor)) {
-					repulsiveCost -= distance(nonNeighbor);
+				if (nonNeighbor.isVisible() && !edges.containsKey(nonNeighbor)) {
+					repulsiveCost -= distance(x,y,z,nonNeighbor);
 				}
 			}
-			double ratio = Visualizer.repulsionFactor * (1.0 + edges.size()) / n;
-			cost += ratio * repulsiveCost;
+			//double ratio = Visualizer.repulsionFactor * (1.0 + edges.size()) / n;
+			cost += Visualizer.repulsionFactor * repulsiveCost;
 		}
 		return cost;
 	}
@@ -214,42 +224,37 @@ public class Node3D implements Comparable<Node3D> {
 		return edges.size();
 	}
 	public double getCostIndex(final ConnectedComponent component) {
+		return getCostIndex(component, xIndex, yIndex, zIndex);
+	}
+	public double getCostIndex(final ConnectedComponent component, int xIndex, int yIndex, int zIndex) {
 		double cost=0.0;
 		for(Node3D neighbor: getNeighbors()) {
-			cost+= distanceIndex(neighbor);
+			if (neighbor.isVisible()) {
+				cost+= distanceIndex(xIndex,yIndex,zIndex,neighbor);
+			}
 		}
-		if (Visualizer.repulsionFactor > 0.01) {
+		if (Visualizer.repulsionFactor > 0) {
 			final int n=component.getNodes().size();
 			final int countOfNonNeighbors = n-edges.size();
 			final int countOfNonNeighborsToInclude = Math.min(Visualizer.maxRepulsiveNodesToInclude, countOfNonNeighbors);
 			double repulsiveCost = 0.0;
-			int countRepulsive=0;
 			for(int i=0;i<countOfNonNeighborsToInclude;i++) {
 				Node3D nonNeighbor = component.getNodes().get(random.nextInt(n));
 				if (nonNeighbor.isVisible() && !edges.containsKey(nonNeighbor)) {
-					repulsiveCost -= distanceIndex(nonNeighbor);
-					countRepulsive++;
+					repulsiveCost -= distanceIndex(xIndex,yIndex,zIndex,nonNeighbor);
 				}
 			}
-			double ratio = Visualizer.repulsionFactor * ((1.0 + edges.size())/countRepulsive);
-			cost += ratio * repulsiveCost;
+			//double ratio = Visualizer.repulsionFactor * ((1.0 + edges.size())/countRepulsive);
+			cost += Visualizer.repulsionFactor * repulsiveCost;
 		}
 		return cost;
 	}
-	public double getCostIfWeWereAtXYZ(double x,double y, double z) {
-		double cost=0.0;
-		for(Node3D neighbor: getNeighbors()) {
-			cost+= Math.sqrt(square(x-neighbor.x) + square(y-neighbor.y)+ square(z-neighbor.z));
-		}
-		return cost;
+	public double getCostIfWeWereAtXYZ(ConnectedComponent component,double x,double y, double z) {
+		return getCost(component,x,y,z);
 	}
 	
-	public double getCostIfWeWereAtIndex(int x,int y, int z) {
-		double cost=0;
-		for(Node3D neighbor: getNeighbors()) {
-			cost+= Math.sqrt(square(x-neighbor.xIndex) + square(y-neighbor.yIndex)+ square(z-neighbor.zIndex));
-		}
-		return cost;
+	public double getCostIfWeWereAtIndex(ConnectedComponent component,int x,int y, int z) {
+		return getCostIndex(component, x,y,z);
 	}
 	
 	private static double square(double x) {return x*x;}

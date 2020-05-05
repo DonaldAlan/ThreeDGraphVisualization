@@ -215,7 +215,7 @@ public class ConnectedComponent {
 					if (nodeRxRyRz == node) {
 						continue;
 					} else if (nodeRxRyRz == null) {
-						double rc = node.getCostIfWeWereAtIndex(rx, ry, rz);
+						double rc = node.getCostIfWeWereAtIndex(this,rx, ry, rz);
 						if (rc < cost) {
 							lessCount++;
 							cost = rc;
@@ -225,9 +225,9 @@ public class ConnectedComponent {
 						}
 					} else { // See if swapping lowers cost.
 						final double startCostNodeRxRyRz = nodeRxRyRz.getCostIndex(this);
-						final double swappedCostNodeRxRyRz = nodeRxRyRz.getCostIfWeWereAtIndex(
+						final double swappedCostNodeRxRyRz = nodeRxRyRz.getCostIfWeWereAtIndex(this,
 								node.getXIndex(),node.getYIndex(),node.getZIndex());
-						double rc = node.getCostIfWeWereAtIndex(rx, ry, rz);
+						double rc = node.getCostIfWeWereAtIndex(this,rx, ry, rz);
 						if (rc + swappedCostNodeRxRyRz < cost + startCostNodeRxRyRz) {
 							final int nodeIndexX = node.getXIndex();
 							final int nodeIndexY = node.getYIndex();
@@ -244,12 +244,12 @@ public class ConnectedComponent {
 			} // for
 //			if (nodes.size()>1000) {
 //				System.out.println(lessCount + " updates for iteration " +iteration);
-//			}
-			for(Node3D node:nodes) {
-				node.setXYZ(positionFactor*node.getXIndex(), positionFactor*node.getYIndex(), positionFactor*node.getZIndex());
-			}
+//			}		
 			delta--;
 		} // while
+		for(Node3D node:nodes) {
+			node.setXYZ(positionFactor*node.getXIndex(), positionFactor*node.getYIndex(), positionFactor*node.getZIndex());
+		}
 		return lessCount;
 	}
 
@@ -300,7 +300,7 @@ public class ConnectedComponent {
 							if (nodeRxRyRz == node) {
 								continue;
 							} else if (nodeRxRyRz == null) {
-								double rc = node.getCostIfWeWereAtXYZ(positionFactor * nx, positionFactor * ny, positionFactor * nz);
+								double rc = node.getCostIfWeWereAtXYZ(this,positionFactor * nx, positionFactor * ny, positionFactor * nz);
 								if (rc < cost) {
 									lessCount++;
 									cost = rc;
@@ -314,9 +314,9 @@ public class ConnectedComponent {
 								}
 							} else { // See if swapping lowers cost.
 								final double startCostNodeRxRyRz = nodeRxRyRz.getCost(this);
-								final double swappedCostNodeRxRyRz = nodeRxRyRz.getCostIfWeWereAtXYZ(
+								final double swappedCostNodeRxRyRz = nodeRxRyRz.getCostIfWeWereAtXYZ(this,
 										positionFactor * node.getXIndex(), positionFactor * node.getYIndex(), positionFactor * node.getZIndex());
-								double rc = node.getCostIfWeWereAtXYZ(positionFactor * nx, positionFactor * ny, positionFactor * nz);
+								double rc = node.getCostIfWeWereAtXYZ(this,positionFactor * nx, positionFactor * ny, positionFactor * nz);
 								if (rc + swappedCostNodeRxRyRz < cost + startCostNodeRxRyRz) {
 									lessCount++;
 									cost = rc;
@@ -886,7 +886,7 @@ public class ConnectedComponent {
 					y+= neighbor.getY();
 					z+= neighbor.getZ();
 				}
-				double countOfNeighbors=node.getNeighbors().size();
+				double countOfNeighbors=1+node.getNeighbors().size();
 				node.setXYZ(x/countOfNeighbors, y/countOfNeighbors, z/countOfNeighbors);
 			}
 		} // for rep
