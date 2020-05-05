@@ -26,6 +26,7 @@ public class BuildGeneratedGraphs {
 				//processNodes(GraphGenerators.makeComponents(100,40,30.0,0.6), "Clusters");
 				//processNodes(GraphGenerators.makeComponents(20,20,15.0,0.5), "Clusters");
 				processNodes(GraphGenerators.makeGraphWithChokePoint(15, 15, 0.95), "ChokePoint Graph"); System.exit(0);
+			//	processNodes(GraphGenerators.makeGraphWithChokePoint(4, 4, 0.95), "ChokePoint Graph"); System.exit(0);
 				//processNodes(GraphGenerators.makeCube(), "Cube"); System.exit(0);
 				//processNodes(GraphGenerators.makeHyperCube1(), "HyperCube"); System.exit(0);
 				//processNodes(GraphGenerators.makeSphere(4,64),"Sphere Graph"); System.exit(0);

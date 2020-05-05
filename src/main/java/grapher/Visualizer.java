@@ -718,14 +718,16 @@ public class Visualizer extends Application {
 				break;
 			case R: {
 				// TODO: sort nodes by cost and move the costliest ones.
-				System.out.println("Randomize");
-				final double probability = ke.isShiftDown() ? 1.0: 0.1;
-				for(ConnectedComponent c:connectedComponents) {
-					c.randomizePositions(probability);
+				if (ke.isShiftDown()|| ke.isControlDown()) {
+					System.out.println("Randomize");
+					final double probability = ke.isShiftDown() ? 1.0: 0.1;
+					for(ConnectedComponent c:connectedComponents) {
+						c.randomizePositions(probability);
+					}
+					refreshNodes();
+				} else {
+					requestReplaceOnePass();
 				}
-				System.out.println("Total cost = " + getTotalCost());
-				refreshNodes();
-				System.out.println("Randomize done");
 			}
 				break;
 			case ESCAPE:

@@ -47,7 +47,7 @@ public class ConnectedComponent {
 	public static int numberOfSamplesForApproximation = 1000; // The higher, the more approximate the forces using
 																// ApproximateForces.
 	public static boolean repulsiveDenonimatorIsSquared = true;
-	public static double decayFactorForFruchtermanAndReingold = 0.9; // TODO: make this controllable from UI
+	public static double decayFactorForFruchtermanAndReingold = 0.95; // TODO: make this controllable from UI
 	public static boolean trace = false;
 
 	public static int totalCount = 0;
@@ -804,7 +804,7 @@ public class ConnectedComponent {
 		}
 		final int n = nodes.size();
 		showMinMaxXYZ();
-		final double repulsionFactor = 0.1*Visualizer.repulsionFactor;
+		final double repulsionFactor = Visualizer.repulsionFactor;
 		final double attractionFactor = 0.001;
 		int iterations=0;
 		countLimits=0;
@@ -830,7 +830,7 @@ public class ConnectedComponent {
 						final double xDeltaAttractive = f*xDisplacement;
 						final double yDeltaAttractive = f*yDisplacement;
 						final double zDeltaAttractive = f*zDisplacement;
-						final double g=delta/square(distance);
+						final double g=delta*repulsionFactor/square(distance);
 						final double xDeltaRepulsive = xDisplacement *g;
 						final double yDeltaRepulsive = yDisplacement *g;
 						final double zDeltaRepulsive = zDisplacement *g;
@@ -846,7 +846,7 @@ public class ConnectedComponent {
 							final double yDisplacement = other.getY() - node.getY();
 							final double zDisplacement = other.getZ() - node.getZ();
 							final double distance = Math.sqrt(square(xDisplacement)+square(yDisplacement)+square(zDisplacement));
-							final double g=delta/square(distance);
+							final double g=delta*repulsionFactor/square(distance);
 							final double xDeltaRepulsive = xDisplacement *g;
 							final double yDeltaRepulsive = yDisplacement *g;
 							final double zDeltaRepulsive = zDisplacement *g;
@@ -863,7 +863,7 @@ public class ConnectedComponent {
 							final double yDisplacement = other.getY() - node.getY();
 							final double zDisplacement = other.getZ() - node.getZ();
 							final double distance = Math.sqrt(square(xDisplacement)+square(yDisplacement)+square(zDisplacement));
-							final double g=delta/square(distance);
+							final double g=delta*repulsionFactor/square(distance);
 							final double xDeltaRepulsive = xDisplacement *g;
 							final double yDeltaRepulsive = yDisplacement *g;
 							final double zDeltaRepulsive = zDisplacement *g;
