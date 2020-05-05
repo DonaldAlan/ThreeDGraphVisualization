@@ -175,6 +175,15 @@ public class GraphGenerators {
 		printWriter.close();
 	}
 
+	//----------------------------------------
+	public static Node3D[] makeGraphWithThreeNodes_TwoWithEdge() {
+		Node3D n1 = new Node3D("one");
+		Node3D n2 = new Node3D("two");
+		n1.addEdge(n2);
+		n2.addEdge(n1);
+		Node3D n3 = new Node3D("three");
+		return new Node3D[] {n1,n2,n3};
+	}
 	//-----------------------
 	public static Node3D[] makeGraphWithChokePoint(int leftCount, int rightCount, double probabilityOfEdge) {
 		int n=leftCount+rightCount;
