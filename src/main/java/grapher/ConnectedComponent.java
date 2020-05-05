@@ -13,6 +13,7 @@ import com.sun.javafx.geom.Matrix3f;
 
 import java.text.NumberFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
@@ -790,11 +791,12 @@ public class ConnectedComponent {
 		System.out.print("Min = (" + numberFormat.format(minX) + ", " + numberFormat.format(minY) + ", " + numberFormat.format(minZ) + ")");
 		System.out.println(", max = (" + numberFormat.format(maxX) + ", " + numberFormat.format(maxY) + ", " + numberFormat.format(maxZ) + ")");
 	}
-	private int countLimits=0;
-	private double limit(double value) {
-		if (Math.abs(value)>positionFactor) {
-			countLimits++;
-			return value>0? positionFactor: -positionFactor;
+	private int countLimits[] = {0,0,0};
+	
+	private double limit(double value, double originalValue, int source) {
+		if (!Double.isFinite(value) || Math.abs(value)>2*Node3D.windowSize) {
+			countLimits[source]++;
+			return originalValue+ random.nextDouble()-0.5;
 		}
 		return value;
 	}
@@ -807,7 +809,9 @@ public class ConnectedComponent {
 		final double repulsionFactor = Visualizer.repulsionFactor;
 		final double attractionFactor = 0.001;
 		int iterations=0;
-		countLimits=0;
+		countLimits[0]=0;
+		countLimits[1]=0;
+		countLimits[2]=0;
 		for (double delta = 1.0; delta > 0.01; delta *= decayFactorForFruchtermanAndReingold) {
 			iterations++;
 			// Attractive forces are between vertices connected by an edge. f_a(d) = d*d/k. (Why k in denominator?)
@@ -822,61 +826,63 @@ public class ConnectedComponent {
 				double z=node.getZ();
 				for(Node3D neighbor: node.getNeighbors()) {
 					if (neighbor.isVisible()) {
-						final double xDisplacement = neighbor.getX() - node.getX();
-						final double yDisplacement = neighbor.getY() - node.getY();
-						final double zDisplacement = neighbor.getZ() - node.getZ();
-						final double distance = Math.sqrt(square(xDisplacement)+square(yDisplacement)+square(zDisplacement));
-						final double f=delta*attractionFactor*distance;
+						final double xDisplacement = neighbor.getX() - x;
+						final double yDisplacement = neighbor.getY() - y;
+						final double zDisplacement = neighbor.getZ() - z;
+						final double distanceSquared = square(xDisplacement)+square(yDisplacement)+square(zDisplacement);
+						//final double distance = Math.sqrt(distanceSquared);
+						final double f=delta*attractionFactor*Math.sqrt(distanceSquared);
 						final double xDeltaAttractive = f*xDisplacement;
 						final double yDeltaAttractive = f*yDisplacement;
 						final double zDeltaAttractive = f*zDisplacement;
-						final double g=delta*repulsionFactor/square(distance);
+						final double g=delta*repulsionFactor/distanceSquared;
 						final double xDeltaRepulsive = xDisplacement *g;
 						final double yDeltaRepulsive = yDisplacement *g;
 						final double zDeltaRepulsive = zDisplacement *g;
-						x = limit(x+xDeltaAttractive-xDeltaRepulsive);
-						y = limit(y+yDeltaAttractive-yDeltaRepulsive);
-						z = limit(z+zDeltaAttractive-zDeltaRepulsive);
+						x = limit(x+xDeltaAttractive-xDeltaRepulsive, x,0);
+						y = limit(y+yDeltaAttractive-yDeltaRepulsive, y,0);
+						z = limit(z+zDeltaAttractive-zDeltaRepulsive, z,0);
 					}
 				}
-				if (nodes.size()<= Visualizer.maxRepulsiveNodesToInclude) {
+				if (Visualizer.maxRepulsiveNodesToInclude==0) {
+				} else if (nodes.size()<= Visualizer.maxRepulsiveNodesToInclude) {
 					for(Node3D other: nodes) {
 						if (other!=node && !node.getEdges().containsKey(other)) {
-							final double xDisplacement = other.getX() - node.getX();
-							final double yDisplacement = other.getY() - node.getY();
-							final double zDisplacement = other.getZ() - node.getZ();
-							final double distance = Math.sqrt(square(xDisplacement)+square(yDisplacement)+square(zDisplacement));
-							final double g=delta*repulsionFactor/square(distance);
+							final double xDisplacement = other.getX() - x;
+							final double yDisplacement = other.getY() - y;
+							final double zDisplacement = other.getZ() - z;
+							final double distanceSquared = square(xDisplacement)+square(yDisplacement)+square(zDisplacement);
+							final double g=delta*repulsionFactor/distanceSquared;
 							final double xDeltaRepulsive = xDisplacement *g;
 							final double yDeltaRepulsive = yDisplacement *g;
 							final double zDeltaRepulsive = zDisplacement *g;
-							x = limit(x-xDeltaRepulsive);
-							y = limit(y-yDeltaRepulsive);
-							z = limit(z-zDeltaRepulsive);
+							x = limit(x-xDeltaRepulsive, x, 1);
+							y = limit(y-yDeltaRepulsive, y, 1);
+							z = limit(z-zDeltaRepulsive, z, 1);
 						}
 					}
 				} else {
 					for(int j=0;j<Visualizer.maxRepulsiveNodesToInclude;j++) {
 						Node3D other = nodes.get(random.nextInt(nodes.size()));
 						if (other!=node && !node.getEdges().containsKey(other)) {
-							final double xDisplacement = other.getX() - node.getX();
-							final double yDisplacement = other.getY() - node.getY();
-							final double zDisplacement = other.getZ() - node.getZ();
-							final double distance = Math.sqrt(square(xDisplacement)+square(yDisplacement)+square(zDisplacement));
-							final double g=delta*repulsionFactor/square(distance);
+							final double xDisplacement = other.getX() - x;
+							final double yDisplacement = other.getY() - y;
+							final double zDisplacement = other.getZ() - z;
+							final double distanceSquared = square(xDisplacement)+square(yDisplacement)+square(zDisplacement);
+							final double g=delta*repulsionFactor/distanceSquared;
 							final double xDeltaRepulsive = xDisplacement *g;
 							final double yDeltaRepulsive = yDisplacement *g;
 							final double zDeltaRepulsive = zDisplacement *g;
-							x = limit(x-xDeltaRepulsive);
-							y = limit(y-yDeltaRepulsive);
-							z = limit(z-zDeltaRepulsive);
+							x = limit(x-xDeltaRepulsive, x, 2);
+							y = limit(y-yDeltaRepulsive, y, 2);
+							z = limit(z-zDeltaRepulsive, z, 2);
 						}
 					}
 				}
 				node.setXYZ(x, y, z);
 			} // for i
 		}
-		System.out.println(iterations + " iterations with countLimits = " + countLimits);
+		System.out.println(iterations + " iterations with countLimits = " + Arrays.toString(countLimits));
 	}
 	//----------------
 	public void placeUsingBarrycenter() {

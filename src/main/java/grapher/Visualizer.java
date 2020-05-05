@@ -360,7 +360,8 @@ public class Visualizer extends Application {
 	        importanceSlider.setMin(min);
 	        importanceSlider.setMax(1); // logarithmic scale
 	        {double proportionToShow = (0.0+countToShow)/savedAllNodes.length;
-	        importanceSlider.setValue(Math.log(proportionToShow)); 
+	        	System.out.println("proportionToShow = " + proportionToShow + ", log = " + Math.log(proportionToShow));
+	        importanceSlider.setValue(1+Math.log(proportionToShow)); 
 	        }
 	        importanceSlider.setShowTickLabels(false);
 	        importanceSlider.setShowTickMarks(true);
@@ -373,10 +374,13 @@ public class Visualizer extends Application {
 	        root.getChildren().add(importanceSlider);
 	        importanceSlider.setOnMouseReleased( e -> {
 	        	double logProportionToShow=importanceSlider.getValue();
-	        	double proportionToShow=Math.exp(logProportionToShow);
+	        	double proportionToShow=Math.exp(logProportionToShow)/Math.E;
+	        	// Math.E*proportionToShow= Math.exp(logProportionToShow)
+	        	// log(Math.E*proportionToShow)= log(Math.exp(logProportionToShow))
+	        	// 1+proportionToShow = logProportionToShow
 	        	countToShow = Math.min(savedAllNodes.length,(int)Math.round(proportionToShow*savedAllNodes.length) );
-	        	if (countToShow<4) {
-	        		countToShow=4;
+	        	if (countToShow<1) {
+	        		countToShow=1;
 	        	}
 	        	double percent = 100.0*proportionToShow;
 	        	System.out.println("Showing " + countToShow + " (" + numberFormat.format(percent) + "%)");
@@ -409,8 +413,8 @@ public class Visualizer extends Application {
         repulsionSlider.setTranslateX(-200);
         repulsionSlider.setTranslateY(-246);
         repulsionSlider.setTranslateZ(1100);
-        repulsionSlider.setMin(-10.0);
-        repulsionSlider.setMax(4.0); // logarithmic scale
+        repulsionSlider.setMin(-12.0);
+        repulsionSlider.setMax(6.0); // logarithmic scale
         repulsionSlider.setValue(repulsionSliderValue);
         repulsionSlider.setShowTickLabels(false);
         repulsionSlider.setShowTickMarks(true);
@@ -423,7 +427,12 @@ public class Visualizer extends Application {
         root.getChildren().add(repulsionSlider);
         repulsionSlider.setOnMouseReleased( e -> {
         	repulsionSliderValue=repulsionSlider.getValue();
-        	repulsionFactor = Math.exp(repulsionSliderValue);
+        	if (repulsionSliderValue==repulsionSlider.getMin()) {
+        		System.out.println("Setting repulsion factor to zero");
+        		repulsionFactor= 0.0;
+        	} else {
+        		repulsionFactor = Math.exp(repulsionSliderValue);
+        	}
         	System.out.println("RepulsionSliderValue = " + repulsionSliderValue + ", repulsionFactor = " + repulsionFactor);
         	if (e.isShiftDown()) {
         		for(ConnectedComponent c:connectedComponents) {

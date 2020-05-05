@@ -251,11 +251,20 @@ public class Node3D implements Comparable<Node3D> {
 			final int countOfNonNeighborsToInclude = Math.min(Visualizer.maxRepulsiveNodesToInclude, countOfNonNeighbors);
 			double repulsiveCost = 0.0;
 			int countRepulsive=0;
-			for(int i=0;i<countOfNonNeighborsToInclude;i++) {
-				Node3D nonNeighbor = component.getNodes().get(random.nextInt(n));
-				if (nonNeighbor!=this && nonNeighbor.isVisible() && !edges.containsKey(nonNeighbor)) {
-					repulsiveCost -= distanceIndex(xIndex,yIndex,zIndex,nonNeighbor);
-					countRepulsive++;
+			if (countOfNonNeighbors <= Visualizer.maxRepulsiveNodesToInclude) {
+				for(Node3D nonNeighbor: component.getNodes()) {
+					if (nonNeighbor!=this && nonNeighbor.isVisible() && !edges.containsKey(nonNeighbor)) {
+						repulsiveCost -= distanceIndex(xIndex,yIndex,zIndex,nonNeighbor);
+						countRepulsive++;
+					}
+				}
+			} else {
+				for(int i=0;i<countOfNonNeighborsToInclude;i++) {
+					Node3D nonNeighbor = component.getNodes().get(random.nextInt(n));
+					if (nonNeighbor!=this && nonNeighbor.isVisible() && !edges.containsKey(nonNeighbor)) {
+						repulsiveCost -= distanceIndex(xIndex,yIndex,zIndex,nonNeighbor);
+						countRepulsive++;
+					}
 				}
 			}
 			//double ratio = Visualizer.repulsionFactor * ((1.0 + edges.size())/countRepulsive);
