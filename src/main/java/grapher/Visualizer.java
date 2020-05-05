@@ -149,11 +149,11 @@ public class Visualizer extends Application {
 		redrawButton.setText("Redrawing");
 	}
 	public double getTotalCost() {
-		double startTotalCost=0;
+		double totalCost=0;
 		for (ConnectedComponent connectedComponent : connectedComponents) {
-			startTotalCost+= connectedComponent.getCost();
+			totalCost+= connectedComponent.getCost();
 		}
-		return startTotalCost;
+		return totalCost;
 	}
 	public void placeOnePassAndRefreshNodes() {
 		long startTime=System.currentTimeMillis();
@@ -180,8 +180,8 @@ public class Visualizer extends Application {
 				}
 				break;
 			case FruchtermanReingold:
-				System.err.println("FruchtermanAndReingold not implemented");
-				//connectedComponent.fruchtermanAndReingold();
+				//System.err.println("FruchtermanAndReingold not implemented");
+				connectedComponent.fruchtermanAndReingold();
 				break;
 			case Systematic:
 				connectedComponent.systematicModel();

@@ -47,7 +47,7 @@ public class ConnectedComponent {
 	public static int numberOfSamplesForApproximation = 1000; // The higher, the more approximate the forces using
 																// ApproximateForces.
 	public static boolean repulsiveDenonimatorIsSquared = true;
-	public static double decayFactorForFruchtermanAndReingold = 0.5;
+	public static double decayFactorForFruchtermanAndReingold = 0.9; // TODO: make this controllable from UI
 	public static boolean trace = false;
 
 	public static int totalCount = 0;
@@ -790,20 +790,25 @@ public class ConnectedComponent {
 		System.out.print("Min = (" + numberFormat.format(minX) + ", " + numberFormat.format(minY) + ", " + numberFormat.format(minZ) + ")");
 		System.out.println(", max = (" + numberFormat.format(maxX) + ", " + numberFormat.format(maxY) + ", " + numberFormat.format(maxZ) + ")");
 	}
+	private int countLimits=0;
+	private double limit(double value) {
+		if (Math.abs(value)>positionFactor) {
+			countLimits++;
+			return value>0? positionFactor: -positionFactor;
+		}
+		return value;
+	}
 	public void fruchtermanAndReingold() {
 		if (nodes.size() <= 1) {
 			return;
 		}
 		final int n = nodes.size();
-		double startDistance = Math.sqrt(3*square(positionFactor*nodeMatrix.length));
-		final double startDelta = 0.00001*startDistance/n;
-		final double endDelta = 0.01*startDelta;
-		System.out.println(nodes.size() + "nodes with stochasticDecayFactor = " + decayFactorForFruchtermanAndReingold
-				+ " vertices, startDistance = " + numberFormat.format(startDistance) 
-				+ ", startDelta = " + startDelta + "\n");
-		int iterations = 0;
 		showMinMaxXYZ();
-		for (double delta = startDelta; delta > endDelta; delta *= decayFactorForFruchtermanAndReingold) {
+		final double repulsionFactor = Visualizer.repulsionFactor;
+		final double attractionFactor = 0.01;
+		int iterations=0;
+		countLimits=0;
+		for (double delta = 1.0; delta > 0.01; delta *= decayFactorForFruchtermanAndReingold) {
 			iterations++;
 			// Attractive forces are between vertices connected by an edge. f_a(d) = d*d/k. (Why k in denominator?)
 			// All pairs of vertices have repulsive forces. f_r(d) = -k*k/d; but we do a sample.
@@ -820,34 +825,44 @@ public class ConnectedComponent {
 						final double displacementX = neighbor.getX() - node.getX();
 						final double displacementY = neighbor.getY() - node.getY();
 						final double displacementZ = neighbor.getZ() - node.getZ();
-						x += delta * (Math.abs(displacementX) * displacementX); // Why in denominator?
-						x -= delta * delta / displacementX;
-						y += delta * (Math.abs(displacementY) * displacementY); // Why in denominator?
-						y -= delta * delta / displacementY;
-						z += delta * (Math.abs(displacementZ) * displacementZ); // Why in denominator?
-						z -= delta * delta / displacementZ;
+						x += limit(delta * attractionFactor* (displacementX));
+						y += limit(delta * attractionFactor* (displacementY));
+						z += limit(delta * attractionFactor* (displacementZ));
+						x -= limit(delta*repulsionFactor/displacementX);
+						y -= limit(delta*repulsionFactor/displacementY);
+						z -= limit(delta*repulsionFactor/displacementZ);
+					}
+				}
+				if (nodes.size()<= Visualizer.maxRepulsiveNodesToInclude) {
+					for(Node3D other: nodes) {
+						if (!node.getEdges().containsKey(other)) {
+							final double displacementX = other.getX() - node.getX();
+							final double displacementY = other.getY() - node.getY();
+							final double displacementZ = other.getZ() - node.getZ();
+							x -= limit(delta*repulsionFactor/displacementX);
+							y -= limit(delta*repulsionFactor/displacementY);
+							z -= limit(delta*repulsionFactor/displacementZ);
+						}
+					}
+				} else {
+					for(int j=0;j<Visualizer.maxRepulsiveNodesToInclude;j++) {
+						Node3D other = nodes.get(random.nextInt(nodes.size()));
+						if (!node.getEdges().containsKey(other)) {
+							final double displacementX = other.getX() - node.getX();
+							final double displacementY = other.getY() - node.getY();
+							final double displacementZ = other.getZ() - node.getZ();
+							x -= limit(Visualizer.repulsionFactor/displacementX); // Why in denominator?
+							y -= limit(Visualizer.repulsionFactor/displacementY); // Why in denominator?
+							z -= limit(Visualizer.repulsionFactor/displacementZ); // Why in denominato
+						}
 					}
 				}
 				node.setXYZ(x, y, z);
 			} // for i
-			showMinMaxXYZ();
-//				// Limit max displacement to temperature and prevent going outside frame
-//			for (Node3D v : nodes) {
-//				Vector3 displ = v.getDisplacement();
-//				// System.out.print(displ + " ");
-//				double length = displ.length();
-//				displ.multiply(Math.min(length, temperature) / length);
-//				displ.add(v.getX(), v.getY(), v.getZ());
-//				double x = Node3D.limit(displ.getX(), maxXYZ);
-//				double y = Node3D.limit(displ.getY(), maxXYZ);
-//				double z = Node3D.limit(displ.getZ(), maxXYZ);
-//				v.setXYZ(x, y, z);
-//			}
-			// System.out.println();
-			// break;
-			System.out.println(iterations + " iterations");
 		}
+		System.out.println(iterations + " iterations with countLimits = " + countLimits);
 	}
+	//----------------
 	public void placeUsingBarrycenter() {
 		if (nodes.size()<8) {
 			stochasticModel();
@@ -868,7 +883,7 @@ public class ConnectedComponent {
 			nodes.get(i).setXYZ(0,0,0);
 		}
 		final long startTime= System.currentTimeMillis();
-		for(int rep=1;rep<2;rep++) {
+		for(int rep=1;rep<4;rep++) {
 			if (rep%100==0) {
 				if (System.currentTimeMillis()-startTime > 1000) {
 					System.out.println("Exited after one second");
