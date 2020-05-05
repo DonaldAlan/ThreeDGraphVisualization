@@ -5,7 +5,6 @@ package grapher;
  * 
  * See README.txt for more documentation. 
  * 
- * TODO 0: Fix intersecting clusters. Put clusters in Groups so we can move them easily.
  * TODO 1: First layout the most important nodes. Then fix their positions and layout the less important nodes, in stages.
  * TODO 2: Allow the relaxation algorithms to run in the background while the UI updates, with a STOP button.
  * TODO 3: Allow different scales. It's OK if the user needs to ZOOM into see substructure.
@@ -172,9 +171,13 @@ public class Visualizer extends Application {
 				connectedComponent.stochasticModel();
 				break;
 			case Barrycenter:
-				throw new UnsupportedOperationException();
-				//connectedComponent.placeUsingBarrycenter();
-				//break;
+				try {
+					connectedComponent.placeUsingBarrycenter();
+				} catch (Throwable thr) {
+					thr.printStackTrace();
+					System.exit(1);
+				}
+				break;
 			case FruchtermanAndReingold:
 				System.err.println("FruchtermanAndReingold not implemented");
 				//connectedComponent.fruchtermanAndReingold();
@@ -250,6 +253,7 @@ public class Visualizer extends Application {
 		graphingAlgorithmComboBox.setTranslateZ(1300);
 		graphingAlgorithmComboBox.setBackground(controlBackground);
 		final List<String> itemList = new ArrayList<String>();
+		//itemList.add(Layout.Barrycenter.name());
 		itemList.add(Layout.FruchtermanAndReingold.name());
 		itemList.add(Layout.Spring.name());
 		itemList.add(Layout.Stochastic.name());
@@ -667,6 +671,7 @@ public class Visualizer extends Application {
 				+ "\n Mean distance to neighbors = " + numberFormat.format(meanDistanceToNeighbors)
 				+ "\n Mean distance to non-neighbors = " + numberFormat.format(meanDistanceToNonNeighbors)
 				+ "\n Importance = " + numberFormat.format(node.getImportance())
+				+ "\n Importance Rank = " + numberFormat.format(1+node.getIndexInImportanceOrder())
 				//+ "\n isVisible = " + node.isVisible()
 				;
 		String title = node.getIdAndDescription();

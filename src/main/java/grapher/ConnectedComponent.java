@@ -807,6 +807,9 @@ public class ConnectedComponent {
 			iterations++;
 			// Attractive forces are between vertices connected by an edge. f_a(d) = d*d/k. (Why k in denominator?)
 			// All pairs of vertices have repulsive forces. f_r(d) = -k*k/d; but we do a sample.
+			// k = C * sqrt(area/#vertices)
+			
+			// Eades(1984) uses f_a(d) = log(d/c2). f_r(d)=c3/(d*d) 
 			for (int i = 0; i < n; i++) {
 				final Node3D node = nodes.get(i);
 				double x=node.getX();
@@ -844,5 +847,48 @@ public class ConnectedComponent {
 			// break;
 			System.out.println(iterations + " iterations");
 		}
+	}
+	public void placeUsingBarrycenter() {
+		if (nodes.size()<8) {
+			stochasticModel();
+			return;
+		}
+		final double one = 0.0;
+		final double two = Node3D.windowSize;
+		nodes.get(0).setXYZ(one, one, one);
+		nodes.get(1).setXYZ(one, one,  two);
+		nodes.get(2).setXYZ(one,  two, one);
+		nodes.get(3).setXYZ(one,  two,  two);
+		nodes.get(4).setXYZ(two,  one, one);
+		nodes.get(5).setXYZ(two,  one,  two);
+		nodes.get(6).setXYZ(two,   two, one);
+		nodes.get(7).setXYZ(two,   two,  two);
+		final int n=nodes.size();
+		for(int i=8;i<n;i++) {
+			nodes.get(i).setXYZ(0,0,0);
+		}
+		final long startTime= System.currentTimeMillis();
+		for(int rep=1;rep<2;rep++) {
+			if (rep%100==0) {
+				if (System.currentTimeMillis()-startTime > 1000) {
+					System.out.println("Exited after one second");
+					break;
+				}
+			}
+			
+			for(int i=8;i<n;i++) {
+				Node3D node = nodes.get(i);
+				double x=0;
+				double y=0;
+				double z=0;
+				for(Node3D neighbor: node.getNeighbors()) {
+					x+= neighbor.getX();
+					y+= neighbor.getY();
+					z+= neighbor.getZ();
+				}
+				double countOfNeighbors=node.getNeighbors().size();
+				node.setXYZ(x/countOfNeighbors, y/countOfNeighbors, z/countOfNeighbors);
+			}
+		} // for rep
 	}
 }
