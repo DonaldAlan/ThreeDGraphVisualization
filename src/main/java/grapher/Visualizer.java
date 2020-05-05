@@ -5,7 +5,7 @@ package grapher;
  * 
  * See README.txt for more documentation. 
  * 
- * TODO 0: Fix moving intersecting clusters. Put clusters in Groups so we can move them easily.
+ * TODO 0: Fix intersecting clusters. Put clusters in Groups so we can move them easily.
  * TODO 1: First layout the most important nodes. Then fix their positions and layout the less important nodes, in stages.
  * TODO 2: Allow the relaxation algorithms to run in the background while the UI updates, with a STOP button.
  * TODO 3: Allow different scales. It's OK if the user needs to ZOOM into see substructure.
@@ -29,6 +29,7 @@ import javafx.application.Application;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.EventHandler;
+import javafx.geometry.Bounds;
 import javafx.geometry.Insets;
 import javafx.geometry.Point3D;
 import javafx.scene.DepthTest;
@@ -185,7 +186,6 @@ public class Visualizer extends Application {
 			connectedComponent.getMaxWidthHeightDepth();
 			newTotalCost+= connectedComponent.getCost();
 		}
-		moveConnectedComponentsAwayFromEachOther();
 		Point3D centerOfMass = findCenterOfMass();
 		world.rotateAroundAndCenterOn(centerOfMass);
 		//System.out.println("Center of mass = " + centerOfMass);
@@ -446,28 +446,6 @@ public class Visualizer extends Application {
 		world.requestLayout();
 	}
 
-	private void moveConnectedComponentsAwayFromEachOther() {
-		if (connectedComponents.size()==1) {
-			return;
-		}
-		int successes = 0;
-		int moves = 0;
-		for (ConnectedComponent connectedComponent : connectedComponents) {
-			for (int i = 0; i < 30; i++) {
-				if (!intersectsSomeOtherConnectedComponent(connectedComponent, connectedComponents)) {
-					// System.out.println(connectedComponent + " does not
-					// intersect\n " + connectedComponents + "\n");
-					successes++;
-					break;
-				}
-				moves++;
-				connectedComponent.shift(random.nextInt(Node3D.windowSize), random.nextInt(Node3D.windowSize),
-						random.nextInt(Node3D.windowSize));
-			}
-		}
-//		System.out.println("Successes count = " + successes + " out of " + connectedComponents.size() + " with " + moves
-//				+ " moves");
-	}
 
 	private Map<ConnectedComponent, Point3D> getCentroids() {
 		Map<ConnectedComponent, Point3D> centroids = new HashMap<>();
@@ -574,7 +552,7 @@ public class Visualizer extends Application {
 		return line;
 	}
 
-	private Sphere drawSphere(double x, double y, double z, double radius, PhongMaterial material, String toolTipMessage) {
+	private Sphere makeSphere(double x, double y, double z, double radius, PhongMaterial material, String toolTipMessage) {
 		Sphere sphere = new Sphere(radius);
 		// double opacity= square(square(square(1- distance/maxDistance)));
 		// sphere.setOpacity(opacity);
@@ -583,7 +561,6 @@ public class Visualizer extends Application {
 		sphere.setTranslateX(x);
 		sphere.setTranslateY(y);
 		sphere.setTranslateZ(z);
-		world.getChildren().add(sphere);
 		Tooltip tooltip = new Tooltip(toolTipMessage);
 		tooltip.setFont(tooltipFont);
 		Tooltip.install(sphere, tooltip);
@@ -938,33 +915,82 @@ public class Visualizer extends Application {
 		return new PhongMaterial(Color.rgb(128+random.nextInt(128),128+random.nextInt(128),128+random.nextInt(128)));
 	}
 
+	//----
+	private double randomTranslation(double amount) {
+		return amount*random.nextDouble()-0.5*amount;
+	}
+	//----
+	private static boolean someComponentIntersects(List<ConnectedComponent> list, ConnectedComponent component) {
+		final Bounds bounds = component.getGroup().getBoundsInParent();
+		for(ConnectedComponent c: list) {
+			if (c.getGroup().getBoundsInParent().intersects(bounds)) {
+				return true;
+			}
+		}
+		return false;
+	}
+	//--------------------
+	private void moveConnectedComponentsAwayFromEachOther() {
+		if (connectedComponents.size()==1) {
+			return;
+		}
+		int successes = 0;
+		int moves = 0;
+		final List<ConnectedComponent> placed = new ArrayList<>();
+		for (ConnectedComponent connectedComponent : connectedComponents) {
+			double amount=0.5*Node3D.windowSize;
+			for (int i = 0; i < 30; i++) {
+				if (!someComponentIntersects(placed, connectedComponent)) {
+					// System.out.println(connectedComponent + " does not
+					// intersect\n " + connectedComponents + "\n");
+					successes++;
+					break;
+				}
+				moves++;
+				Group group = connectedComponent.getGroup();
+				group.setTranslateX(randomTranslation(amount) + group.getTranslateX());
+				group.setTranslateY(randomTranslation(amount) + group.getTranslateY());
+				group.setTranslateZ(randomTranslation(amount) + group.getTranslateZ());
+			}
+			placed.add(connectedComponent);
+			amount+= 50;
+		}
+		System.out.println("Moving connectedComponents: successes count = " + successes 
+				+ " out of " + connectedComponents.size() + " connected components with " + moves
+				+ " moves");
+	}
 	// --------------------------
 	private void displayNodes() {
 		// If we are focused on a node, then ignore the importance limit
 		System.out.println(countToShow + " nodes to display");
-		for (int i = 0; i < countToShow; i++) {
-			Node3D node = nodesToDisplay[i];
-			double radius = node == focusedNode?  3*sphereRadius: sphereRadius;
-			Sphere sphere = drawSphere(node.getX(), node.getY(), node.getZ(), radius, randomMaterial(), 
-					node.toString() + ", imp=" + numberFormat.format(node.getImportance()));
-			sphere.setUserData(node);
-			node.setSphere(sphere);
-			shapes.add(sphere);
-		}
-		for (int i = 0; i < countToShow; i++) {
-			Node3D node = nodesToDisplay[i];
-			Point3D p1 = node.getPoint3D();
-			for (Node3D neighbor : node.getNeighbors()) {
-				if (focusedNode!=null || neighbor.isVisible()) {
-					Point3D p2 = neighbor.getPoint3D();
-					Cylinder cylinder = createCylinderBetween(p1, p2,node);
-					cylinder.setUserData(node);
-					shapes.add(cylinder);
-					cylinder.setMaterial(node.getMaterial());
-					world.getChildren().add(cylinder);
+		for(ConnectedComponent component: connectedComponents) {
+			final Group group = new Group();
+			component.setGroup(group);
+			world.getChildren().add(group);
+			for(Node3D node: component.getNodes()) {
+				double radius = node == focusedNode?  3*sphereRadius: sphereRadius;
+				Sphere sphere = makeSphere(node.getX(), node.getY(), node.getZ(), radius, randomMaterial(), 
+						node.toString() + ", imp=" + numberFormat.format(node.getImportance()));
+				sphere.setUserData(node);
+				group.getChildren().add(sphere);
+				node.setSphere(sphere);
+				shapes.add(sphere);
+			}
+			for(Node3D node:component.getNodes()) {
+				Point3D p1 = node.getPoint3D();
+				for (Node3D neighbor : node.getNeighbors()) {
+					if (focusedNode!=null || neighbor.isVisible()) {
+						Point3D p2 = neighbor.getPoint3D();
+						Cylinder cylinder = createCylinderBetween(p1, p2,node);
+						cylinder.setUserData(node);
+						shapes.add(cylinder);
+						cylinder.setMaterial(node.getMaterial());
+						group.getChildren().add(cylinder);
+					}
 				}
 			}
 		}
+		moveConnectedComponentsAwayFromEachOther();
 	}
 
 	private Point3D findCenterOfMass() {

@@ -18,6 +18,7 @@ import java.util.Random;
 import java.util.Set;
 
 import javafx.geometry.Point3D;
+import javafx.scene.Group;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.PhongMaterial;
 import javafx.scene.shape.Sphere;
@@ -57,6 +58,7 @@ public class ConnectedComponent {
 	double minX = Double.MAX_VALUE, maxX = Double.NEGATIVE_INFINITY;
 	double minY = Double.MAX_VALUE, maxY = Double.NEGATIVE_INFINITY;
 	double minZ = Double.MAX_VALUE, maxZ = Double.NEGATIVE_INFINITY;
+	private Group group = null;
 	private static final NumberFormat numberFormat = NumberFormat.getInstance();
 	static {
 		numberFormat.setMinimumFractionDigits(1);
@@ -707,7 +709,12 @@ public class ConnectedComponent {
 		}
 		return false;
 	}
-
+	public void setGroup(Group group) {
+		this.group = group;
+	}
+	public Group getGroup() {
+		return group;
+	}
 	// ------------
 	public static void main2(String[] args) {
 		Node3D.windowSize = 100;
@@ -838,5 +845,4 @@ public class ConnectedComponent {
 			System.out.println(iterations + " iterations");
 		}
 	}
-
 }
