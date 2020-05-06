@@ -964,7 +964,22 @@ public class Visualizer extends Application {
 		int successes = 0;
 		int moves = 0;
 		final List<ConnectedComponent> placed = new ArrayList<>();
-		for (ConnectedComponent connectedComponent : connectedComponents) {
+		final List<ConnectedComponent> sortedListOfComponents = new ArrayList<>();
+		sortedListOfComponents.addAll(connectedComponents);
+		sortedListOfComponents.sort(new Comparator<ConnectedComponent>() {
+			@Override
+			public int compare(ConnectedComponent c1, ConnectedComponent c2) {
+				return Integer.compare(c2.size(), c1.size());
+			}});
+		int size=sortedListOfComponents.get(0).size();
+		for(ConnectedComponent c:sortedListOfComponents) {
+			int s=c.size();
+			if (s>size) {
+				throw new IllegalStateException();
+			}
+			size=s;
+		}
+		for (ConnectedComponent connectedComponent : sortedListOfComponents) {
 			double amount=0.5*Node3D.windowSize;
 			for (int i = 0; i < 30; i++) {
 				if (!someComponentIntersects(placed, connectedComponent)) {
