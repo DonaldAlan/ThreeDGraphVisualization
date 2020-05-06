@@ -1108,7 +1108,8 @@ public class Visualizer extends Application {
 			randomizeColors(2);
 			
 			//showAverageDistances();
-			world.setTranslateZ(0.7*Node3D.windowSize);
+			world.setTranslateY(0.05*Node3D.windowSize);
+			world.setTranslateZ(0.9*Node3D.windowSize);
 			animate();
 			primaryStage.show();
 		} catch (Throwable exc) {

@@ -68,7 +68,7 @@ public class Node3D implements Comparable<Node3D> {
 			assert(node.isVisible());
 			for (Node3D otherNode : node.getNeighbors()) {
 				if (node==otherNode) {
-					System.err.println("Warning node " + node + " == " + otherNode);
+					//System.err.println("Warning node " + node + " == " + otherNode);
 					continue;
 				}
 				if (!otherNode.isVisible()) {

@@ -1,7 +1,11 @@
 package grapher;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.text.NumberFormat;
 import java.util.HashMap;
@@ -40,6 +44,55 @@ public class ReadGraphAndVisualize {
 	public ReadGraphAndVisualize(String path) {
 		this.path = path;
 	}
+	private void readInGraphFromTextFileWithNodeNodeWeightForEdge(String path) throws IOException {
+		BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(path)));
+		int lineNumber=0;
+		int countEdges=0;
+		while (true) {
+			String line=reader.readLine();
+			if (line==null) {
+				break;
+			}
+			lineNumber++;
+			if (line.startsWith("#") || line.startsWith("%")) {
+				System.out.println(line);
+			} else {
+				String parts[]=line.split("\\s+");
+				if (line.length()<2) {
+					System.err.println("Ignoring line " + line);
+					continue;
+				}
+				String n1=parts[0];
+				String n2=parts[1];
+				double weight=1.0;
+				if (parts.length>2) {
+					try {
+						weight=Double.parseDouble(parts[2]);
+					} catch (NumberFormatException exc) {
+						System.err.println("Couldn't parse weight at lineNumber " + lineNumber + " in " + line);
+						System.err.println("(" + parts[2] + ")");
+						System.exit(1);
+					}
+				}
+				Node3D node1 = mapFromNodeIdToNode.get(n1);
+				if (node1==null) {
+					node1=new Node3D(n1);
+					mapFromNodeIdToNode.put(n1, node1);
+				}
+				Node3D node2 = mapFromNodeIdToNode.get(n2);
+				if (node2==null) {
+					node2=new Node3D(n2);
+					mapFromNodeIdToNode.put(n2, node2);
+				}
+				node1.addEdge(node2,weight);
+				node2.addEdge(node1,weight);
+				countEdges++;
+			}
+		}
+		System.out.println("Processed " + lineNumber + " lines, generating "
+				+ mapFromNodeIdToNode.size() + " nodes and " + countEdges + " edges");
+		reader.close();
+	}
 	private void readInGraph() throws Exception {
 		if (!new File(path).exists()) {
 			System.err.println(path + " does not exist");
@@ -49,9 +102,13 @@ public class ReadGraphAndVisualize {
 			GraphMLReader.parseWithSax(path,mapFromNodeIdToNode);
 			return;
 		}
+		if (path.endsWith("edges") || path.endsWith("mtx") || path.endsWith("txt")) {
+			readInGraphFromTextFileWithNodeNodeWeightForEdge(path);
+			return;
+		}
 		FileSource source = FileSourceFactory.sourceFor(path);
 		if (source==null) {
-			System.err.println("Couldn't get source");
+			System.err.println("ReadGraphAndVisualize: Couldn't get source from " + path);
 			System.exit(1);
 		}
 		Sink sink = new SinkAdapter() {
