@@ -837,11 +837,11 @@ public class ConnectedComponent {
 						final double distanceSquared = Math.max(0.0001, square(xDisplacement)+square(yDisplacement)+square(zDisplacement));
 						final double distance = Math.sqrt(distanceSquared);
 						// final double f=Math.min(1.0,attractionFactor*(Visualizer.distanceForOneEdge/distance));
-						final double f=Math.min(1.0,attractionFactor*(distance/Visualizer.distanceForOneEdge));
+						final double f=attractionFactor*Math.min(1.0,(distance/Visualizer.distanceForOneEdge));
 						final double xDeltaAttractive = f*xDisplacement;
 						final double yDeltaAttractive = f*yDisplacement;
 						final double zDeltaAttractive = f*zDisplacement;
-						final double g=Math.min(1.0, repulsionFactor/distanceSquared);
+						final double g=repulsionFactor*Math.min(1.0, 1/distanceSquared);
 						final double xDeltaRepulsive = xDisplacement *g;
 						final double yDeltaRepulsive = yDisplacement *g;
 						final double zDeltaRepulsive = zDisplacement *g;
@@ -858,7 +858,7 @@ public class ConnectedComponent {
 							final double yDisplacement = other.getY() - y;
 							final double zDisplacement = other.getZ() - z;
 							final double distanceSquared = Math.max(0.001,square(xDisplacement)+square(yDisplacement)+square(zDisplacement));
-							final double g=Math.min(1.0, repulsionFactor/distanceSquared);
+							final double g=repulsionFactor*Math.min(1.0, 1.0/distanceSquared);
 							final double xDeltaRepulsive = xDisplacement *g;
 							final double yDeltaRepulsive = yDisplacement *g;
 							final double zDeltaRepulsive = zDisplacement *g;
