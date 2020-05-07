@@ -181,6 +181,9 @@ public class Node3D implements Comparable<Node3D> {
 		}
 		return Double.MAX_VALUE;
 	}
+	public static double distanceSquared(double x, double y, double z, Node3D other) {
+		return square(x-other.x) + square(y-other.y) + square(z-other.z);
+	}
 	public static double distance(double x, double y, double z, Node3D other) {
 		return Math.sqrt(square(x-other.x) + square(y-other.y) + square(z-other.z));
 	}
@@ -213,15 +216,16 @@ public class Node3D implements Comparable<Node3D> {
 			if (countOfNonNeighbors <= Visualizer.maxRepulsiveNodesToInclude) {
 				for(Node3D nonNeighbor:component.getNodes()) {
 					if (nonNeighbor!=this && nonNeighbor.isVisible() && !edges.containsKey(nonNeighbor)) {
-						repulsiveCost -= distance(x, y, z, nonNeighbor);
+						repulsiveCost -= distanceSquared(x, y, z, nonNeighbor);
 						countRepulsive++;
 					}
 				}
 			} else {
+				random.setSeed(indexInImportanceOrder); 
 				for (int i = 0; i < Visualizer.maxRepulsiveNodesToInclude; i++) {
 					Node3D nonNeighbor = component.getNodes().get(random.nextInt(n));
 					if (nonNeighbor!=this && nonNeighbor.isVisible() && !edges.containsKey(nonNeighbor)) {
-						repulsiveCost -= distance(x, y, z, nonNeighbor);
+						repulsiveCost -= distanceSquared(x, y, z, nonNeighbor);
 						countRepulsive++;
 					}
 				}
@@ -259,6 +263,7 @@ public class Node3D implements Comparable<Node3D> {
 					}
 				}
 			} else {
+				random.setSeed(indexInImportanceOrder); 
 				for(int i=0;i<countOfNonNeighborsToInclude;i++) {
 					Node3D nonNeighbor = component.getNodes().get(random.nextInt(n));
 					if (nonNeighbor!=this && nonNeighbor.isVisible() && !edges.containsKey(nonNeighbor)) {

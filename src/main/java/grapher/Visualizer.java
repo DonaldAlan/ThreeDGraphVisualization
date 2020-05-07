@@ -16,6 +16,7 @@ import java.text.NumberFormat;
 import grapher.Node3D;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -24,6 +25,8 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import javax.swing.JOptionPane;
+import javax.swing.event.ListSelectionEvent;
+
 import javafx.animation.AnimationTimer;
 import javafx.application.Application;
 import javafx.collections.FXCollections;
@@ -37,6 +40,7 @@ import javafx.scene.Group;
 import javafx.scene.PerspectiveCamera;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
+import javafx.scene.control.CheckBox;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Slider;
 import javafx.scene.control.Tooltip;
@@ -59,7 +63,7 @@ import javafx.stage.Stage;
 
 public class Visualizer extends Application {
 	public static int preferredCountOfNodesShown = 1000; // The slider can override this value.
-	public static volatile int maxRepulsiveNodesToInclude=50;
+	public static volatile int maxRepulsiveNodesToInclude=25;
 	public static double repulsionSliderValue = -2.0;
 	public static volatile double repulsionFactor = Math.exp(repulsionSliderValue);
 	//--------------------
@@ -67,9 +71,9 @@ public class Visualizer extends Application {
 	public static Layout layout = Layout.Stochastic;
 	private Node3D[] nodesToDisplay = null;
 	public static Node3D[] savedAllNodes=null;
-	public static double distanceForOneEdge = 10;
-	public static double sphereRadius = 5;
-	public static double cylinderRadius = 1;
+	public static double distanceForOneEdge = 30;
+	public static double sphereRadius = 5.5;
+	public static double cylinderRadius = 1.1;
 	public static String title="Visualize Graph";
 	//.....
 	private final static int width = 1600;
@@ -104,9 +108,8 @@ public class Visualizer extends Application {
 	private Cylinder selectedCylinder = null;
 	private volatile Node3D focusedNode=null;
 	private Set<ConnectedComponent> connectedComponents=null;
-	private List<Shape3D> shapes = new ArrayList<Shape3D>();
+	private List<Cylinder> cylinders = new ArrayList<Cylinder>();
 	private final Group root = new Group();
-	
 	private Stage primaryStage;
 	private MessageBox messageBox;
 	static volatile int countToShow = 0; // used
@@ -210,13 +213,40 @@ public class Visualizer extends Application {
 		redrawButton.setBackground(controlBackground);
 		redrawButton.setText("Redraw");
 	}
+	@SuppressWarnings("unchecked")
+	private void buildRepulsiveCountComboBox(Group root) {
+		stochasticCountComboBox.setTranslateX(-520);
+		stochasticCountComboBox.setTranslateY(-410);
+		stochasticCountComboBox.setTranslateZ(1600);
+	
+		stochasticCountComboBox.setBackground(controlBackground);
+		Tooltip tooltip = new Tooltip("Choose count of random nodes for repulsive force. Higher values result in better layouts but are slower.");
+		stochasticCountComboBox.setTooltip(tooltip);
+		  // Use Java Collections to create the List.
+        final List<String> itemList = new ArrayList<String>();
+        for(int i=0;i<=400;i+=10) {
+        	itemList.add(""+i);
+        }
+        final ObservableList<String> observableList = FXCollections.observableList(itemList);
+        stochasticCountComboBox.setItems(observableList);
+        stochasticCountComboBox.setValue(""+maxRepulsiveNodesToInclude);
+        stochasticCountComboBox.setOnAction( e -> {
+        	String value=stochasticCountComboBox.getValue();
+        	maxRepulsiveNodesToInclude=Integer.parseInt(value);
+        	System.out.println("Setting repulsiveCount to " + maxRepulsiveNodesToInclude);
+        	//requestReplaceOnePass();
+			});
+		root.getChildren().add(stochasticCountComboBox);
+	}
 
 	@SuppressWarnings("unchecked")
 	private void buildImportanceAlgorithmComboBox(Group root) {
 		importanceAlgorithmComboBox.setTranslateX(-750);
 		importanceAlgorithmComboBox.setTranslateY(-410);
 		importanceAlgorithmComboBox.setTranslateZ(1600);
+		
 		importanceAlgorithmComboBox.setBackground(controlBackground);
+		
 		Tooltip tooltip = new Tooltip("Importance algorithm");
 		importanceAlgorithmComboBox.setTooltip(tooltip);
 		  // Use Java Collections to create the List.
@@ -246,7 +276,9 @@ public class Visualizer extends Application {
 				System.exit(1);
 			}
 			});
-		root.getChildren().add(importanceAlgorithmComboBox);
+
+		root.getChildren().addAll(importanceAlgorithmComboBox);
+		
 	}
 	private void buildGraphPlacementAlgorithmComboBox(Group root) {
 		graphingAlgorithmComboBox.setTranslateX(350);
@@ -268,32 +300,7 @@ public class Visualizer extends Application {
 		});
 		root.getChildren().add(graphingAlgorithmComboBox);
 	}
-	@SuppressWarnings("unchecked")
-	private void buildRepulsiveCountComboBox(Group root) {
-		stochasticCountComboBox.setTranslateX(-550);
-		stochasticCountComboBox.setTranslateY(-410);
-		stochasticCountComboBox.setTranslateZ(1600);
 	
-		stochasticCountComboBox.setBackground(controlBackground);
-		Tooltip tooltip = new Tooltip("Choose count of random nodes for repulsive force. Higher values result in better layouts but are slower.");
-		stochasticCountComboBox.setTooltip(tooltip);
-		  // Use Java Collections to create the List.
-        final List<String> itemList = new ArrayList<String>();
-        for(int i=0;i<=400;i+=10) {
-        	itemList.add(""+i);
-        }
-        final ObservableList<String> observableList = FXCollections.observableList(itemList);
-        stochasticCountComboBox.setItems(observableList);
-        stochasticCountComboBox.setValue(""+maxRepulsiveNodesToInclude);
-        stochasticCountComboBox.setOnAction( e -> {
-        	String value=stochasticCountComboBox.getValue();
-        	maxRepulsiveNodesToInclude=Integer.parseInt(value);
-        	System.out.println("Setting repulsiveCount to " + maxRepulsiveNodesToInclude);
-        	//requestReplaceOnePass();
-			});
-		root.getChildren().add(stochasticCountComboBox);
-	}
-
 	private void runCurrentImportanceAlgorithm() {
 			switch (currentImportanceAlgorithm) {
 			case betweennessCentralityAlgorithm:
@@ -465,7 +472,7 @@ public class Visualizer extends Application {
 	}
 	private void refreshNodes() {
 		world.getChildren().clear();
-		shapes.clear();
+		cylinders.clear();
 		displayNodes();
 		world.requestLayout();
 	}
@@ -812,14 +819,24 @@ public class Visualizer extends Application {
 						+ "\n Left-click on a node to see details. Right click to focus on that node."
 						+ "\n Press Ctrl-F to search for a node by id. If found, the program will focus on that node."
 						+ "\n\n Press PageUp and PageDown to adjust how many nodes are shown when focussed."
-						+ "\n Press 'r' to reset the view. Press 'R' or click on 'Redraw' to recompute the layout."
+						+ "\n Press 'r' or click on 'Redraw' to optimize the layout, 'R' to randomize first"
+						+ "\n Press 's' to decrease the size of the nodes and edges, 'S' to increase the sizes"
 						+ "\n Press 'c' to randomize the colors."
 						+ "\n Press 'q' to exit."
 						;
 				new MessageBox(message,"Help");
 				break;
 			}
-			case I: {
+			case S: {
+				 final double sizeFactor = ke.isShiftDown()?1.1 : 1.0/1.1;
+				 sphereRadius*= sizeFactor;
+				 cylinderRadius*=sizeFactor;
+				 for(Node3D n:nodesToDisplay) {
+					 n.getSphere().setRadius(sphereRadius);
+				 }
+				 for(Cylinder c:cylinders) {
+					 c.setRadius(cylinderRadius); 
+				 }
 				}
 				break;
 			case PAGE_UP:
@@ -873,13 +890,14 @@ public class Visualizer extends Application {
 	private void handleKeyEvents(Scene scene) {
 		scene.setOnKeyPressed(keyEventHandler);
 	}
+	private final Comparator<Node3D> comparatorDecreasing = new Comparator<Node3D>() {
+		@Override
+		public int compare(Node3D node1, Node3D node2) {
+			return -Double.compare(node1.getImportance(), node2.getImportance());
+		}};
+	
 	private void assignImportanceIndicesAndSortSavedAllNodes() {
-		Comparator<Node3D> comparator = new Comparator<Node3D>() {
-			@Override
-			public int compare(Node3D node1, Node3D node2) {
-				return -Double.compare(node1.getImportance(), node2.getImportance());
-			}};
-		Arrays.sort(savedAllNodes,comparator);
+		Arrays.sort(savedAllNodes, comparatorDecreasing);
 		int index=0;
 		for(Node3D node: savedAllNodes) {
 			node.setIndexInImportanceOrder(index);
@@ -893,12 +911,9 @@ public class Visualizer extends Application {
 		for (ConnectedComponent c : connectedComponents) {
 			c.randomizeColors(mergeCount);
 		}
-		for(Shape3D shape:shapes) {
-			if (shape instanceof Cylinder) {
-				Cylinder c = (Cylinder) shape;
-				Node3D node = (Node3D) c.getUserData();
-				c.setMaterial(node.getMaterial());
-			}
+		for(Cylinder c:cylinders) {
+			Node3D node = (Node3D) c.getUserData();
+			c.setMaterial(node.getMaterial());
 		}
 		world.requestLayout();
 	}
@@ -1016,7 +1031,6 @@ public class Visualizer extends Application {
 				sphere.setUserData(node);
 				group.getChildren().add(sphere);
 				node.setSphere(sphere);
-				shapes.add(sphere);
 			}
 			for(Node3D node:component.getNodes()) {
 				Point3D p1 = node.getPoint3D();
@@ -1025,7 +1039,7 @@ public class Visualizer extends Application {
 						Point3D p2 = neighbor.getPoint3D();
 						Cylinder cylinder = createCylinderBetween(p1, p2,node);
 						cylinder.setUserData(node);
-						shapes.add(cylinder);
+						cylinders.add(cylinder);
 						cylinder.setMaterial(node.getMaterial());
 						group.getChildren().add(cylinder);
 					}

@@ -807,7 +807,7 @@ public class ConnectedComponent {
 		final int n = nodes.size();
 		showMinMaxXYZ();
 		final double repulsionFactor = Visualizer.repulsionFactor;
-		final double attractionFactor = 0.001;
+		final double attractionFactor = 0.1;
 		int iterations=0;
 		countLimits[0]=0;
 		countLimits[1]=0;
@@ -820,31 +820,34 @@ public class ConnectedComponent {
 			
 			// Eades(1984) uses f_a(d) = log(d/c2). f_r(d)=c3/(d*d) 
 			for (int i = 0; i < n; i++) {
-				final Node3D node = nodes.get(i);
-				double x=node.getX();
-				double y=node.getY();
-				double z=node.getZ();
+				final Node3D node = nodes.get(i);			
+				final double x=node.getX();
+				final double y=node.getY();
+				final double z=node.getZ();
+				double dx=0;
+				double dy=0;
+				double dz=0;
 				for(Node3D neighbor: node.getNeighbors()) {
 					if (neighbor.isVisible()) {
 						final double xDisplacement = neighbor.getX() - x;
 						final double yDisplacement = neighbor.getY() - y;
 						final double zDisplacement = neighbor.getZ() - z;
-						final double distanceSquared = square(xDisplacement)+square(yDisplacement)+square(zDisplacement);
-						//final double distance = Math.sqrt(distanceSquared);
-						final double f=delta*attractionFactor*Math.sqrt(distanceSquared);
+						final double distanceSquared = Math.max(0.01, square(xDisplacement)+square(yDisplacement)+square(zDisplacement));
+						final double distance = Math.sqrt(distanceSquared);
+						final double f=Math.min(1.0,attractionFactor*(Visualizer.distanceForOneEdge/distance));
 						final double xDeltaAttractive = f*xDisplacement;
 						final double yDeltaAttractive = f*yDisplacement;
 						final double zDeltaAttractive = f*zDisplacement;
-						final double g=delta*repulsionFactor/distanceSquared;
+						final double g=repulsionFactor/distanceSquared;
 						final double xDeltaRepulsive = xDisplacement *g;
 						final double yDeltaRepulsive = yDisplacement *g;
 						final double zDeltaRepulsive = zDisplacement *g;
-						x = limit(x+xDeltaAttractive-xDeltaRepulsive, x,0);
-						y = limit(y+yDeltaAttractive-yDeltaRepulsive, y,0);
-						z = limit(z+zDeltaAttractive-zDeltaRepulsive, z,0);
+						dx += xDeltaAttractive-xDeltaRepulsive;
+						dy += yDeltaAttractive-yDeltaRepulsive;
+						dz += zDeltaAttractive-zDeltaRepulsive;
 					}
 				}
-				if (Visualizer.maxRepulsiveNodesToInclude==0) {
+				if (Visualizer.maxRepulsiveNodesToInclude==0 || repulsionFactor<0.001) {
 				} else if (nodes.size()<= Visualizer.maxRepulsiveNodesToInclude) {
 					for(Node3D other: nodes) {
 						if (other!=node && !node.getEdges().containsKey(other)) {
@@ -852,16 +855,17 @@ public class ConnectedComponent {
 							final double yDisplacement = other.getY() - y;
 							final double zDisplacement = other.getZ() - z;
 							final double distanceSquared = square(xDisplacement)+square(yDisplacement)+square(zDisplacement);
-							final double g=delta*repulsionFactor/distanceSquared;
+							final double g=repulsionFactor/distanceSquared;
 							final double xDeltaRepulsive = xDisplacement *g;
 							final double yDeltaRepulsive = yDisplacement *g;
 							final double zDeltaRepulsive = zDisplacement *g;
-							x = limit(x-xDeltaRepulsive, x, 1);
-							y = limit(y-yDeltaRepulsive, y, 1);
-							z = limit(z-zDeltaRepulsive, z, 1);
+							dx -= xDeltaRepulsive;
+							dy -= yDeltaRepulsive;
+							dz -= zDeltaRepulsive;
 						}
 					}
 				} else {
+					random.setSeed(node.getIndexInImportanceOrder());
 					for(int j=0;j<Visualizer.maxRepulsiveNodesToInclude;j++) {
 						Node3D other = nodes.get(random.nextInt(nodes.size()));
 						if (other!=node && !node.getEdges().containsKey(other)) {
@@ -869,17 +873,17 @@ public class ConnectedComponent {
 							final double yDisplacement = other.getY() - y;
 							final double zDisplacement = other.getZ() - z;
 							final double distanceSquared = square(xDisplacement)+square(yDisplacement)+square(zDisplacement);
-							final double g=delta*repulsionFactor/distanceSquared;
+							final double g=repulsionFactor/distanceSquared;
 							final double xDeltaRepulsive = xDisplacement *g;
 							final double yDeltaRepulsive = yDisplacement *g;
 							final double zDeltaRepulsive = zDisplacement *g;
-							x = limit(x-xDeltaRepulsive, x, 2);
-							y = limit(y-yDeltaRepulsive, y, 2);
-							z = limit(z-zDeltaRepulsive, z, 2);
+							dx -= xDeltaRepulsive;
+							dy -= yDeltaRepulsive;
+							dz -= zDeltaRepulsive;
 						}
 					}
 				}
-				node.setXYZ(x, y, z);
+				node.setXYZ(x+delta*dx, y+delta*dy, z + delta*dz);
 			} // for i
 		}
 		System.out.println(iterations + " iterations with countLimits = " + Arrays.toString(countLimits));
