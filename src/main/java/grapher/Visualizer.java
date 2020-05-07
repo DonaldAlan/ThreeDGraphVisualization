@@ -1019,7 +1019,7 @@ public class Visualizer extends Application {
 	// --------------------------
 	private void displayNodes() {
 		// If we are focused on a node, then ignore the importance limit
-		System.out.println(countToShow + " nodes to display");
+		System.out.println(countToShow + " nodes to display in " + connectedComponents.size() + " connected components");
 		for(ConnectedComponent component: connectedComponents) {
 			final Group group = new Group();
 			component.setGroup(group);

@@ -806,12 +806,14 @@ public class ConnectedComponent {
 		}
 		final int n = nodes.size();
 		showMinMaxXYZ();
-		final double repulsionFactor = Visualizer.repulsionFactor;
-		final double attractionFactor = 0.1;
+		final double repulsionFactor = 50.0*Visualizer.repulsionFactor;
+		final double attractionFactor = 0.1; // repulsionFactor; //0.1;
 		int iterations=0;
 		countLimits[0]=0;
 		countLimits[1]=0;
 		countLimits[2]=0;
+		System.out.println("Entering fruchtermanAndReingold with repulsionFactor = " + numberFormat.format(repulsionFactor)
+		 + " and Visuzlizer.maxRepulsiveNodesToInclude = " + Visualizer.maxRepulsiveNodesToInclude);
 		for (double delta = 1.0; delta > 0.01; delta *= decayFactorForFruchtermanAndReingold) {
 			iterations++;
 			// Attractive forces are between vertices connected by an edge. f_a(d) = d*d/k. (Why k in denominator?)
@@ -832,13 +834,14 @@ public class ConnectedComponent {
 						final double xDisplacement = neighbor.getX() - x;
 						final double yDisplacement = neighbor.getY() - y;
 						final double zDisplacement = neighbor.getZ() - z;
-						final double distanceSquared = Math.max(0.01, square(xDisplacement)+square(yDisplacement)+square(zDisplacement));
+						final double distanceSquared = Math.max(0.0001, square(xDisplacement)+square(yDisplacement)+square(zDisplacement));
 						final double distance = Math.sqrt(distanceSquared);
-						final double f=Math.min(1.0,attractionFactor*(Visualizer.distanceForOneEdge/distance));
+						// final double f=Math.min(1.0,attractionFactor*(Visualizer.distanceForOneEdge/distance));
+						final double f=Math.min(1.0,attractionFactor*(distance/Visualizer.distanceForOneEdge));
 						final double xDeltaAttractive = f*xDisplacement;
 						final double yDeltaAttractive = f*yDisplacement;
 						final double zDeltaAttractive = f*zDisplacement;
-						final double g=repulsionFactor/distanceSquared;
+						final double g=Math.min(1.0, repulsionFactor/distanceSquared);
 						final double xDeltaRepulsive = xDisplacement *g;
 						final double yDeltaRepulsive = yDisplacement *g;
 						final double zDeltaRepulsive = zDisplacement *g;
@@ -854,8 +857,8 @@ public class ConnectedComponent {
 							final double xDisplacement = other.getX() - x;
 							final double yDisplacement = other.getY() - y;
 							final double zDisplacement = other.getZ() - z;
-							final double distanceSquared = square(xDisplacement)+square(yDisplacement)+square(zDisplacement);
-							final double g=repulsionFactor/distanceSquared;
+							final double distanceSquared = Math.max(0.001,square(xDisplacement)+square(yDisplacement)+square(zDisplacement));
+							final double g=Math.min(1.0, repulsionFactor/distanceSquared);
 							final double xDeltaRepulsive = xDisplacement *g;
 							final double yDeltaRepulsive = yDisplacement *g;
 							final double zDeltaRepulsive = zDisplacement *g;
@@ -873,7 +876,7 @@ public class ConnectedComponent {
 							final double yDisplacement = other.getY() - y;
 							final double zDisplacement = other.getZ() - z;
 							final double distanceSquared = square(xDisplacement)+square(yDisplacement)+square(zDisplacement);
-							final double g=repulsionFactor/distanceSquared;
+							final double g=Math.min(1.0, repulsionFactor/distanceSquared);
 							final double xDeltaRepulsive = xDisplacement *g;
 							final double yDeltaRepulsive = yDisplacement *g;
 							final double zDeltaRepulsive = zDisplacement *g;
@@ -883,7 +886,11 @@ public class ConnectedComponent {
 						}
 					}
 				}
-				node.setXYZ(x+delta*dx, y+delta*dy, z + delta*dz);
+				double newX= x+delta*dx;
+				double newY= y+delta*dy;
+				double newZ= z+delta*dz;
+				//System.out.println(newX + ", " + newY + ", " + newZ);
+				node.setXYZ(newX,newY, newZ);
 			} // for i
 		}
 		System.out.println(iterations + " iterations with countLimits = " + Arrays.toString(countLimits));
