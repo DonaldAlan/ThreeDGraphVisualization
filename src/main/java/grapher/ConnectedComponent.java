@@ -793,6 +793,51 @@ public class ConnectedComponent {
 	}
 	private int countLimits[] = {0,0,0};
 	
+	//-----------------------------------
+	public void placeUsingBarrycenter() {
+		if (nodes.size()<8) {
+			stochasticModel();
+			return;
+		}
+		final double one = 0.0;
+		final double two = Node3D.windowSize;
+		nodes.get(0).setXYZ(one, one, one);
+		nodes.get(1).setXYZ(one, one,  two);
+		nodes.get(2).setXYZ(one,  two, one);
+		nodes.get(3).setXYZ(one,  two,  two);
+		nodes.get(4).setXYZ(two,  one, one);
+		nodes.get(5).setXYZ(two,  one,  two);
+		nodes.get(6).setXYZ(two,   two, one);
+		nodes.get(7).setXYZ(two,   two,  two);
+		final int n=nodes.size();
+		for(int i=8;i<n;i++) {
+			nodes.get(i).setXYZ(0,0,0);
+		}
+		final long startTime= System.currentTimeMillis();
+		for(int rep=1;rep<4;rep++) {
+			if (rep%100==0) {
+				if (System.currentTimeMillis()-startTime > 1000) {
+					System.out.println("Exited after one second");
+					break;
+				}
+			}
+			
+			for(int i=8;i<n;i++) {
+				Node3D node = nodes.get(i);
+				double x=0;
+				double y=0;
+				double z=0;
+				for(Node3D neighbor: node.getNeighbors()) {
+					x+= neighbor.getX();
+					y+= neighbor.getY();
+					z+= neighbor.getZ();
+				}
+				double countOfNeighbors=1+node.getNeighbors().size();
+				node.setXYZ(x/countOfNeighbors, y/countOfNeighbors, z/countOfNeighbors);
+			}
+		} // for rep
+	} // barrycenter
+	//---------------------------
 	private double limit(double value, double originalValue, int source) {
 		if (!Double.isFinite(value) || Math.abs(value)>2*Node3D.windowSize) {
 			countLimits[source]++;
@@ -886,9 +931,9 @@ public class ConnectedComponent {
 						}
 					}
 				}
-				double newX= x+delta*dx;
-				double newY= y+delta*dy;
-				double newZ= z+delta*dz;
+				double newX= limit(x+delta*dx, x,0);
+				double newY= limit(y+delta*dy, y,1);
+				double newZ= limit(z+delta*dz, z, 1);
 				//System.out.println(newX + ", " + newY + ", " + newZ);
 				node.setXYZ(newX,newY, newZ);
 			} // for i
@@ -896,47 +941,5 @@ public class ConnectedComponent {
 		System.out.println(iterations + " iterations with countLimits = " + Arrays.toString(countLimits));
 	}
 	//----------------
-	public void placeUsingBarrycenter() {
-		if (nodes.size()<8) {
-			stochasticModel();
-			return;
-		}
-		final double one = 0.0;
-		final double two = Node3D.windowSize;
-		nodes.get(0).setXYZ(one, one, one);
-		nodes.get(1).setXYZ(one, one,  two);
-		nodes.get(2).setXYZ(one,  two, one);
-		nodes.get(3).setXYZ(one,  two,  two);
-		nodes.get(4).setXYZ(two,  one, one);
-		nodes.get(5).setXYZ(two,  one,  two);
-		nodes.get(6).setXYZ(two,   two, one);
-		nodes.get(7).setXYZ(two,   two,  two);
-		final int n=nodes.size();
-		for(int i=8;i<n;i++) {
-			nodes.get(i).setXYZ(0,0,0);
-		}
-		final long startTime= System.currentTimeMillis();
-		for(int rep=1;rep<4;rep++) {
-			if (rep%100==0) {
-				if (System.currentTimeMillis()-startTime > 1000) {
-					System.out.println("Exited after one second");
-					break;
-				}
-			}
-			
-			for(int i=8;i<n;i++) {
-				Node3D node = nodes.get(i);
-				double x=0;
-				double y=0;
-				double z=0;
-				for(Node3D neighbor: node.getNeighbors()) {
-					x+= neighbor.getX();
-					y+= neighbor.getY();
-					z+= neighbor.getZ();
-				}
-				double countOfNeighbors=1+node.getNeighbors().size();
-				node.setXYZ(x/countOfNeighbors, y/countOfNeighbors, z/countOfNeighbors);
-			}
-		} // for rep
-	}
+
 }

@@ -421,7 +421,7 @@ public class Visualizer extends Application {
         repulsionSlider.setTranslateY(-246);
         repulsionSlider.setTranslateZ(1100);
         repulsionSlider.setMin(-12.0);
-        repulsionSlider.setMax(6.0); // logarithmic scale
+        repulsionSlider.setMax(8.0); // logarithmic scale
         repulsionSlider.setValue(repulsionSliderValue);
         repulsionSlider.setShowTickLabels(false);
         repulsionSlider.setShowTickMarks(true);
