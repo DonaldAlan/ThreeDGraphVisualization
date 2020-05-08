@@ -48,6 +48,7 @@ import javafx.scene.input.InputEvent;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.input.PickResult;
+import javafx.scene.input.ScrollEvent;
 import javafx.scene.layout.Background;
 import javafx.scene.layout.BackgroundFill;
 import javafx.scene.layout.CornerRadii;
@@ -1059,6 +1060,14 @@ public class Visualizer extends Application {
 		int n=nodesToDisplay.length;
 		return new Point3D(x/n,y/n,z/n);
 	}
+	//------------------------
+	 public void addMouseScrolling(Scene scene) {
+	       scene.setOnScroll((ScrollEvent event) -> {
+	    	   event.consume();
+	            double delta = (event.isShiftDown()? 2.0 : 0.2)*event.getDeltaY();
+	            world.setTranslateZ(world.getTranslateZ() - delta);
+	        });
+	    }
 	//--------------
 	private void animate() {
 		final AnimationTimer timer = new AnimationTimer() {
@@ -1105,6 +1114,8 @@ public class Visualizer extends Application {
 			primaryStage.setOnCloseRequest(r -> System.exit(0));
 			handleMouse(scene);
 			buildCamera(root);
+			addMouseScrolling(scene);
+			
 			buildImportanceAlgorithmComboBox(root);
 			buildRepulsiveCountComboBox(root); 
 			buildImportanceSlider(root);
@@ -1120,7 +1131,7 @@ public class Visualizer extends Application {
 			computeConnectedComponentsFromNodesToDisplay();
 			placeOnePassAndRefreshNodes();
 			randomizeColors(2);
-			
+		
 			//showAverageDistances();
 			world.setTranslateY(0.05*Node3D.windowSize);
 			world.setTranslateZ(0.9*Node3D.windowSize);

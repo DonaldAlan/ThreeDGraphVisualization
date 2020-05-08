@@ -28,30 +28,27 @@ Two ways to use this toolkit are:
  
  In the UI you can navigate in 3d with the arrow keys or by dragging with the mouse.  Lots of features: click 'h' to get a help screen.
 
- Graphs are laid out using stochastic relaxation of spring tensions and repulsive forces.  Vertex positions are randomly moved from their current positions, using a decreasing temperature to control the distance moved.  After each move, the cost is recalculated. Moves that lower the cost are preferred.
-
- There are three components to the cost:
- 1. a large, constant repulsive force that prevents vertices from being placed less than a specified minimum distance from each other
- (to prevent overcrowding).
- 2. a repulsive force that varies as the inverse of the Euclidean distance between vertices.
- 3. a spring force (either attractive or repulsive) between nodes. The spring constant (the force of the spring) depends on the graph
- theoretic distance between the nodes.
-
- There are two related layout algorithms: UnrestrictedForces and ApproximateForces.
-
- UnrestrictedForces is appropriate for smaller graphs, as its running time is O(n*n*d*d), where n is number of vertices and d is  the (max) degree of vertices. UnrestrictedForces sets up repulsive forces (type 1 and 2 above) between each pair of vertices,  as well as spring forces between vertices at graph-theoretic distance 1 or 2 (neighbors, or neighbors of neighbors).   The resulting visualizations are more informative and attractive but are slow to build for large graphs.
-
- ApproximateForces running time is O(n*d*d), as it maintains forces mostly between pairs of vertices at graph theoretic distance 1 or 2   (neighbors or neighbors of neighbors). In addition, it adds repulsive forces of a <em>sample</em> of nodes not in the neighborhood.    The sampling represents an approximation to UnrestrictedForces.
+ Graphs are laid out, by default, using stochastic relaxation of spring tensions and repulsive forces.  Vertex positions are randomly moved from their current positions, using a decreasing temperature to control the distance moved.  After each move, the cost is recalculated. Moves that lower the cost are preferred.
 
  The layout algorithms take advantage of multi-threading if you have multiple cores.
 
- A UI button allows the user to choose between the layout algorithms.  For small graphs the layout defaults to UnrestrictedForces.  For large graphs it defaults to ApproximateForces.
+ There are two components to the cost:
+ 1. an attactive force between nodes that share an edge. This is always included if there is an edge between two nodes.
+ (to prevent overcrowding).
+ 2. a repulsive force that varies as the inverse of the Euclidean distance between vertices. But this is done only stochastically.
 
- If you click the left mouse button on a node, it will open a window that shows details about the node's features.  Right clicking  (or clickong on "Focus" in the detail window) will zoom in on the node, showing only nodes within a configurable graph distance from the focused node.   Use the PageUp and Page Down keys to control that graph distance.
+
+ A UI button allows the user to choose between the layout algorithms.  
+
+ If you click the left mouse button on a node, it will open a window that shows details about the node's features.  Right clicking  (or clicking on "Focus" in the detail window) will zoom in on the node, showing only nodes within a configurable graph distance from the focused node.   Use the PageUp and Page Down keys to control that graph distance.
 
  Another trick:  closely connected subgraphs are made to have distinct colors (via random assignment and merging of colors). Type 'c' to re-assign colors.
 
- The public static variable Visuzlizer.preferredCountOfNodesShown defaults to the value 1000. By default, at most that number of nodes will be graphed. You can override the default via the slider at the top of the window. The order of nodes depends on the importance algorithm that the drop-down on the top-left lets you control. So, if the graph has 6000 nodes and the slider is one third of the way to right, then 2000 nodes will be displayed on the screen.
+ The public static variable Visuzlizer.preferredCountOfNodesShown defaults to the value 1000. By default, at most that number of nodes will be graphed. You can override the default via the slider at the top of the window. The order of nodes depends on the importance algorithm that the drop-down on the top-left lets you control. The slider is on a logarithmic scale; if you set it all the way to the right, all nodes will be shown, but layout and rendering may be slow.
+
+ The second slider at the top controls the repulsive force between nodes.
+
+ Click 'h' for help.
 
  The program can load in graphs with tens of thousands of nodes, but can visualize on the screen only thousands of nodes in a reasonable amount of time.  Graphs with tens of thousands of nodes will probably be take minutes to appear (if you adjust the slider to the right).
 
