@@ -61,6 +61,7 @@ import javafx.scene.text.Font;
 import javafx.scene.transform.Rotate;
 import javafx.scene.transform.Translate;
 import javafx.stage.Stage;
+import javafx.util.Pair;
 
 public class Visualizer extends Application {
 	public static int preferredCountOfNodesShown = 1000; // The slider can override this value.
@@ -128,6 +129,7 @@ public class Visualizer extends Application {
 
 	private final Button redrawButton=new Button("Redraw");
 	private volatile boolean newImportanceAlgorithm = false;
+	private long mlsToComputeFocus=0;
 	// --------------
 	static {
 		numberFormat.setMaximumFractionDigits(3);
@@ -508,6 +510,9 @@ public class Visualizer extends Application {
 	}
 	//----------------------------------
 	private void makeNodesToDisplayFromSavedNodesAndCountToShow() {
+		focusedNode=null;
+		mlsToComputeFocus=0;
+		maxFocusDistance=2;
 		nodesToDisplay = new Node3D[countToShow];
 		for(int i=0;i<countToShow;i++) {
 			nodesToDisplay[i]=savedAllNodes[i];
@@ -574,7 +579,7 @@ public class Visualizer extends Application {
 	}
 
 	// From http://netzwerg.ch/blog/2015/03/22/javafx-3d-line/
-	private Cylinder createCylinderBetween(Point3D origin, Point3D target,Node3D sourceNode) {
+	private Cylinder createCylinderBetween(Point3D origin, Point3D target,Node3D sourceNode, Node3D neighbor) { 
 		Point3D diff = target.subtract(origin);
 		double height = diff.magnitude();
 		Point3D mid = target.midpoint(origin);
@@ -583,7 +588,7 @@ public class Visualizer extends Application {
 		double angle = Math.acos(diff.normalize().dotProduct(YAXIS));
 		Rotate rotateAroundCenter = new Rotate(-Math.toDegrees(angle), axisOfRotation);
 		Cylinder line = new Cylinder(cylinderRadius, height);
-		line.setUserData(sourceNode);
+		line.setUserData(new Pair<Node3D,Node3D>(sourceNode,neighbor));
 		line.getTransforms().addAll(moveToMidpoint, rotateAroundCenter);
 		return line;
 	}
@@ -625,7 +630,11 @@ public class Visualizer extends Application {
 				if (me.isPrimaryButtonDown()) {
 					spherePopup(node);
 				} else {
-					focus(node);
+					if (focusedNode==null) {
+						focus(node);
+					} else {
+						unfocus();
+					}
 				}
 			} else if (pr.getIntersectedNode() instanceof Cylinder) {
 			}
@@ -714,20 +723,43 @@ public class Visualizer extends Application {
 		}
 	}
 	//--------------------------------------------
+	private void unfocus() {
+		for(Node3D node:nodesToDisplay) {
+			node.getSphere().setVisible(true);
+		}
+		for(Cylinder c: cylinders) {
+			c.setVisible(true);
+		}		
+		focusedNode=null;
+		mlsToComputeFocus=0;
+		maxFocusDistance=2;
+	}
 	/* package*/ void focus(Node3D node) {
 		focusedNode=node;
-		connectedComponents=null;
-		
-		nodesToDisplay=getNodesNear(node,maxFocusDistance);
-		placeOnePassAndRefreshNodes();
+
+		try {
+			long startTime=System.currentTimeMillis();
+			final Set<Node3D> nearNodes = getNodesNear(node,maxFocusDistance);
+			mlsToComputeFocus = System.currentTimeMillis()-startTime;
+			for(Node3D n:nodesToDisplay) {
+				n.getSphere().setVisible(nearNodes.contains(n));
+			}
+			for(Cylinder c: cylinders) {
+				Pair<Node3D,Node3D> pair = (Pair<Node3D,Node3D>) c.getUserData();
+				Node3D n1=pair.getKey();
+				Node3D n2=pair.getValue();
+				c.setVisible(nearNodes.contains(n1) && nearNodes.contains(n2));
+			}
+		} catch (Throwable thr) {
+			thr.printStackTrace();
+			System.exit(1);
+		}
 	}
 
-	private Node3D[] getNodesNear(Node3D node, int maxDistance) {
+	private Set<Node3D> getNodesNear(Node3D node, int maxDistance) {
 		final Set<Node3D> nearNodes = new HashSet<>();
 		node.addNearbyNodes(nearNodes,maxDistance);
-		final Node3D [] result = new Node3D[nearNodes.size()];
-		nearNodes.toArray(result);
-		return result;
+		return nearNodes;
 	}
 
 	private EventHandler<KeyEvent> keyEventHandler = new EventHandler<KeyEvent>() {
@@ -745,34 +777,12 @@ public class Visualizer extends Application {
 					for(ConnectedComponent c:connectedComponents) {
 						c.randomizePositions(probability);
 					}
-					refreshNodes();
-				} else {
-					requestReplaceOnePass();
-				}
+				} 
+				requestReplaceOnePass();
 			}
 				break;
 			case ESCAPE:
-				if (ke.isShiftDown()) {
-					requestReplaceOnePass();
-					break;
-				}
-				world.t.setZ(0);
-				world.rx.setAngle(0);
-				world.ry.setAngle(0);
-				world.setTranslateZ(0.75*Node3D.windowSize);
-				if (focusedNode!=null || ke.isShiftDown()) {
-					for(Node3D n:savedAllNodes) {
-						n.setXYZ(Node3D.windowSize*random.nextDouble(),Node3D.windowSize*random.nextDouble(),Node3D.windowSize*random.nextDouble());
-					}
-				}
-				if (focusedNode!=null) {
-					focusedNode=null;
-					nodesToDisplay=savedAllNodes;
-					connectedComponents=null;
-					requestReplaceOnePass();
-				} else {
-					refreshNodes();
-				}
+				unfocus();
 				break;
 			case LEFT: {
 				world.setTranslateX(world.getTranslateX() + factor*10);
@@ -820,8 +830,7 @@ public class Visualizer extends Application {
 						//+ "\n Use the drop-down at the top left to choose the count of stochastic placements; higher values result in nicer graphs."
 						+ "\n Use the slider at the top to adjust how many nodes to display, ordered by importance."
 						+ "\n Use the next slider to adjust how the repulsive force (how spread out the graph is)."
-						+ "\n For large graphs, it defaults to Approximate Forces; for smaller graphs it defaults to Unrestricted Forces"
-						+ "\n Left-click on a node to see details. Right click to focus on that node."
+						+ "\n Left-click on a node to see details. Right click to focus/unfocus; hit Escape to unfocus."
 						+ "\n Press Ctrl-F to search for a node by id. If found, the program will focus on that node."
 						+ "\n\n Press PageUp and PageDown to adjust how many nodes are shown when focussed."
 						+ "\n Press 'r' or click on 'Redraw' to optimize the layout, 'R' to randomize first"
@@ -862,6 +871,9 @@ public class Visualizer extends Application {
 				}
 				break;
 			case PAGE_UP:
+				if (focusedNode!=null && mlsToComputeFocus>1000) {
+					return;
+				}
 				maxFocusDistance++;
 				if (focusedNode!=null) {
 					System.out.println("Focusing with maxFocusDistance = " + maxFocusDistance);
@@ -934,8 +946,8 @@ public class Visualizer extends Application {
 			c.randomizeColors(mergeCount);
 		}
 		for(Cylinder c:cylinders) {
-			Node3D node = (Node3D) c.getUserData();
-			c.setMaterial(node.getMaterial());
+			Pair<Node3D,Node3D> pair = (Pair<Node3D,Node3D>) c.getUserData();
+			c.setMaterial(pair.getKey().getMaterial());
 		}
 		world.requestLayout();
 	}
@@ -1059,8 +1071,7 @@ public class Visualizer extends Application {
 				for (Node3D neighbor : node.getNeighbors()) {
 					if (focusedNode!=null || neighbor.isVisible()) {
 						Point3D p2 = neighbor.getPoint3D();
-						Cylinder cylinder = createCylinderBetween(p1, p2,node);
-						cylinder.setUserData(node);
+						Cylinder cylinder = createCylinderBetween(p1, p2,node, neighbor);
 						cylinders.add(cylinder);
 						cylinder.setMaterial(node.getMaterial());
 						group.getChildren().add(cylinder);

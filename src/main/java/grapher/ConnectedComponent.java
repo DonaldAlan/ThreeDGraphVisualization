@@ -6,8 +6,6 @@ import java.util.concurrent.ThreadLocalRandom;
 import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Comparator;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
@@ -15,15 +13,7 @@ import javafx.geometry.Point3D;
 import javafx.scene.Group;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.PhongMaterial;
-import mdsj.MDSJ;
-
-import com.jujutsu.tsne.barneshut.BHTSne;
-import com.jujutsu.tsne.barneshut.BarnesHutTSne;
-import com.jujutsu.tsne.barneshut.ParallelBHTsne;
-import com.jujutsu.utils.MatrixOps;
-import com.jujutsu.utils.MatrixUtils;
-import com.jujutsu.utils.TSneUtils;
-
+//import mdsj.MDSJ;
 
 /**
  * 
@@ -962,7 +952,9 @@ public class ConnectedComponent {
 		return size;
 	}
 	
+	// Doesn't work well
 	public void mds(int neighborhoodSize) {
+		/*
 		final int n=nodes.size();
 		final double distanceMatrix[][] = new double[n][n];
 		for(int i=0;i<n;i++) {
@@ -994,8 +986,8 @@ public class ConnectedComponent {
 			}
 			nodes.get(i).setXYZ(x, y, z);
 		}
-		
+		*/
 	}
-	//----------------
+	//---------------------
 
 }
