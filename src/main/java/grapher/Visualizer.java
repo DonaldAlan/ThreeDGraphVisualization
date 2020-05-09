@@ -630,10 +630,10 @@ public class Visualizer extends Application {
 				if (me.isPrimaryButtonDown()) {
 					spherePopup(node);
 				} else {
-					if (focusedNode==null) {
-						focus(node);
-					} else {
+					if (focusedNode==node) {
 						unfocus();
+					} else {
+						focus(node);
 					}
 				}
 			} else if (pr.getIntersectedNode() instanceof Cylinder) {
