@@ -68,7 +68,7 @@ public class Visualizer extends Application {
 	public static double repulsionSliderValue = -2.0;
 	public static volatile double repulsionFactor = Math.exp(repulsionSliderValue);
 	//--------------------
-	public static enum Layout { Stochastic,Spring,Barrycenter,FruchtermanReingold, Systematic;}
+	public static enum Layout { Stochastic,Spring,Barrycenter,FruchtermanReingold, Systematic, MDS}
 	public static Layout layout = Layout.Stochastic;
 	private Node3D[] nodesToDisplay = null;
 	public static Node3D[] savedAllNodes=null;
@@ -187,6 +187,9 @@ public class Visualizer extends Application {
 				//System.err.println("FruchtermanAndReingold not implemented");
 				connectedComponent.fruchtermanAndReingold();
 				break;
+			case MDS:
+				connectedComponent.mds(1);
+				break;
 			case Systematic:
 				connectedComponent.systematicModel();
 				break;
@@ -289,6 +292,7 @@ public class Visualizer extends Application {
 		final List<String> itemList = new ArrayList<String>();
 		itemList.add(Layout.Barrycenter.name());
 		itemList.add(Layout.FruchtermanReingold.name());
+		//itemList.add(Layout.MDS.name()); // Doesn't work well
 		itemList.add(Layout.Spring.name());
 		itemList.add(Layout.Stochastic.name());
 		itemList.add(Layout.Systematic.name());
@@ -827,6 +831,23 @@ public class Visualizer extends Application {
 						;
 				new MessageBox(message,"Help");
 				break;
+			}
+			case E:
+			{
+				 final double sizeFactor = ke.isShiftDown()?1.1 : 1.0/1.1;
+				 cylinderRadius*=sizeFactor;
+				 System.out.println("Cylinder radius = " + cylinderRadius);
+				 for(Cylinder c:cylinders) {
+					 c.setRadius(cylinderRadius); 
+				 }
+			}
+			break;
+			case N :{
+				final double sizeFactor = ke.isShiftDown()?1.1 : 1.0/1.1;
+				 sphereRadius*= sizeFactor;
+				 for(Node3D n:nodesToDisplay) {
+					 n.getSphere().setRadius(sphereRadius);
+				 }
 			}
 			case S: {
 				 final double sizeFactor = ke.isShiftDown()?1.1 : 1.0/1.1;

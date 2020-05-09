@@ -1,28 +1,29 @@
 package grapher;
 
 import java.util.TreeSet;
-import java.util.concurrent.Callable;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
+
 import java.util.concurrent.ThreadLocalRandom;
-import java.util.concurrent.TimeUnit;
-
-import com.sun.javafx.geom.Matrix3f;
-
 import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
-
 import javafx.geometry.Point3D;
 import javafx.scene.Group;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.PhongMaterial;
-import javafx.scene.shape.Sphere;
+import mdsj.MDSJ;
+
+import com.jujutsu.tsne.barneshut.BHTSne;
+import com.jujutsu.tsne.barneshut.BarnesHutTSne;
+import com.jujutsu.tsne.barneshut.ParallelBHTsne;
+import com.jujutsu.utils.MatrixOps;
+import com.jujutsu.utils.MatrixUtils;
+import com.jujutsu.utils.TSneUtils;
+
 
 /**
  * 
@@ -939,6 +940,61 @@ public class ConnectedComponent {
 			} // for i
 		}
 		System.out.println(iterations + " iterations with countLimits = " + Arrays.toString(countLimits));
+	}
+	
+	private static int intersectionSize(Set<?> s1, Set<?> s2) {
+		int count=0;
+		for(Object obj:s1) {
+			if (s2.contains(obj)) {
+				count++;
+			}
+		}
+		return count;
+	}
+	
+	private static int unionSize(Set s1, Set s2) {
+		int size=s1.size();
+		for(Object obj:s2) {
+			if (!s2.contains(obj)) {
+				size++;
+			}
+		}
+		return size;
+	}
+	
+	public void mds(int neighborhoodSize) {
+		final int n=nodes.size();
+		final double distanceMatrix[][] = new double[n][n];
+		for(int i=0;i<n;i++) {
+			final Node3D n1=nodes.get(i);
+			final Set neighbors1 = neighborhoodSize==1? n1.getNeighbors(): n1.getNeighborhood(neighborhoodSize);
+			for(int j=i+1;j<n;j++) {
+				final Node3D n2=nodes.get(j);
+				final double edgeDistance= n1.getNeighbors().contains(n2)? 0.0 : 1.0;
+				final Set neighbors2 = neighborhoodSize==1? n2.getNeighbors():n2.getNeighborhood(neighborhoodSize);
+				int unionSize=unionSize(neighbors1, neighbors2);
+				int intersectionSize=intersectionSize(neighbors1, neighbors2);
+				double ratio=(0.0+intersectionSize)/unionSize;
+				double neighborsDistance =(1.0-ratio);
+				double distance = edgeDistance + neighborsDistance;
+				distanceMatrix[i][j]=distance;
+				distanceMatrix[j][i]=distance;
+			}
+		}
+		double[][] output= //MDSJ.classicalScaling(distanceMatrix,3); // apply MDS
+				MDSJ.stressMinimization(distanceMatrix, 3); // apply MDS
+		System.out.println("Output of MDS has dimensions: " + output.length + " x " + output[0].length);
+		final double c=500.0; // TODO
+		for(int i=0;i<n;i++) {
+			double x=500*output[0][i];
+			double y=500*output[1][i];
+			double z=500*output[2][i];
+			if (i<10) {
+				System.out.println(x + ", " + y + ", " + z);
+			}
+			nodes.get(i).setXYZ(x, y, z);
+		}
+		
 	}
 	//----------------
 
