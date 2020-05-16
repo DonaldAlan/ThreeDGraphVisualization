@@ -1,9 +1,16 @@
 package grapher;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.scene.Group;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
+import javafx.scene.control.ComboBox;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
@@ -44,14 +51,18 @@ public class MessageBox {
 			});
 			group.getChildren().add(button);
 			
+			final List<Integer> list = new ArrayList<>();
+			for(int i=1;i<7;i++) {list.add(i);}
+			final ObservableList<Integer> items = FXCollections.observableList(list);
 			//...
-			Button hideButton = new Button("hide");
-			hideButton.setTranslateX(width-70);
-			hideButton.setTranslateY(40);
-			hideButton.setOnAction(e -> {
-				plot.hide(node);
+			final ComboBox<Integer> hider = new ComboBox<>(items);
+			hider.setTranslateX(width-70);
+			hider.setTranslateY(40);
+			hider.setValue(1);
+			hider.setOnAction(e -> {
+				plot.hide(node, hider.getValue());
 			});
-			group.getChildren().add(hideButton);
+			group.getChildren().add(hider);
 		}
 		
 		text = new Text(message);

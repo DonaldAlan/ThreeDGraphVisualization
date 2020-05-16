@@ -912,6 +912,9 @@ public class Visualizer extends Application {
 			case DELETE:
 				repulsionFactor= Math.max(0, factor*-0.05+repulsionFactor);
 				System.out.println("repulsionFactor = " + numberFormat.format(repulsionFactor));
+			case V:
+				unhideAll();
+				break;
 			default:
 			}
 		}
@@ -1092,13 +1095,25 @@ public class Visualizer extends Application {
 		}
 		moveConnectedComponentsAwayFromEachOther();
 	}
-	public void hide(Node3D node) {
-		// TODO: find a way to undo this.
-		node.getSphere().setVisible(false);
+	private void unhideAll() {
+		for(Node3D n:nodesToDisplay) {
+			n.getSphere().setVisible(true);
+		}
 		for(Cylinder cyl: this.cylinders) {
-			Pair<Node3D,Node3D> pair = (Pair<Node3D,Node3D>)  cyl.getUserData();
-			if (pair.getKey().equals(node) || pair.getValue().equals(node)) {
-				cyl.setVisible(false);
+			cyl.setVisible(true);
+		}
+	}
+
+	public void hide(final Node3D node, int countOfNeighbors) {
+		final Set<Node3D> visibleNeighborhood = node.getNeighborhood(countOfNeighbors, true);
+		visibleNeighborhood.add(node);
+		for (Node3D n : visibleNeighborhood) {
+			n.getSphere().setVisible(false);
+			for (Cylinder cyl : this.cylinders) {
+				Pair<Node3D, Node3D> pair = (Pair<Node3D, Node3D>) cyl.getUserData();
+				if (pair.getKey().equals(node) || pair.getValue().equals(n)) {
+					cyl.setVisible(false);
+				}
 			}
 		}
 	}

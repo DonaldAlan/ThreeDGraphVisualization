@@ -393,33 +393,45 @@ public class Node3D implements Comparable<Node3D> {
 	
 	/**
 	 * 
-	 * @param graphDistance -- graph theoretic distance. Max graphDistance allowed is 5.  If graphDistance is above 4 it is treated as if it's 5. 
+	 * @param graphDistance -- graph theoretic distance. Max graphDistance allowed is 6.  If graphDistance is above 4 it is treated as if it's 6. 
 	 * If graphDistance is 0, the empty set is returned. If graphDistance is 1, the set of neighbors is returned.
-	 * @return the set all of nodes (with their distances) within distance graphDistance of this node.
+	 * @param onlyIncludeVisible
+	 * @return the set all of nodes (with their distances) within distance graphDistance of this node, excluding this node
 	 */
-	public Set<NeighborAtGraphDistance> getNeighborhood(int graphDistance) {
-		Set<NeighborAtGraphDistance> set=new HashSet<>();
-		addNeighborsAtDistance(set,graphDistance);
+	public Set<Node3D> getNeighborhood(int graphDistance, boolean onlyIncludeVisible) {
+		Set<Node3D> set=new HashSet<>();
+		addNeighborsAtDistance(set,graphDistance, onlyIncludeVisible);
 		return set;
 	}
 	
 	// Max distance considered is 5
-	private void addNeighborsAtDistance(Set<NeighborAtGraphDistance> set, int distance) {
+	private void addNeighborsAtDistance(Set<Node3D> set, int distance, boolean onlyIncludeVisible) {
 		if (distance>=1) {
 			for(Node3D n1: getNeighbors()) {
-				set.add(new NeighborAtGraphDistance(n1,1));
+				if (onlyIncludeVisible && !n1.isVisible()) {continue;}
+				if (set.add(n1))
 				if (distance>=2) {
 					for(Node3D n2:n1.getNeighbors()) {
-						set.add(new NeighborAtGraphDistance(n2, 2));
+						if (onlyIncludeVisible && !n2.isVisible()) {continue;}
+						if (set.add(n2))
 						if (distance>=3) {
 							for(Node3D n3: n2.getNeighbors()) {
-								set.add(new NeighborAtGraphDistance(n3, 3));
+								if (onlyIncludeVisible && !n3.isVisible()) {continue;}
+								if (set.add(n3))
 								if (distance>=4) {
 									for(Node3D n4: n3.getNeighbors()) {
-										set.add(new NeighborAtGraphDistance(n4, 4));
+										if (onlyIncludeVisible && !n4.isVisible()) {continue;}
+										if (set.add(n4))
 										if (distance>=5) {
 											for(Node3D n5:n4.getNeighbors()) {
-												set.add(new NeighborAtGraphDistance(n5, 5));
+												if (onlyIncludeVisible && !n5.isVisible()) {continue;}
+												if (set.add(n5))
+													if (distance>=6) {
+														for(Node3D n6:n5.getNeighbors()) {
+															if (onlyIncludeVisible && !n5.isVisible()) {continue;}
+															set.add(n6);
+														}
+													}
 											}
 										}
 									}
