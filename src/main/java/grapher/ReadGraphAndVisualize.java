@@ -327,7 +327,7 @@ public class ReadGraphAndVisualize {
 				nodes.length + " nodes, " + edgeCount + " edges, "
 		+ Node3D.maxDegree + " maxDegree, clusteringCoefficent = " + computeClusteringCoefficient(nodes));
 		//...
-		Visualizer.savedAllNodes = nodes;
+		Visualizer.setSavedAllNodes(nodes);
 		Node3D.windowSize=(int)Math.max(100*Math.pow(nodes.length,0.333),200);
 		Visualizer.distanceForOneEdge = 0.2*Math.pow(Math.pow(Node3D.windowSize,3)/nodes.length,1.0/3.0);
 		Visualizer.sphereRadius = 1; //10/Math.log(nodes.length);

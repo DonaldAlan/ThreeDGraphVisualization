@@ -25,7 +25,7 @@ public class MessageBox {
 		stage.setY(height+100);
 		scene.setFill(Color.FLORALWHITE);
 	}
-	public MessageBox(String message, String title, Node3D node, Visualizer plot) {
+	public MessageBox(final String message, final String title, final Node3D node, final Visualizer plot) {
 		this.node=node;
 		stage = new Stage();
 		stage.initModality(Modality.NONE);
@@ -43,6 +43,15 @@ public class MessageBox {
 				stage.close();
 			});
 			group.getChildren().add(button);
+			
+			//...
+			Button hideButton = new Button("hide");
+			hideButton.setTranslateX(width-70);
+			hideButton.setTranslateY(40);
+			hideButton.setOnAction(e -> {
+				plot.hide(node);
+			});
+			group.getChildren().add(hideButton);
 		}
 		
 		text = new Text(message);

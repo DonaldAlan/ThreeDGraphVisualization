@@ -5,11 +5,14 @@ package grapher;
  * 
  * See README.txt for more documentation. 
  * 
- * TODO 0: Let user change diameter of edges, or hide them.
  * TODO 1: First layout the most important nodes. Then fix their positions and layout the less important nodes, in stages.
  * TODO 2: Allow the relaxation algorithms to run in the background while the UI updates, with a STOP button.
- * TODO 3: Allow different scales. It's OK if the user needs to ZOOM into see substructure.
- * TODO 4: Compare Gephi's Yifan Hu, Force Atlas
+ * TODO 3: Allow different scales. It's OK if the user needs to ZOOM in to see substructure.
+ * TODO 4: Changing focus doesn't change the nodes included in ndoesToDisplay; it only changes which ones are visible. 
+ *   If the user wants to explore other nodes not included, they won't appear.  But it would be annoying if 
+ *   each time you click on a node, the placement is recomputed and nodes move.
+ * TODO 5: Compare Gephi's Yifan Hu, Force Atlas
+ * TODO 6: Support hiding (high-importance) sets of nodes and their edges (which are often boring), and unhiding.
  */
 
 import java.text.NumberFormat;
@@ -26,6 +29,8 @@ import java.util.Random;
 import java.util.Set;
 import javax.swing.JOptionPane;
 import javax.swing.event.ListSelectionEvent;
+
+import com.sun.org.apache.bcel.internal.generic.InstructionConstants.Clinit;
 
 import javafx.animation.AnimationTimer;
 import javafx.application.Application;
@@ -72,7 +77,7 @@ public class Visualizer extends Application {
 	public static enum Layout { Stochastic,Spring,Barrycenter,FruchtermanReingold, Systematic, MDS}
 	public static Layout layout = Layout.Stochastic;
 	private Node3D[] nodesToDisplay = null;
-	public static Node3D[] savedAllNodes=null;
+	private static Node3D[] savedAllNodes=null;
 	public static double distanceForOneEdge = 30;
 	public static double sphereRadius = 5.5;
 	public static double cylinderRadius = 1.1;
@@ -137,7 +142,9 @@ public class Visualizer extends Application {
 
 	public Visualizer() {
 	}
-	
+	public static void setSavedAllNodes(Node3D[] nodes) {
+		savedAllNodes = nodes;
+	}
 	private boolean intersectsSomeOtherConnectedComponent(ConnectedComponent component, Set<ConnectedComponent> set) {
 		for (ConnectedComponent other : set) {
 			if (other != component && other.intersects(component)) {
@@ -734,13 +741,17 @@ public class Visualizer extends Application {
 		mlsToComputeFocus=0;
 		maxFocusDistance=2;
 	}
-	/* package*/ void focus(Node3D node) {
+	//................
+	void focus(Node3D node) {
 		focusedNode=node;
-
+		
 		try {
 			long startTime=System.currentTimeMillis();
 			final Set<Node3D> nearNodes = getNodesNear(node,maxFocusDistance);
 			mlsToComputeFocus = System.currentTimeMillis()-startTime;
+			System.out.println(numberFormat.format(0.001*mlsToComputeFocus) + " seconds to get neighborhood");
+
+			//nodesToDisplay=new Node3D[nearNodes.size()];
 			for(Node3D n:nodesToDisplay) {
 				n.getSphere().setVisible(nearNodes.contains(n));
 			}
@@ -1080,6 +1091,16 @@ public class Visualizer extends Application {
 			}
 		}
 		moveConnectedComponentsAwayFromEachOther();
+	}
+	public void hide(Node3D node) {
+		// TODO: find a way to undo this.
+		node.getSphere().setVisible(false);
+		for(Cylinder cyl: this.cylinders) {
+			Pair<Node3D,Node3D> pair = (Pair<Node3D,Node3D>)  cyl.getUserData();
+			if (pair.getKey().equals(node) || pair.getValue().equals(node)) {
+				cyl.setVisible(false);
+			}
+		}
 	}
 
 	private Point3D findCenterOfMass() {
