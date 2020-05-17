@@ -24,6 +24,7 @@ import javafx.scene.shape.Sphere;
 
 //-----------
 public class Node3D implements Comparable<Node3D> {
+	public static final int maxAllowedFocusDistance =7;
 	private int xIndex,yIndex,zIndex;
 	public static int windowSize=1000;
 	private static final Random random = new Random();
@@ -40,6 +41,7 @@ public class Node3D implements Comparable<Node3D> {
 	private double importance=1.0;
 	private int indexInImportanceOrder;
 	private Sphere sphere=null;
+	private static Set<String> allIds = new HashSet<>();
 	//-----------------------------------
 	static {
 		numberFormat.setMaximumFractionDigits(1);
@@ -49,6 +51,7 @@ public class Node3D implements Comparable<Node3D> {
 	}
 	public Node3D(String id, String description) {
 		this.id=id;
+		assert(allIds.add(id));
 		attributes.put("description",description);
 	}
 	@Override
@@ -393,7 +396,8 @@ public class Node3D implements Comparable<Node3D> {
 	
 	/**
 	 * 
-	 * @param graphDistance -- graph theoretic distance. Max graphDistance allowed is 6.  If graphDistance is above 4 it is treated as if it's 6. 
+	 * @param graphDistance -- graph theoretic distance. Max graphDistance allowed is 7.  
+	 * If graphDistance is above 7 it is treated as if it's 7. 
 	 * If graphDistance is 0, the empty set is returned. If graphDistance is 1, the set of neighbors is returned.
 	 * @param onlyIncludeVisible
 	 * @return the set all of nodes (with their distances) within distance graphDistance of this node, excluding this node
@@ -404,46 +408,51 @@ public class Node3D implements Comparable<Node3D> {
 		return set;
 	}
 	
-	// Max distance considered is 5
-	private void addNeighborsAtDistance(Set<Node3D> set, int distance, boolean onlyIncludeVisible) {
-		if (distance>=1) {
-			for(Node3D n1: getNeighbors()) {
-				if (onlyIncludeVisible && !n1.isVisible()) {continue;}
-				if (set.add(n1))
-				if (distance>=2) {
-					for(Node3D n2:n1.getNeighbors()) {
-						if (onlyIncludeVisible && !n2.isVisible()) {continue;}
-						if (set.add(n2))
-						if (distance>=3) {
-							for(Node3D n3: n2.getNeighbors()) {
-								if (onlyIncludeVisible && !n3.isVisible()) {continue;}
-								if (set.add(n3))
-								if (distance>=4) {
-									for(Node3D n4: n3.getNeighbors()) {
-										if (onlyIncludeVisible && !n4.isVisible()) {continue;}
-										if (set.add(n4))
-										if (distance>=5) {
-											for(Node3D n5:n4.getNeighbors()) {
-												if (onlyIncludeVisible && !n5.isVisible()) {continue;}
-												if (set.add(n5))
-													if (distance>=6) {
-														for(Node3D n6:n5.getNeighbors()) {
-															if (onlyIncludeVisible && !n5.isVisible()) {continue;}
-															set.add(n6);
+	// Max distance considered is maxAllowedFocusDistance
+	private void addNeighborsAtDistance(final Set<Node3D> set, final int distance, final boolean onlyIncludeVisible) {
+		if (distance >= 1) {
+			for (Node3D n1 : getNeighbors()) {
+				if ((!onlyIncludeVisible || n1.isVisible()) && set.add(n1))
+					if (distance >= 2) {
+						for (Node3D n2 : n1.getNeighbors()) {
+							if ((!onlyIncludeVisible || n2.isVisible()) && set.add(n2))
+								if (distance >= 3) {
+									for (Node3D n3 : n2.getNeighbors()) {
+										if ((!onlyIncludeVisible || n3.isVisible()) && set.add(n3))
+											if (distance >= 4) {
+												for (Node3D n4 : n3.getNeighbors()) {
+													if ((!onlyIncludeVisible || n4.isVisible()) && set.add(n4))
+														if (distance >= 5) {
+															for (Node3D n5 : n4.getNeighbors()) {
+																if ((!onlyIncludeVisible || n5.isVisible())
+																		&& set.add(n5))
+																	if (distance >= 6) {
+																		for (Node3D n6 : n5.getNeighbors()) {
+																			if ((!onlyIncludeVisible || n6.isVisible())
+																					&& set.add(n6))
+																				if (distance >= 7) {
+																					for (Node3D n7 : n6
+																							.getNeighbors()) {
+																						if (!onlyIncludeVisible
+																								|| n7.isVisible()) {
+																							set.add(n7);
+																						}
+																					}
+																				}
+																		}
+																	}
+															}
 														}
-													}
+												}
 											}
-										}
 									}
 								}
-							}
 						}
 					}
-				}
 			}
 		}
 	}
-		@Override
+	@Override
 	public boolean equals(Object obj) {
 		Node3D other= (Node3D)obj;
 		return other.id.equals(id);
@@ -789,14 +798,7 @@ public class Node3D implements Comparable<Node3D> {
     	else if (d>maxXYZ) {return maxXYZ;}
     	return d;
     }
-	public void addNearbyNodes(final Set<Node3D> nearNodes,final int maxDistance) {
-		nearNodes.add(this);
-		if (maxDistance>0) {
-			for(Node3D neighbor:getNeighbors()) {
-				neighbor.addNearbyNodes(nearNodes, maxDistance-1);
-			}
-		}
-	}
+	
 	public boolean isVisible() {
 		//System.out.println("indexInImportanceOrder for " + id + " is " + indexInImportanceOrder);
 		return indexInImportanceOrder < Visualizer.countToShow;

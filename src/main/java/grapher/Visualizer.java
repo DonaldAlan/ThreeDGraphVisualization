@@ -5,6 +5,12 @@ package grapher;
  * 
  * See README.txt for more documentation. 
  * 
+ * TODO 0:  Show focused nodes in a separate JavaFX Stage, so it can show nodes not in nodesToDisplay 
+ * Causes bug in Node3D.addNeighborsAtDistance:
+ *  0 mls to get neighborhood  at max distance 1 ha size 12
+ *  0 mls to get neighborhood  at max distance 2 ha size 95
+ * 	0 mls to get neighborhood  at max distance 3 ha size 62 <------
+ * 
  * TODO 1: First layout the most important nodes. Then fix their positions and layout the less important nodes, in stages.
  * TODO 2: Allow the relaxation algorithms to run in the background while the UI updates, with a STOP button.
  * TODO 3: Allow different scales. It's OK if the user needs to ZOOM in to see substructure.
@@ -134,7 +140,7 @@ public class Visualizer extends Application {
 
 	private final Button redrawButton=new Button("Redraw");
 	private volatile boolean newImportanceAlgorithm = false;
-	private long mlsToComputeFocus=0;
+	private long timeOfLastKeyEvent=0;
 	// --------------
 	static {
 		numberFormat.setMaximumFractionDigits(3);
@@ -518,7 +524,6 @@ public class Visualizer extends Application {
 	//----------------------------------
 	private void makeNodesToDisplayFromSavedNodesAndCountToShow() {
 		focusedNode=null;
-		mlsToComputeFocus=0;
 		maxFocusDistance=2;
 		nodesToDisplay = new Node3D[countToShow];
 		for(int i=0;i<countToShow;i++) {
@@ -738,18 +743,24 @@ public class Visualizer extends Application {
 			c.setVisible(true);
 		}		
 		focusedNode=null;
-		mlsToComputeFocus=0;
 		maxFocusDistance=2;
 	}
 	//................
 	void focus(Node3D node) {
 		focusedNode=node;
-		
+//		System.out.println("--------------------\nFocusing with maxFocusDistance = " + maxFocusDistance );
+//		StackTraceElement [] stack=Thread.currentThread().getStackTrace();
+//		for(int i=0;i<6;i++) {
+//			System.out.println(stack[i]);
+//		}
 		try {
 			long startTime=System.currentTimeMillis();
-			final Set<Node3D> nearNodes = getNodesNear(node,maxFocusDistance);
-			mlsToComputeFocus = System.currentTimeMillis()-startTime;
-			System.out.println(numberFormat.format(0.001*mlsToComputeFocus) + " seconds to get neighborhood");
+			final Set<Node3D> nearNodes = node.getNeighborhood(maxFocusDistance, false); 
+			nearNodes.add(node);
+			long mlsToComputeFocus = System.currentTimeMillis()-startTime;
+			System.out.println(mlsToComputeFocus + " mls to get neighborhood " +
+					" at max distance " + maxFocusDistance 
+					+ " has size " + nearNodes.size());
 
 			//nodesToDisplay=new Node3D[nearNodes.size()];
 			for(Node3D n:nodesToDisplay) {
@@ -767,14 +778,13 @@ public class Visualizer extends Application {
 		}
 	}
 
-	private Set<Node3D> getNodesNear(Node3D node, int maxDistance) {
-		final Set<Node3D> nearNodes = new HashSet<>();
-		node.addNearbyNodes(nearNodes,maxDistance);
-		return nearNodes;
-	}
-
 	private EventHandler<KeyEvent> keyEventHandler = new EventHandler<KeyEvent>() {
 		public void handle(KeyEvent ke) {
+			long now=System.currentTimeMillis();
+			if (now-timeOfLastKeyEvent<250) {
+				return;
+			}
+			timeOfLastKeyEvent=now;
 			final int factor=ke.isShiftDown() ? 10: 1;
 			switch (ke.getCode()) {
 			case Q:
@@ -882,14 +892,14 @@ public class Visualizer extends Application {
 				}
 				break;
 			case PAGE_UP:
-				if (focusedNode!=null && mlsToComputeFocus>1000) {
-					return;
+				if (maxFocusDistance==Node3D.maxAllowedFocusDistance) { 
+					break;
 				}
 				maxFocusDistance++;
-				if (focusedNode!=null) {
-					System.out.println("Focusing with maxFocusDistance = " + maxFocusDistance);
+				if (focusedNode!=null) {					
 					focus(focusedNode);
 				}
+				ke.consume();
 				break;
 			case PAGE_DOWN:
 				if (maxFocusDistance>1) {
