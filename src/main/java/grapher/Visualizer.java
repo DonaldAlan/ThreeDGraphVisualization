@@ -760,11 +760,7 @@ public class Visualizer extends Application {
 	//................
 	void focus(Node3D node, int focusDistance) {
 		focusedNode=node;
-//		System.out.println("--------------------\nFocusing with maxFocusDistance = " + maxFocusDistance );
-//		StackTraceElement [] stack=Thread.currentThread().getStackTrace();
-//		for(int i=0;i<6;i++) {
-//			System.out.println(stack[i]);
-//		}
+		maxFocusDistance=focusDistance;
 		try {
 			System.out.println("---------------------------------");
 			final long startTime=System.currentTimeMillis();
