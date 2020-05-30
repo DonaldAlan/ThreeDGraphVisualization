@@ -741,15 +741,13 @@ public class Visualizer extends Application {
 	}
 	//--------------------------------------------
 	private void unfocus() {
-		for(Node3D node:nodesToDisplay) {
-			node.setVisible(true);
-			node.getSphere().setVisible(true);
-		}
-		for(Cylinder c: cylinders) {
-			c.setVisible(true);
-		}		
 		focusedNode=null;
 		maxFocusDistance=2;
+		for(Node3D node:savedAllNodes) {
+			node.setVisible(true);
+		}
+		makeNodesToDisplayFromSavedNodesAndCountToShow();
+		placeOnePassAndRefreshNodes();
 	}
 	//................
 	void focus(Node3D node) {
@@ -763,21 +761,15 @@ public class Visualizer extends Application {
 			final long startTime=System.currentTimeMillis();
 			final Set<Node3D> nearNodes = node.getNeighborhood(maxFocusDistance, false); 
 			nearNodes.add(node);
-			if (countToShow<savedAllNodes.length) { 
-// We compute the location of all nodes, so that when the user changes maxFocusDistance the positions stay the same.
-				countToShow=savedAllNodes.length;
-				makeNodesToDisplayFromSavedNodesAndCountToShow();
-        		computeConnectedComponentsFromNodesToDisplay();
-        		for(Node3D n:nodesToDisplay) {
-        			n.setVisible(nearNodes.contains(n));
-        		}
-        		placeOnePassAndRefreshNodes();			
-			} else {
-				for(Node3D n:nodesToDisplay) {
-        			n.setVisible(nearNodes.contains(n));
-        		}
-				refreshNodes();
+			nodesToDisplay = new Node3D[nearNodes.size()];
+			nearNodes.toArray(nodesToDisplay);
+			countToShow=savedAllNodes.length;
+			for(Node3D n:savedAllNodes) {
+				n.setVisible(nearNodes.contains(n));
 			}
+			System.out.println("Found " + nearNodes.size() + " nodes within distance " + maxFocusDistance);
+			computeConnectedComponentsFromNodesToDisplay();
+			placeOnePassAndRefreshNodes();			
 			
 			long mlsToComputeFocus = System.currentTimeMillis()-startTime;
 			System.out.println(mlsToComputeFocus + " mls to get neighborhood " +
@@ -1095,7 +1087,7 @@ public class Visualizer extends Application {
 	// --------------------------
 	private void displayNodes() {
 		// If we are focused on a node, then ignore the importance limit
-		System.out.println(countToShow + " nodes to display in " + connectedComponents.size() + " connected components");
+		System.out.println(nodesToDisplay.length + " nodes to display in " + connectedComponents.size() + " connected components");
 		for(ConnectedComponent component: connectedComponents) {
 			final Group group = new Group();
 			component.setGroup(group);
