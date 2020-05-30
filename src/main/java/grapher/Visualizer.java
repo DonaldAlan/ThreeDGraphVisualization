@@ -145,6 +145,7 @@ public class Visualizer extends Application {
 	private final Button redrawButton=new Button("Redraw");
 	private volatile boolean newImportanceAlgorithm = false;
 	private long timeOfLastKeyEvent=0;
+	private long finishedFocusTime=0;
 	// --------------
 	static {
 		numberFormat.setMaximumFractionDigits(3);
@@ -790,6 +791,7 @@ public class Visualizer extends Application {
 			thr.printStackTrace();
 			System.exit(1);
 		}
+		finishedFocusTime=System.currentTimeMillis();
 	}
 
 	private EventHandler<KeyEvent> keyEventHandler = new EventHandler<KeyEvent>() {
@@ -906,6 +908,11 @@ public class Visualizer extends Application {
 				}
 				break;
 			case PAGE_UP:
+				if (System.currentTimeMillis()-finishedFocusTime < 250) {
+					System.out.println("Skipping PAGE_UP due to time");
+					break;
+				}
+				System.out.println("Got PAGE_UP");
 				ke.consume();
 				if (maxFocusDistance==Node3D.maxAllowedFocusDistance) { 
 					break;
