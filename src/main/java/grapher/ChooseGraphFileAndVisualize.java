@@ -46,7 +46,7 @@ public final class ChooseGraphFileAndVisualize {
 			exc.printStackTrace();
 		}
 	}
-	private static void test() {
+	private static void choose() {
 		String dirPath = "graphs";
 		String fileName = "graphs/collatz.gml";
 		String filePath = getLastPath();
@@ -78,7 +78,8 @@ public final class ChooseGraphFileAndVisualize {
 	
 	public static void main(String [] args) {
 		try {
-			while (true) {test();}}
+			choose();
+		}
 		catch (Throwable thr) {
 			thr.printStackTrace();
 			System.exit(1);

@@ -16,7 +16,11 @@ package grapher;
  * TODO 3: Allow different scales. It's OK if the user needs to ZOOM in to see substructure.
  * TODO 4: Changing focus doesn't change the nodes included in ndoesToDisplay; it only changes which ones are visible. 
  *   If the user wants to explore other nodes not included, they won't appear.  But it would be annoying if 
- *   each time you click on a node, the placement is recomputed and nodes move.
+ *   each time you click on a node, the placement is recomputed and nodes move.  To fix this I could
+ *        a. Focus in a separate window, showing JUST a tree of nodes from the focus node (with mouse-over showing links).
+ *    or: b. layout all nodes once but only show focussed ones. This is partly implemented. To make it better do:
+ *      TODO: 4a.  Layout all the nodes (via stochastic positioning, for example), but only build nodes and cylinders
+ *      for the ones in focus. 
  * TODO 5: Compare Gephi's Yifan Hu, Force Atlas
  * TODO 6: Support hiding (high-importance) sets of nodes and their edges (which are often boring), and unhiding.
  */
@@ -175,6 +179,12 @@ public class Visualizer extends Application {
 		return totalCost;
 	}
 	public void placeOnePassAndRefreshNodes() {
+		placeOnePassWithoutRefreshingNodes();
+		refreshNodes();
+		redrawButton.setBackground(controlBackground);
+		redrawButton.setText("Redraw");
+	}
+	public void placeOnePassWithoutRefreshingNodes() {
 		long startTime=System.currentTimeMillis();
 	//	randomizeNodePlacements();
 		double startTotalCost=getTotalCost();
@@ -227,10 +237,7 @@ public class Visualizer extends Application {
 				+ ", nodesToDisplay.length = " + nodesToDisplay.length
 				+ " in " + numberFormat.format(seconds) + " seconds"
 				 );
-		refreshNodes();
-		seconds = 0.001*(System.currentTimeMillis() - middle);
-		redrawButton.setBackground(controlBackground);
-		redrawButton.setText("Redraw");
+		seconds = 0.001*(System.currentTimeMillis() - middle);		
 	}
 	@SuppressWarnings("unchecked")
 	private void buildRepulsiveCountComboBox(Group root) {
@@ -523,8 +530,6 @@ public class Visualizer extends Application {
 	}
 	//----------------------------------
 	private void makeNodesToDisplayFromSavedNodesAndCountToShow() {
-		focusedNode=null;
-		maxFocusDistance=2;
 		nodesToDisplay = new Node3D[countToShow];
 		for(int i=0;i<countToShow;i++) {
 			nodesToDisplay[i]=savedAllNodes[i];
@@ -737,6 +742,7 @@ public class Visualizer extends Application {
 	//--------------------------------------------
 	private void unfocus() {
 		for(Node3D node:nodesToDisplay) {
+			node.setVisible(true);
 			node.getSphere().setVisible(true);
 		}
 		for(Cylinder c: cylinders) {
@@ -754,24 +760,36 @@ public class Visualizer extends Application {
 //			System.out.println(stack[i]);
 //		}
 		try {
-			long startTime=System.currentTimeMillis();
+			final long startTime=System.currentTimeMillis();
 			final Set<Node3D> nearNodes = node.getNeighborhood(maxFocusDistance, false); 
 			nearNodes.add(node);
+			if (countToShow<savedAllNodes.length) { 
+// We compute the location of all nodes, so that when the user changes maxFocusDistance the positions stay the same.
+				countToShow=savedAllNodes.length;
+				makeNodesToDisplayFromSavedNodesAndCountToShow();
+        		computeConnectedComponentsFromNodesToDisplay();
+        		for(Node3D n:nodesToDisplay) {
+        			n.setVisible(nearNodes.contains(n));
+        		}
+        		placeOnePassAndRefreshNodes();			
+			} else {
+				for(Node3D n:nodesToDisplay) {
+        			n.setVisible(nearNodes.contains(n));
+        		}
+				refreshNodes();
+			}
+			
 			long mlsToComputeFocus = System.currentTimeMillis()-startTime;
 			System.out.println(mlsToComputeFocus + " mls to get neighborhood " +
 					" at max distance " + maxFocusDistance 
 					+ " has size " + nearNodes.size());
 
-			//nodesToDisplay=new Node3D[nearNodes.size()];
-			for(Node3D n:nodesToDisplay) {
-				n.getSphere().setVisible(nearNodes.contains(n));
-			}
-			for(Cylinder c: cylinders) {
-				Pair<Node3D,Node3D> pair = (Pair<Node3D,Node3D>) c.getUserData();
-				Node3D n1=pair.getKey();
-				Node3D n2=pair.getValue();
-				c.setVisible(nearNodes.contains(n1) && nearNodes.contains(n2));
-			}
+//			for(Cylinder c: cylinders) {
+//				Pair<Node3D,Node3D> pair = (Pair<Node3D,Node3D>) c.getUserData();
+//				Node3D n1=pair.getKey();
+//				Node3D n2=pair.getValue();
+//				c.setVisible(nearNodes.contains(n1) && nearNodes.contains(n2));
+//			}
 		} catch (Throwable thr) {
 			thr.printStackTrace();
 			System.exit(1);
@@ -1083,23 +1101,27 @@ public class Visualizer extends Application {
 			component.setGroup(group);
 			world.getChildren().add(group);
 			for(Node3D node: component.getNodes()) {
-				double radius = node == focusedNode?  3*sphereRadius: sphereRadius;
-				Sphere sphere = makeSphere(node.getX(), node.getY(), node.getZ(), radius, randomMaterial(), 
+				if (node.isVisible()) {
+					double radius = node == focusedNode?  3*sphereRadius: sphereRadius;
+					Sphere sphere = makeSphere(node.getX(), node.getY(), node.getZ(), radius, randomMaterial(), 
 						node.toString() + ", imp=" + numberFormat.format(node.getImportance()));
-				sphere.setUserData(node);
-				group.getChildren().add(sphere);
-				node.setSphere(sphere);
+					sphere.setUserData(node);
+					group.getChildren().add(sphere);
+					node.setSphere(sphere);
+				}
 			}
 			for(Node3D node:component.getNodes()) {
+				if (node.isVisible()) {
 				Point3D p1 = node.getPoint3D();
 				for (Node3D neighbor : node.getNeighbors()) {
-					if (focusedNode!=null || neighbor.isVisible()) {
+					if (neighbor.isVisible()) {
 						Point3D p2 = neighbor.getPoint3D();
 						Cylinder cylinder = createCylinderBetween(p1, p2,node, neighbor);
 						cylinders.add(cylinder);
 						cylinder.setMaterial(node.getMaterial());
 						group.getChildren().add(cylinder);
 					}
+				}
 				}
 			}
 		}

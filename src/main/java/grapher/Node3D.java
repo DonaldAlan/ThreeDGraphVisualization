@@ -24,7 +24,7 @@ import javafx.scene.shape.Sphere;
 
 //-----------
 public class Node3D implements Comparable<Node3D> {
-	public static final int maxAllowedFocusDistance =7;
+	public static final int maxAllowedFocusDistance =10000;
 	private int xIndex,yIndex,zIndex;
 	public static int windowSize=1000;
 	private static final Random random = new Random();
@@ -41,6 +41,7 @@ public class Node3D implements Comparable<Node3D> {
 	private double importance=1.0;
 	private int indexInImportanceOrder;
 	private Sphere sphere=null;
+	private boolean isVisible = true;
 	private static Set<String> allIds = new HashSet<>();
 	//-----------------------------------
 	static {
@@ -800,8 +801,10 @@ public class Node3D implements Comparable<Node3D> {
     }
 	
 	public boolean isVisible() {
-		//System.out.println("indexInImportanceOrder for " + id + " is " + indexInImportanceOrder);
-		return indexInImportanceOrder < Visualizer.countToShow;
+		return isVisible && indexInImportanceOrder < Visualizer.countToShow;
+	}
+	public void setVisible(boolean visible) {
+		this.isVisible=visible;
 	}
 	public void setSphere(Sphere sphere) {
 		this.sphere=sphere;
@@ -821,6 +824,7 @@ public class Node3D implements Comparable<Node3D> {
 		this.z=f;
 	}
 	private Point3D point3D=null;
+
 	public Point3D getPoint3D() {
 		if (point3D!=null && point3D.getX()==x && point3D.getY()==y && point3D.getZ()==z) {
 			return point3D;
@@ -848,5 +852,6 @@ public class Node3D implements Comparable<Node3D> {
 			
 			System.out.println(ConnectedComponent.totalCount);
 		}
+
 
 } // class Node3D
