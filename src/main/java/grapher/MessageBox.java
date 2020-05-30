@@ -45,7 +45,7 @@ public class MessageBox {
 			button.setTranslateX(width-70);
 			button.setTranslateY(10);
 			button.setOnAction(e -> {
-				plot.focus(this.node);
+				plot.focus(this.node,1);
 				this.closed = true;
 				stage.close();
 			});

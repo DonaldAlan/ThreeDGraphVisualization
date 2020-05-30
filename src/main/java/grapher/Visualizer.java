@@ -104,7 +104,7 @@ public class Visualizer extends Application {
     private final static String markovCentralityJung="Markov Centrality"; // throws exception "Matrix is singular"
     private final static String randomWalkCentralityJung="Random Walk Centrality"; 
     //...
-    private int maxFocusDistance=3;
+    private int maxFocusDistance=1;
 	private String currentImportanceAlgorithm=degreeAlgorithm;
 	private final XformWorld world = new XformWorld();
 	private final PerspectiveCamera camera = new PerspectiveCamera(true);
@@ -650,7 +650,7 @@ public class Visualizer extends Application {
 					if (focusedNode==node) {
 						unfocus();
 					} else {
-						focus(node);
+						focus(node,1);
 					}
 				}
 			} else if (pr.getIntersectedNode() instanceof Cylinder) {
@@ -750,7 +750,7 @@ public class Visualizer extends Application {
 		placeOnePassAndRefreshNodes();
 	}
 	//................
-	void focus(Node3D node) {
+	void focus(Node3D node, int focusDistance) {
 		focusedNode=node;
 //		System.out.println("--------------------\nFocusing with maxFocusDistance = " + maxFocusDistance );
 //		StackTraceElement [] stack=Thread.currentThread().getStackTrace();
@@ -758,22 +758,26 @@ public class Visualizer extends Application {
 //			System.out.println(stack[i]);
 //		}
 		try {
+			System.out.println("---------------------------------");
 			final long startTime=System.currentTimeMillis();
-			final Set<Node3D> nearNodes = node.getNeighborhood(maxFocusDistance, false); 
+			countToShow=savedAllNodes.length;
+			for(Node3D n:savedAllNodes) {
+				n.setVisible(true);
+			}
+			final Set<Node3D> nearNodes = node.getNeighborhood(focusDistance, false); 
 			nearNodes.add(node);
 			nodesToDisplay = new Node3D[nearNodes.size()];
 			nearNodes.toArray(nodesToDisplay);
-			countToShow=savedAllNodes.length;
 			for(Node3D n:savedAllNodes) {
 				n.setVisible(nearNodes.contains(n));
 			}
-			System.out.println("Found " + nearNodes.size() + " nodes within distance " + maxFocusDistance);
+			System.out.println("Found " + nearNodes.size() + " nodes within distance " + focusDistance);
 			computeConnectedComponentsFromNodesToDisplay();
 			placeOnePassAndRefreshNodes();			
 			
 			long mlsToComputeFocus = System.currentTimeMillis()-startTime;
 			System.out.println(mlsToComputeFocus + " mls to get neighborhood " +
-					" at max distance " + maxFocusDistance 
+					" at max distance " + focusDistance 
 					+ " has size " + nearNodes.size());
 
 //			for(Cylinder c: cylinders) {
@@ -902,21 +906,21 @@ public class Visualizer extends Application {
 				}
 				break;
 			case PAGE_UP:
+				ke.consume();
 				if (maxFocusDistance==Node3D.maxAllowedFocusDistance) { 
 					break;
 				}
 				maxFocusDistance++;
 				if (focusedNode!=null) {					
-					focus(focusedNode);
+					focus(focusedNode, maxFocusDistance);
 				}
-				ke.consume();
 				break;
 			case PAGE_DOWN:
 				if (maxFocusDistance>1) {
 					maxFocusDistance--;
 					if (focusedNode!=null) {
 						System.out.println("Focusing with maxFocusDistance = " + maxFocusDistance);
-						focus(focusedNode);
+						focus(focusedNode, maxFocusDistance);
 					}
 				}
 				break;
@@ -948,7 +952,7 @@ public class Visualizer extends Application {
 			if (id.length()>0) {
 				for(Node3D node: nodesToDisplay) {
 					if (node.getId().equals(id)) {
-						focus(node);
+						focus(node,1);
 						return;
 					}
 				}

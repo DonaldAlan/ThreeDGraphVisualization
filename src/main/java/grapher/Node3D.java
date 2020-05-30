@@ -24,7 +24,7 @@ import javafx.scene.shape.Sphere;
 
 //-----------
 public class Node3D implements Comparable<Node3D> {
-	public static final int maxAllowedFocusDistance =10000;
+	public static final int maxAllowedFocusDistance =800000;
 	private int xIndex,yIndex,zIndex;
 	public static int windowSize=1000;
 	private static final Random random = new Random();
@@ -411,47 +411,21 @@ public class Node3D implements Comparable<Node3D> {
 	
 	// Max distance considered is maxAllowedFocusDistance
 	private void addNeighborsAtDistance(final Set<Node3D> set, final int distance, final boolean onlyIncludeVisible) {
-		if (distance >= 1) {
-			for (Node3D n1 : getNeighbors()) {
-				if ((!onlyIncludeVisible || n1.isVisible()) && set.add(n1))
-					if (distance >= 2) {
-						for (Node3D n2 : n1.getNeighbors()) {
-							if ((!onlyIncludeVisible || n2.isVisible()) && set.add(n2))
-								if (distance >= 3) {
-									for (Node3D n3 : n2.getNeighbors()) {
-										if ((!onlyIncludeVisible || n3.isVisible()) && set.add(n3))
-											if (distance >= 4) {
-												for (Node3D n4 : n3.getNeighbors()) {
-													if ((!onlyIncludeVisible || n4.isVisible()) && set.add(n4))
-														if (distance >= 5) {
-															for (Node3D n5 : n4.getNeighbors()) {
-																if ((!onlyIncludeVisible || n5.isVisible())
-																		&& set.add(n5))
-																	if (distance >= 6) {
-																		for (Node3D n6 : n5.getNeighbors()) {
-																			if ((!onlyIncludeVisible || n6.isVisible())
-																					&& set.add(n6))
-																				if (distance >= 7) {
-																					for (Node3D n7 : n6
-																							.getNeighbors()) {
-																						if (!onlyIncludeVisible
-																								|| n7.isVisible()) {
-																							set.add(n7);
-																						}
-																					}
-																				}
-																		}
-																	}
-															}
-														}
-												}
-											}
-									}
-								}
+		Set<Node3D> lastAdded= new HashSet<>();
+		lastAdded.add(this);
+		for(int i=0;i<distance;i++) {
+			Set<Node3D> newLastAdded=new HashSet<>();
+			for(Node3D n:lastAdded) {
+				for(Node3D neighbor:n.getNeighbors()) {
+					if (!onlyIncludeVisible || neighbor.isVisible()) {
+						if (set.add(neighbor)) {
+							newLastAdded.add(neighbor);
 						}
 					}
-			}
-		}
+				}
+			} // for Node3D n:lastAdded
+			lastAdded=newLastAdded;
+		} // for i
 	}
 	@Override
 	public boolean equals(Object obj) {
