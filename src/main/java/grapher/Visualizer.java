@@ -747,8 +747,15 @@ public class Visualizer extends Application {
 		for(Node3D node:savedAllNodes) {
 			node.setVisible(true);
 		}
-		makeNodesToDisplayFromSavedNodesAndCountToShow();
-		placeOnePassAndRefreshNodes();
+		countToShow=Math.min(preferredCountOfNodesShown, savedAllNodes.length);
+		try {
+			makeNodesToDisplayFromSavedNodesAndCountToShow();
+			computeConnectedComponentsFromNodesToDisplay();
+			requestReplaceOnePass();
+		} catch (Throwable thr) {
+			thr.printStackTrace();
+			System.exit(1);
+		}
 	}
 	//................
 	void focus(Node3D node, int focusDistance) {
