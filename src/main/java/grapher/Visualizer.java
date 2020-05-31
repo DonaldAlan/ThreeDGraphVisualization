@@ -316,7 +316,7 @@ public class Visualizer extends Application {
 		itemList.add(Layout.Barrycenter.name());
 		itemList.add(Layout.FruchtermanReingold.name());
 		//itemList.add(Layout.MDS.name()); // Doesn't work well
-		itemList.add(Layout.Spring.name());
+		//itemList.add(Layout.Spring.name());
 		itemList.add(Layout.Stochastic.name());
 		itemList.add(Layout.Systematic.name());
 		final ObservableList<String> observableList = FXCollections.observableList(itemList);
@@ -325,6 +325,7 @@ public class Visualizer extends Application {
 		graphingAlgorithmComboBox.setOnAction( e -> {
         	String value=graphingAlgorithmComboBox.getValue();
         	layout = Layout.valueOf(value);
+        	requestReplaceOnePass();
 		});
 		root.getChildren().add(graphingAlgorithmComboBox);
 	}
