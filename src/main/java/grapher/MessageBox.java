@@ -21,7 +21,7 @@ public class MessageBox {
 	private static final int height=400;
 	private static final Font font = new Font("New Times Roman",16);
 	private Text text;
-	private Stage stage;
+	private final Stage stage;
 	private Group group= new Group();
 	private Scene scene = new Scene(group);
 	private boolean closed=false;
@@ -69,6 +69,15 @@ public class MessageBox {
 		text.setFont(font);
 		group.getChildren().addAll(text);
 		scene.setFill(Color.ANTIQUEWHITE);
+		scene.setOnKeyPressed(ke -> {
+			switch (ke.getCode()) {
+			case Q: 
+				stage.hide();
+				break;
+			default:
+				break;
+			}
+		});
 		stage.setScene(scene);
 		stage.show();
 		stage.setOnCloseRequest(v -> {closed=true;} );

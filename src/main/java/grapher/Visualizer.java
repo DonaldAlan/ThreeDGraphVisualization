@@ -798,6 +798,7 @@ public class Visualizer extends Application {
 	}
 
 	private EventHandler<KeyEvent> keyEventHandler = new EventHandler<KeyEvent>() {
+		private long lastSearchAndFocusTime=0;
 		public void handle(KeyEvent ke) {
 			long now=System.currentTimeMillis();
 			if (now-timeOfLastKeyEvent<250) {
@@ -806,7 +807,7 @@ public class Visualizer extends Application {
 			timeOfLastKeyEvent=now;
 			final int factor=ke.isShiftDown() ? 10: 1;
 			switch (ke.getCode()) {
-			case Q:
+			case Q: 
 				System.exit(0);
 				break;
 			case R: {
@@ -864,12 +865,12 @@ public class Visualizer extends Application {
 				placeOnePassAndRefreshNodes();
 				//showAverageDistances();
 				break;
-			case H:  {
+			case H: case SLASH:  {
 				String message="\n\n Navigate in 3D space by dragging the mouse, or by pressing the arrow keys."
 						+ "\n Use the drop-down at the top left to choose the importance algorithm that's used to rank nodes."
-						//+ "\n Use the drop-down at the top left to choose the count of stochastic placements; higher values result in nicer graphs."
+						+ "\n Use the next drop-down to adjust the count of stochastic repulsive nodes; higher values result in nicer graphs."
 						+ "\n Use the slider at the top to adjust how many nodes to display, ordered by importance."
-						+ "\n Use the next slider to adjust how the repulsive force (how spread out the graph is)."
+						+ "\n Use the next slider to adjust the repulsive force (how spread out the graph is)."
 						+ "\n Left-click on a node to see details. Right click to focus/unfocus; hit Escape to unfocus."
 						+ "\n Press Ctrl-F to search for a node by id. If found, the program will focus on that node."
 						+ "\n\n Press PageUp and PageDown to adjust how many nodes are shown when focussed."
@@ -935,8 +936,9 @@ public class Visualizer extends Application {
 				}
 				break;
 			case F:
-				if (ke.isControlDown()) {
+				if (ke.isControlDown() && System.currentTimeMillis()-lastSearchAndFocusTime>250) {
 					doSearchAndFocus();
+					lastSearchAndFocusTime=System.currentTimeMillis();
 				}
 				break;
 			case INSERT:
@@ -960,8 +962,9 @@ public class Visualizer extends Application {
 		if (id!=null) {
 			id = id.trim();
 			if (id.length()>0) {
-				for(Node3D node: nodesToDisplay) {
+				for(Node3D node: savedAllNodes) {
 					if (node.getId().equals(id)) {
+						System.out.println("Focusing on " + node.getId());
 						focus(node,1);
 						return;
 					}
