@@ -283,8 +283,8 @@ public class Visualizer extends Application {
         itemList.add(pageRankAlgorithm);
         itemList.add(degreeAlgorithm);
         itemList.add(closenessCentrality);
-   //     itemList.add(randomWalkCentralityJung);  Throws excecption "Matrix is sinular"
-   //     itemList.add(markovCentralityJung);  Throws excecption "Matrix is sinular"
+        itemList.add(randomWalkCentralityJung); 
+//        itemList.add(markovCentralityJung);  
         itemList.add(randomWalkVisits);
         final ObservableList<String> observableList = FXCollections.observableList(itemList);
 		importanceAlgorithmComboBox.setItems(observableList);
@@ -1178,24 +1178,31 @@ public class Visualizer extends Application {
 	            world.setTranslateZ(world.getTranslateZ() - delta);
 	        });
 	    }
-	//--------------
+
+	// --------------
 	private void animate() {
 		final AnimationTimer timer = new AnimationTimer() {
 			@Override
 			public void handle(long nowInNanoSeconds) {
-				final long diff=nowInNanoSeconds-requestPlaceOnePassTimeInMls;
-				if (requestPlaceOnePassTimeInMls>0 && diff>50*ONE_MILLISECOND_IN_NANOSECONDS) {
-					requestPlaceOnePassTimeInMls=0;
-					if (newImportanceAlgorithm) {
-						newImportanceAlgorithm=false;
-						runCurrentImportanceAlgorithm();
-						assignImportanceIndicesAndSortSavedAllNodes();
-						makeNodesToDisplayFromSavedNodesAndCountToShow();
-						computeConnectedComponentsFromNodesToDisplay();
+				final long diff = nowInNanoSeconds - requestPlaceOnePassTimeInMls;
+				if (requestPlaceOnePassTimeInMls > 0 && diff > 50 * ONE_MILLISECOND_IN_NANOSECONDS) {
+					try {
+						requestPlaceOnePassTimeInMls = 0;
+						if (newImportanceAlgorithm) {
+							newImportanceAlgorithm = false;
+							runCurrentImportanceAlgorithm();
+							assignImportanceIndicesAndSortSavedAllNodes();
+							makeNodesToDisplayFromSavedNodesAndCountToShow();
+							computeConnectedComponentsFromNodesToDisplay();
+						}
+						placeOnePassAndRefreshNodes();
+					} catch (Throwable thr) {
+						thr.printStackTrace();
+						System.exit(1);
 					}
-					placeOnePassAndRefreshNodes();
 				}
-			}};
+			}
+		};
 		timer.start();
 	}
 	// --------------------------

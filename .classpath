@@ -6,10 +6,17 @@
 	<classpathentry kind="lib" path="lib/jung-algorithms-2.0.1.jar"/>
 	<classpathentry kind="lib" path="lib/jung-api-2.0.1.jar"/>
 	<classpathentry kind="lib" path="lib/jung-graph-impl-2.0.1.jar"/>
+	<classpathentry kind="lib" path="lib/gs-ui-1.3.jar"/>
+	<classpathentry kind="lib" path="lib/gs-algo-1.3.jar"/>
+	<classpathentry kind="lib" path="lib/jung-graph-impl-2.1.1.jar"/>
+	<classpathentry kind="lib" path="lib/jung-algorithms-2.1.1.jar"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER">
 		<accessrules>
 			<accessrule kind="accessible" pattern="javafx/**"/>
 		</accessrules>
 	</classpathentry>
+	<classpathentry kind="lib" path="D:/Java/T-SNE-Java/tsne-core/target/tsne-2.5.0.jar" sourcepath="D:/Java/T-SNE-Java/tsne-core/src/main/java"/>
+	<classpathentry kind="lib" path="D:/Java/MDS/mdsj.jar"/>
+	<classpathentry kind="lib" path="D:/java-jars/colt-1.2.0.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

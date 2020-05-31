@@ -1,6 +1,7 @@
 package grapher;
 
 import java.text.NumberFormat;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -16,6 +17,7 @@ import edu.uci.ics.jung.algorithms.importance.MarkovCentrality;
 import edu.uci.ics.jung.algorithms.importance.RandomWalkBetweenness;
 import edu.uci.ics.jung.algorithms.scoring.ClosenessCentrality;
 import edu.uci.ics.jung.algorithms.scoring.PageRank;
+import edu.uci.ics.jung.graph.DirectedSparseGraph;
 import edu.uci.ics.jung.graph.Graph;
 import edu.uci.ics.jung.graph.UndirectedSparseGraph;
 import javafx.geometry.Point3D;
@@ -642,8 +644,10 @@ public class Node3D implements Comparable<Node3D> {
 	}
 	public static void computeImportanceViaJungMarkovCentrality(List<Node3D> nodes) {
 		long startTime=System.currentTimeMillis();
-		UndirectedSparseGraph<Node3D,Integer> graph = new UndirectedSparseGraph<>();
-		RandomWalkBetweenness<Node3D,Integer> scorer = new RandomWalkBetweenness<Node3D,Integer>(graph);
+		DirectedSparseGraph<Node3D,Integer> graph = new DirectedSparseGraph<>();
+		Set<Node3D> set = new HashSet<>();
+		set.add(nodes.get(0));
+		MarkovCentrality<Node3D,Integer> markovCentralityScorer = new MarkovCentrality<Node3D,Integer>(graph,set);
 		for(Node3D node:nodes) {
 			graph.addVertex(node);
 		}
@@ -654,37 +658,22 @@ public class Node3D implements Comparable<Node3D> {
 				edgeCount++;
 			}
 		}
-		scorer.evaluate();
+		//markovCentralityScorer.setRemoveRankScoresOnFinalize(false);
+		markovCentralityScorer.evaluate(); // Causes NullPointerException
 	//	ranker.printRankings(true, true); 
 		for(Node3D node:nodes) {
-			node.setImportance(1+scorer.getVertexRankScore(node));
+			node.setImportance(1+markovCentralityScorer.getVertexRankScore(node));
 			//System.out.println(node + " has importance " + node.getImportance());
 		}
 		double seconds = 0.001*(System.currentTimeMillis()-startTime);
 		System.out.println(seconds + " seconds to compute importance via Jung's MarkovCentrality");
 	}
 	public static void computeImportanceViaJungMarkovCentrality(Node3D[] nodes) {
-		long startTime=System.currentTimeMillis();
-		UndirectedSparseGraph<Node3D,Integer> graph = new UndirectedSparseGraph<>();
-		RandomWalkBetweenness<Node3D,Integer> scorer = new RandomWalkBetweenness<Node3D,Integer>(graph);
-		for(Node3D node:nodes) {
-			graph.addVertex(node);
+		List<Node3D> list = new ArrayList<>();
+		for(Node3D n:nodes) {
+			list.add(n);
 		}
-		int edgeCount=0;
-		for(Node3D node:nodes) {
-			for(Node3D neighbor:node.getNeighbors()) {
-				graph.addEdge(new Integer(edgeCount),node,neighbor);
-				edgeCount++;
-			}
-		}
-		scorer.evaluate();
-	//	ranker.printRankings(true, true); 
-		for(Node3D node:nodes) {
-			node.setImportance(1+scorer.getVertexRankScore(node));
-			//System.out.println(node + " has importance " + node.getImportance());
-		}
-		double seconds = 0.001*(System.currentTimeMillis()-startTime);
-		System.out.println(seconds + " seconds to compute importance via Jung's MarkovCentrality");
+		computeImportanceViaJungMarkovCentrality(list);
 	}
 	public static void computeImportanceViaJungRandomWalkBetweenness(List<Node3D> nodes) {
 		long startTime=System.currentTimeMillis();
@@ -723,6 +712,7 @@ public class Node3D implements Comparable<Node3D> {
 				edgeCount++;
 			}
 		}
+		scorer.setRemoveRankScoresOnFinalize(false);
 		scorer.evaluate();
 	//	ranker.printRankings(true, true); 
 		for(Node3D node:nodes) {
