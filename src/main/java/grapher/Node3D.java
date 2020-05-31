@@ -13,8 +13,7 @@ import java.util.Set;
 import java.util.TreeMap;
 
 import edu.uci.ics.jung.algorithms.importance.BetweennessCentrality;
-import edu.uci.ics.jung.algorithms.importance.MarkovCentrality;
-import edu.uci.ics.jung.algorithms.importance.RandomWalkBetweenness;
+import edu.uci.ics.jung.algorithms.importance.KStepMarkov;
 import edu.uci.ics.jung.algorithms.scoring.ClosenessCentrality;
 import edu.uci.ics.jung.algorithms.scoring.PageRank;
 import edu.uci.ics.jung.graph.DirectedSparseGraph;
@@ -643,30 +642,31 @@ public class Node3D implements Comparable<Node3D> {
 		System.out.println(seconds + " seconds to compute importance via Jung's PageRank");
 	}
 	public static void computeImportanceViaJungMarkovCentrality(List<Node3D> nodes) {
-		long startTime=System.currentTimeMillis();
-		DirectedSparseGraph<Node3D,Integer> graph = new DirectedSparseGraph<>();
-		Set<Node3D> set = new HashSet<>();
-		set.add(nodes.get(0));
-		MarkovCentrality<Node3D,Integer> markovCentralityScorer = new MarkovCentrality<Node3D,Integer>(graph,set);
-		for(Node3D node:nodes) {
-			graph.addVertex(node);
-		}
-		int edgeCount=0;
-		for(Node3D node:nodes) {
-			for(Node3D neighbor:node.getNeighbors()) {
-				graph.addEdge(new Integer(edgeCount),node,neighbor);
-				edgeCount++;
-			}
-		}
-		//markovCentralityScorer.setRemoveRankScoresOnFinalize(false);
-		markovCentralityScorer.evaluate(); // Causes NullPointerException
-	//	ranker.printRankings(true, true); 
-		for(Node3D node:nodes) {
-			node.setImportance(1+markovCentralityScorer.getVertexRankScore(node));
-			//System.out.println(node + " has importance " + node.getImportance());
-		}
-		double seconds = 0.001*(System.currentTimeMillis()-startTime);
-		System.out.println(seconds + " seconds to compute importance via Jung's MarkovCentrality");
+//		long startTime=System.currentTimeMillis();
+//		DirectedSparseGraph<Node3D,Integer> graph = new DirectedSparseGraph<>();
+//		int k=5;
+//		Set<Node3D> priors= new HashSet<>();
+//		Map<Integer, Number> edgeWeights= new HashMap<>();
+//				//new KStepMarkov<Nod3D,Integer>(graph,priors,k,edgeWeights);
+//		for(Node3D node:nodes) {
+//			graph.addVertex(node);
+//		}
+//		int edgeCount=0;
+//		for(Node3D node:nodes) {
+//			for(Node3D neighbor:node.getNeighbors()) {
+//				graph.addEdge(new Integer(edgeCount),node,neighbor);
+//				edgeCount++;
+//			}
+//		}
+//		//markovCentralityScorer.setRemoveRankScoresOnFinalize(false);
+//		markovCentralityScorer.evaluate(); // Causes NullPointerException
+//	//	ranker.printRankings(true, true); 
+//		for(Node3D node:nodes) {
+//			node.setImportance(1+markovCentralityScorer.getVertexRankScore(node));
+//			//System.out.println(node + " has importance " + node.getImportance());
+//		}
+//		double seconds = 0.001*(System.currentTimeMillis()-startTime);
+//		System.out.println(seconds + " seconds to compute importance via Jung's MarkovCentrality");
 	}
 	public static void computeImportanceViaJungMarkovCentrality(Node3D[] nodes) {
 		List<Node3D> list = new ArrayList<>();
@@ -675,53 +675,30 @@ public class Node3D implements Comparable<Node3D> {
 		}
 		computeImportanceViaJungMarkovCentrality(list);
 	}
-	public static void computeImportanceViaJungRandomWalkBetweenness(List<Node3D> nodes) {
-		long startTime=System.currentTimeMillis();
-		UndirectedSparseGraph<Node3D,Integer> graph = new UndirectedSparseGraph<>();
-		RandomWalkBetweenness<Node3D,Integer> scorer = new RandomWalkBetweenness<Node3D,Integer>(graph);
-		for(Node3D node:nodes) {
-			graph.addVertex(node);
-		}
-		int edgeCount=0;
-		for(Node3D node:nodes) {
-			for(Node3D neighbor:node.getNeighbors()) {
-				graph.addEdge(new Integer(edgeCount),node,neighbor);
-				edgeCount++;
-			}
-		}
-		scorer.evaluate();
-	//	ranker.printRankings(true, true); 
-		for(Node3D node:nodes) {
-			node.setImportance(1+scorer.getVertexRankScore(node));
-			//System.out.println(node + " has importance " + node.getImportance());
-		}
-		double seconds = 0.001*(System.currentTimeMillis()-startTime);
-		System.out.println(seconds + " seconds to compute importance via Jung's RandomWalkBetweenness");
-	}
-	public static void computeImportanceViaJungRandomWalkBetweenness(final Node3D[] nodes) {
-		long startTime=System.currentTimeMillis();
-		UndirectedSparseGraph<Node3D,Integer> graph = new UndirectedSparseGraph<>();
-		RandomWalkBetweenness<Node3D,Integer> scorer = new RandomWalkBetweenness<Node3D,Integer>(graph);
-		for(Node3D node:nodes) {
-			graph.addVertex(node);
-		}
-		int edgeCount=0;
-		for(Node3D node:nodes) {
-			for(Node3D neighbor:node.getNeighbors()) {
-				graph.addEdge(new Integer(edgeCount),node,neighbor);
-				edgeCount++;
-			}
-		}
-		scorer.setRemoveRankScoresOnFinalize(false);
-		scorer.evaluate();
-	//	ranker.printRankings(true, true); 
-		for(Node3D node:nodes) {
-			node.setImportance(1+scorer.getVertexRankScore(node));
-			//System.out.println(node + " has importance " + node.getImportance());
-		}
-		double seconds = 0.001*(System.currentTimeMillis()-startTime);
-		System.out.println(seconds + " seconds to compute importance via Jung's RandomWalkBetweenness");
-	}
+//	public static void computeImportanceViaJungRandomWalkBetweenness(List<Node3D> nodes) {
+//		long startTime=System.currentTimeMillis();
+//		UndirectedSparseGraph<Node3D,Integer> graph = new UndirectedSparseGraph<>();
+//		RandomWalkBetweenness<Node3D,Integer> scorer = new RandomWalkBetweenness<Node3D,Integer>(graph);
+//		for(Node3D node:nodes) {
+//			graph.addVertex(node);
+//		}
+//		int edgeCount=0;
+//		for(Node3D node:nodes) {
+//			for(Node3D neighbor:node.getNeighbors()) {
+//				graph.addEdge(new Integer(edgeCount),node,neighbor);
+//				edgeCount++;
+//			}
+//		}
+//		scorer.evaluate();
+//	//	ranker.printRankings(true, true); 
+//		for(Node3D node:nodes) {
+//			node.setImportance(1+scorer.getVertexRankScore(node));
+//			//System.out.println(node + " has importance " + node.getImportance());
+//		}
+//		double seconds = 0.001*(System.currentTimeMillis()-startTime);
+//		System.out.println(seconds + " seconds to compute importance via Jung's RandomWalkBetweenness");
+//	}
+	
 	
 	//WeightedNIPaths  requires rootSet
 	public static void computeImportanceViaJungClosenessCentrality(List<Node3D> nodesList) {

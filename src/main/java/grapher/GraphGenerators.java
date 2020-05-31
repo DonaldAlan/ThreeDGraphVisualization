@@ -10,10 +10,6 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 
-import org.apache.commons.collections15.Factory;
-
-import edu.uci.ics.jung.algorithms.generators.random.BarabasiAlbertGenerator;
-import edu.uci.ics.jung.algorithms.generators.random.KleinbergSmallWorldGenerator;
 import edu.uci.ics.jung.graph.Graph;
 import edu.uci.ics.jung.graph.UndirectedSparseGraph;
 
@@ -52,92 +48,7 @@ public class GraphGenerators {
 		return nodes;
 	}
 	
-	private interface Goer {
-		public Graph<String,String> go(Factory<Graph<String,String>> graphFactory,Factory<String> vertexFactory,Factory<String> edgeFactory,int init_vertices,Set<String> seedVertices);
-	}
-	public static Node3D[] createBarabasiAlbertViaJung(int generations, int numberOfEdgesToAttach) {
-		Goer goer = new Goer() {
-			@Override
-			public Graph<String, String> go(Factory<Graph<String,String>> graphFactory,Factory<String> vertexFactory,Factory<String> edgeFactory,int init_vertices,Set<String> seedVertices) {
-				BarabasiAlbertGenerator<String,String> gen = new BarabasiAlbertGenerator<String,String>(graphFactory,vertexFactory,edgeFactory,init_vertices,numberOfEdgesToAttach,seedVertices);
-				gen.evolveGraph(generations);
-				return gen.create();
-			}};
-		return doGo(goer);
-	}
-	public static Node3D[] createKleinbergSmallWorldGenerator(int rowCount, int columnCount,double clusteringExponent, boolean isToroidal) {
-		Goer goer = new Goer() {
-			@Override
-			public Graph<String, String> go(Factory<Graph<String,String>> graphFactory,Factory<String> vertexFactory,Factory<String> edgeFactory,int init_vertices,Set<String> seedVertices) {
-				KleinbergSmallWorldGenerator<String,String> gen= new KleinbergSmallWorldGenerator<String,String>(graphFactory,vertexFactory,edgeFactory,rowCount,columnCount,clusteringExponent,isToroidal);
-				return gen.create();
-			}};
-		return doGo(goer);
-	}
-	//---------------
-	//BarabasiAlbertGenerator
-	private static Node3D[] doGo(Goer goer) {
-		Set<String> seedVertices= new HashSet<>();
-		int init_vertices=10;
-		final UndirectedSparseGraph<String,String> graph = new UndirectedSparseGraph<>(); 
-		Factory<String> edgeFactory=new Factory<String>() {
-			@Override
-			public String create() {
-				return "e"+ graph.getEdgeCount();
-			}};
-		Factory<String> vertexFactory=new Factory<String>() {
-			@Override
-			public String create() {
-				return "v" + graph.getVertexCount();
-			}};
-		Factory<Graph<String,String>> graphFactory=new Factory<Graph<String,String>>() {
-			@Override
-			public Graph<String, String> create() {
-				return graph;
-			}};
-			
-		Graph<String,String> outputGraph=goer.go(graphFactory,vertexFactory,edgeFactory,init_vertices,seedVertices);
-//		if (doBarabasiAlbert) {
-//			BarabasiAlbertGenerator<String,String> gen = new BarabasiAlbertGenerator<String,String>(graphFactory,vertexFactory,edgeFactory,init_vertices,numberOfEdgesToAttach,seedVertices);
-//			gen.evolveGraph(generations);
-//			outputGraph=gen.create();
-//		} else {
-//			int row_count=20;
-//			int col_count=20;
-//			double clusteringExponent=4.2;
-//			boolean isToroidal=false;
-//			KleinbergSmallWorldGenerator<String,String> gen2= new KleinbergSmallWorldGenerator(graphFactory,vertexFactory,edgeFactory,row_count,col_count,clusteringExponent,isToroidal);
-//			outputGraph=gen2.create();
-//		}
-		
-	//	System.out.println("Generated graph has " + outputGraph.getVertexCount() + " vertices and " + outputGraph.getEdgeCount() + " edges");
-		Node3D[] nodes = new Node3D[outputGraph.getVertexCount()];
-		int i=0;
-		Map<String,Node3D> map = new HashMap<>();
-		for(String v:outputGraph.getVertices()) {
-			Node3D node=nodes[i]= new Node3D(v);
-			map.put(v, node);
-			i++;
-		}
-		i=0;
-		for(String v:outputGraph.getVertices()) {
-			Node3D vNode = map.get(v);
-			if (vNode==null) {
-				throw new IllegalStateException("No node for " + v);
-			}
-			for(String neighbor: outputGraph.getSuccessors(v)) { 
-				Node3D neighborNode = map.get(neighbor);
-				if (neighborNode==null) {
-					throw new IllegalStateException("No node for " + neighbor);
-				}
-				vNode.addEdge(neighborNode);
-				neighborNode.addEdge(vNode);
-			}
-			
-			i++;
-		}
-		return nodes;
-	}
+
 	//---------------------------------
 	//MixedRandomGraphGenerator
 	private static Node3D[] createKleinbergSmallWorldViaJung() {
@@ -298,7 +209,7 @@ public class GraphGenerators {
 	}
 	public static void writeToFile() {
 		try {
-			Node3D[] nodes =createBarabasiAlbertViaJung(60,3); // makeSphere(5, 5);
+			Node3D[] nodes =createKleinbergSmallWorldViaJung(); // makeSphere(5, 5);
 			writeGMLGraphToFile(nodes, "d:/tmp/test.gml"); 
 		} catch (Throwable thr) {
 			thr.printStackTrace();

@@ -29,7 +29,6 @@ import java.text.NumberFormat;
 import grapher.Node3D;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -38,10 +37,6 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import javax.swing.JOptionPane;
-import javax.swing.event.ListSelectionEvent;
-
-import com.sun.org.apache.bcel.internal.generic.InstructionConstants.Clinit;
-
 import javafx.animation.AnimationTimer;
 import javafx.application.Application;
 import javafx.collections.FXCollections;
@@ -55,7 +50,6 @@ import javafx.scene.Group;
 import javafx.scene.PerspectiveCamera;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
-import javafx.scene.control.CheckBox;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Slider;
 import javafx.scene.control.Tooltip;
@@ -70,7 +64,6 @@ import javafx.scene.layout.CornerRadii;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.PhongMaterial;
 import javafx.scene.shape.Cylinder;
-import javafx.scene.shape.Shape3D;
 import javafx.scene.shape.Sphere;
 import javafx.scene.text.Font;
 import javafx.scene.transform.Rotate;
@@ -344,9 +337,9 @@ public class Visualizer extends Application {
 			case randomWalkVisits:
 				Node3D.computeImportanceViaRandomWalks(savedAllNodes, 20, 100);
 				break;
-			case randomWalkCentralityJung:
-				Node3D.computeImportanceViaJungRandomWalkBetweenness(savedAllNodes);
-				break;
+//			case randomWalkCentralityJung:
+//				Node3D.computeImportanceViaJungRandomWalkBetweenness(savedAllNodes);
+//				break;
 			case markovCentralityJung:
 				Node3D.computeImportanceViaJungMarkovCentrality(savedAllNodes);
 				break;
@@ -372,9 +365,9 @@ public class Visualizer extends Application {
 			case randomWalkVisits:
 				Node3D.computeImportanceViaRandomWalks(component.getNodes(), 20, 100);
 				break;
-			case randomWalkCentralityJung:
-				Node3D.computeImportanceViaJungRandomWalkBetweenness(component.getNodes());
-				break;
+//			case randomWalkCentralityJung:
+//				Node3D.computeImportanceViaJungRandomWalkBetweenness(component.getNodes());
+//				break;
 			case markovCentralityJung:
 				Node3D.computeImportanceViaJungMarkovCentrality(component.getNodes());
 				break;
