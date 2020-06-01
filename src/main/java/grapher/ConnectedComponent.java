@@ -33,7 +33,7 @@ public class ConnectedComponent {
 	private Node3D[][][] nodeMatrix;
 	private int numberOfNodesToShow;
 	public double simpleDecayFactor = 0.75;
-	public static int secondsToWaitPerIterationPer1000 = 4;
+	public static int secondsToWaitPerIterationPer1000 = 6;
 	public static int stochasticMovesReps = 14; // Raising this will result in prettier graphs, at the cost of slower
 												// execution. TODO: slider, etc.
 	public static int numberOfSamplesForApproximation = 1000; // The higher, the more approximate the forces using

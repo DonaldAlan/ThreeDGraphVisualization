@@ -8,20 +8,21 @@ License:  The GNU Lesser General Public License (LGPL)
 
 RUNNING:
 
-Either run inside Eclipse or some other IDE, or you'll need to edit compile.bat, run-BuildGeneratedGraphs.bat  and run-ChooseGraphFilesAndVisualize.bat  so they point to your jdk/jre. You may need to edit the path to jfxrt.jar in those files, if you use an older version of java.
+Execute run-ChooseGraphFileAndVisualize.sh  or  run-ChooseGraphFileAndVisualize.bat
+
 
 See the images in screenshots/ for sample screenshots.
 
 Two ways to use this toolkit are:
 
-1. ChooseGraphFileAndVisualize.java  (run-ChooseGraphFilesAndVisualize.bat)
+1. ChooseGraphFileAndVisualize.java  (run-ChooseGraphFilesAndVisualize.sh/bat)
 
   Run ChooseGraphFileAndVisualize.java to choose graph files in various formats (gexf, gml, and graphml) and visualize them.  
   In the graphs/ subdirectory you'll find some sample graphs.    When you run ChooseGraphFileAndVisualize.java, it will present a FileChooser dialog 
   pointing to the graphs/ subdirectory.
 
 
-2.  BuildGeneratedGraphs.java  (run-BuildGeneratedGraphs.bat)
+2.  BuildGeneratedGraphs.java  
 
   Run BuildGeneratedGraphs.java to view some synthetic (generated) graphs. Modify the code in main(String args) to choose which graph to visualize.
 
@@ -53,16 +54,4 @@ Two ways to use this toolkit are:
  The program can load in graphs with tens of thousands of nodes, but can visualize on the screen only thousands of nodes in a reasonable amount of time.  Graphs with tens of thousands of nodes will probably be take minutes to appear (if you adjust the slider to the right).
 
 -------------------------------------------------------------------
-
- In the lib/ subdirectory you'll find several jar files:
-
-collections-generic-4.01.jar Apache license
-
-gs-core-1.3.jar              CeCILL-C (French version) and LGPL v3.     from http://graphstream-project.org/      Used to read some graphs.
-
-The following Jung jars are used for importance algoritms and graph generators (not for layout).    From http://jung.sourceforge.net/         
-jung-algorithms-2.0.1.jar    Berkley license 
-jung-api-2.0.1.jar           Berkley license
-jung-graph-impl-2.0.1.jar    Berkley license
-
 
