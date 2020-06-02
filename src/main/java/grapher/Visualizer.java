@@ -135,7 +135,7 @@ public class Visualizer extends Application {
 	private final BackgroundFill controlBackgroundFill = new BackgroundFill(Color.SKYBLUE, CornerRadii.EMPTY, Insets.EMPTY);
 	private final Background controlBackground = new Background(controlBackgroundFill);
 
-	private final Button redrawButton=new Button("Redraw");
+	private final Button redrawButton=new Button("Optimize");
 	private volatile boolean newImportanceAlgorithm = false;
 	private long timeOfLastKeyEvent=0;
 	private long finishedFocusTime=0;
@@ -163,7 +163,7 @@ public class Visualizer extends Application {
 		}
 		requestPlaceOnePassTimeInMls=System.nanoTime();
 		redrawButton.setBackground(backgroundRedrawing);
-		redrawButton.setText("Redrawing");
+		redrawButton.setText("Working");
 	}
 	public double getTotalCost() {
 		double totalCost=0;
@@ -176,7 +176,7 @@ public class Visualizer extends Application {
 		placeOnePassWithoutRefreshingNodes();
 		refreshNodes();
 		redrawButton.setBackground(controlBackground);
-		redrawButton.setText("Redraw");
+		redrawButton.setText("Optimize");
 	}
 	public void placeOnePassWithoutRefreshingNodes() {
 		long startTime=System.currentTimeMillis();
@@ -487,6 +487,7 @@ public class Visualizer extends Application {
 		redrawButton.setTranslateY(-335);
 		redrawButton.setTranslateZ(1300);
 		redrawButton.setBackground(controlBackground);
+		redrawButton.setTooltip(new Tooltip("Refine the placement of nodes to optimize layout."));
 		redrawButton.setOnAction( e -> {
 			requestReplaceOnePass();
 		});
