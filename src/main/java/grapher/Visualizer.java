@@ -5,24 +5,11 @@ package grapher;
  * 
  * See README.txt for more documentation. 
  * 
- * TODO 0:  Show focused nodes in a separate JavaFX Stage, so it can show nodes not in nodesToDisplay 
- * Causes bug in Node3D.addNeighborsAtDistance:
- *  0 mls to get neighborhood  at max distance 1 ha size 12
- *  0 mls to get neighborhood  at max distance 2 ha size 95
- * 	0 mls to get neighborhood  at max distance 3 ha size 62 <------
- * 
  * TODO 1: First layout the most important nodes. Then fix their positions and layout the less important nodes, in stages.
  * TODO 2: Allow the relaxation algorithms to run in the background while the UI updates, with a STOP button.
  * TODO 3: Allow different scales. It's OK if the user needs to ZOOM in to see substructure.
- * TODO 4: Changing focus doesn't change the nodes included in ndoesToDisplay; it only changes which ones are visible. 
- *   If the user wants to explore other nodes not included, they won't appear.  But it would be annoying if 
- *   each time you click on a node, the placement is recomputed and nodes move.  To fix this I could
- *        a. Focus in a separate window, showing JUST a tree of nodes from the focus node (with mouse-over showing links).
- *    or: b. layout all nodes once but only show focussed ones. This is partly implemented. To make it better do:
- *      TODO: 4a.  Layout all the nodes (via stochastic positioning, for example), but only build nodes and cylinders
- *      for the ones in focus. 
- * TODO 5: Compare Gephi's Yifan Hu, Force Atlas
- * TODO 6: Support hiding (high-importance) sets of nodes and their edges (which are often boring), and unhiding.
+ * TODO 4: Compare Gephi's Yifan Hu, Force Atlas
+ * TODO 5: Support hiding (high-importance) sets of nodes and their edges (which are often boring), and unhiding.
  */
 
 import java.text.NumberFormat;
@@ -32,8 +19,11 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Queue;
 import java.util.Random;
 import java.util.Set;
 import javax.swing.JOptionPane;
@@ -121,6 +111,7 @@ public class Visualizer extends Application {
 	private List<Cylinder> cylinders = new ArrayList<Cylinder>();
 	private final Group root = new Group();
 	private Stage primaryStage;
+	private boolean showOnlyTreeEdgesWhileFocused=false;
 	private MessageBox messageBox;
 	static volatile int countToShow = 0; // used
 	private Font tooltipFont = new Font("Times Roman",20);
@@ -756,6 +747,7 @@ public class Visualizer extends Application {
 	void focus(Node3D node, int focusDistance) {
 		focusedNode=node;
 		maxFocusDistance=focusDistance;
+		showOnlyTreeEdgesWhileFocused=false;
 		try {
 			System.out.println("---------------------------------");
 			final long startTime=System.currentTimeMillis();
@@ -791,7 +783,60 @@ public class Visualizer extends Application {
 		}
 		finishedFocusTime=System.currentTimeMillis();
 	}
-
+	private static Node3D removeFirst(Set<Node3D> set) {
+		Iterator<Node3D> iterator = set.iterator();
+		Node3D node = iterator.next();
+		iterator.remove();
+		return node;
+	}
+	//TODO: buggie
+	private void makeOnlyTreeEdgesVisible() {
+		final Set<Node3D> visibleNodesSoFar = new HashSet<>();
+		final Map<Node3D,List<Cylinder>> mapFromNodeToCylinder = new HashMap<>();
+		final Set<Node3D> nodesToDisplaySet = new HashSet<>();
+		for(Node3D n:nodesToDisplay) {nodesToDisplaySet.add(n);}
+		for(Cylinder cylinder:cylinders) {
+			cylinder.setVisible(false);
+			Pair<Node3D,Node3D> pair = (Pair<Node3D,Node3D>) cylinder.getUserData();
+			List<Cylinder> listKey = mapFromNodeToCylinder.get(pair.getKey());
+			if (listKey==null) {
+				listKey = new ArrayList<>();
+				mapFromNodeToCylinder.put(pair.getKey(), listKey);				
+			}
+			listKey.add(cylinder);
+			List<Cylinder> listValue = mapFromNodeToCylinder.get(pair.getValue());
+			if (listValue==null) {
+				listValue = new ArrayList<>();
+				mapFromNodeToCylinder.put(pair.getValue(), listValue);				
+			}
+			listValue.add(cylinder);
+		}
+		Queue<Node3D> toDo = new LinkedList<>();
+		toDo.add(focusedNode);
+		visibleNodesSoFar.add(focusedNode);
+		int countCylindersVisible=0;
+		while (!toDo.isEmpty()) {
+			Node3D node = toDo.poll();
+			List<Cylinder> list = mapFromNodeToCylinder.get(node);
+			if (list != null) {
+				for (Cylinder cylinder : list) {
+					Pair<Node3D, Node3D> pair = (Pair<Node3D, Node3D>) cylinder.getUserData();
+					Node3D next = pair.getValue();
+					if (!visibleNodesSoFar.contains(next)) {
+						visibleNodesSoFar.add(next);
+						cylinder.setVisible(true);
+						countCylindersVisible++;
+						for (Node3D nextNext : next.getNeighbors()) {
+							if (nodesToDisplaySet.contains(nextNext) && !visibleNodesSoFar.contains(nextNext)) {
+								toDo.add(nextNext);
+							}
+						}
+					}
+				}
+			}
+		}
+		System.out.println("Made " + countCylindersVisible + " cylinders visible");
+	}
 	private EventHandler<KeyEvent> keyEventHandler = new EventHandler<KeyEvent>() {
 		private long lastSearchAndFocusTime=0;
 		public void handle(KeyEvent ke) {
@@ -804,6 +849,22 @@ public class Visualizer extends Application {
 			switch (ke.getCode()) {
 			case Q: 
 				System.exit(0);
+				break;
+			case T:
+				showOnlyTreeEdgesWhileFocused = !showOnlyTreeEdgesWhileFocused;
+				System.out.println("Set showOnlyTreeEdgesWhileFocused to " + showOnlyTreeEdgesWhileFocused);
+				if (focusedNode==null || !showOnlyTreeEdgesWhileFocused) {
+					for(Cylinder cylinder:cylinders) {
+						cylinder.setVisible(true);
+					}
+				} else if (focusedNode!=null && showOnlyTreeEdgesWhileFocused) {
+					try {
+						makeOnlyTreeEdgesVisible();
+					} catch (Throwable thr) {
+						thr.printStackTrace();
+						System.exit(1);
+					}
+				}
 				break;
 			case R: {
 				// TODO: sort nodes by cost and move the costliest ones.
@@ -872,6 +933,7 @@ public class Visualizer extends Application {
 						+ "\n Press 'r' or click on 'Redraw' to optimize the layout, 'R' to randomize first"
 						+ "\n Press 's' to decrease the size of the nodes and edges, 'S' to increase the sizes"
 						+ "\n Press 'c' to randomize the colors."
+						+ "\n Press 't' to hide non-tree edges while focusing."
 						+ "\n Press 'q' to exit."
 						;
 				new MessageBox(message,"Help");
