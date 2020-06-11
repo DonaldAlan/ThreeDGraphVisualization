@@ -58,9 +58,12 @@ public class ReadGraphAndVisualize {
 				System.out.println(line);
 			} else {
 				String parts[]=line.split("\\s+");
-				if (line.length()<2) {
-					System.err.println("Ignoring line " + line);
-					continue;
+				if (parts.length<2 || parts.length>3) {
+					parts = line.split(",");
+					if (parts.length<2 || parts.length>3) {
+						System.err.println("Ignoring line " + line);
+						continue;
+					}
 				}
 				String n1=parts[0];
 				String n2=parts[1];

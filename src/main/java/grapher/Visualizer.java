@@ -927,14 +927,14 @@ public class Visualizer extends Application {
 						+ "\n Use the next drop-down to adjust the count of stochastic repulsive nodes; higher values result in nicer graphs."
 						+ "\n Use the slider at the top to adjust how many nodes to display, ordered by importance."
 						+ "\n Use the next slider to adjust the repulsive force (how spread out the graph is)."
-						+ "\n Left-click on a node to see details. Right click to focus/unfocus; hit Escape to unfocus."
-						+ "\n Press Ctrl-F to search for a node by id. If found, the program will focus on that node."
-						+ "\n\n Press PageUp and PageDown to adjust how many nodes are shown when focussed."
-						+ "\n Press 'r' or click on 'Redraw' to optimize the layout, 'R' to randomize first"
-						+ "\n Press 's' to decrease the size of the nodes and edges, 'S' to increase the sizes"
+						+ "\n Press 'r' or click on 'Optimize' to optimize the layout, 'R' to randomize first"
 						+ "\n Press 'c' to randomize the colors."
-						+ "\n Press 't' to hide non-tree edges while focusing."
+						+ "\n Press 's' to decrease the size of the nodes and edges, 'S' to increase the sizes"
 						+ "\n Press 'q' to exit."
+						+ "\n Press Ctrl-F to search for a node by id. If found, the program will focus on that node."
+						+ "\n Left-click on a node to see details. Right click to focus/unfocus; hit Escape to unfocus."
+						+ "\n   Press PageUp and PageDown to adjust how many nodes are shown when focused."
+						+ "\n   Press 't' to hide non-tree edges when focused."
 						;
 				new MessageBox(message,"Help");
 				break;

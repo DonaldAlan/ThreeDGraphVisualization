@@ -10,6 +10,8 @@ RUNNING:
 
 Execute run-ChooseGraphFileAndVisualize.sh  or  run-ChooseGraphFileAndVisualize.bat
 
+I've tested it with Java 8.
+
 
 See the images in screenshots/ for sample screenshots.
 
