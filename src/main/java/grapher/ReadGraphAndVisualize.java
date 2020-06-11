@@ -44,7 +44,51 @@ public class ReadGraphAndVisualize {
 	public ReadGraphAndVisualize(String path) {
 		this.path = path;
 	}
+	private String findSeparator(String path) throws IOException {
+		BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(path)));
+		int countEdges=0;
+		int countSpace=0;
+		int countComma=0;
+		int countTab=0;
+		while (countEdges<100) {
+			String line=reader.readLine();
+			if (line==null) {
+				break;
+			}
+			if (line.startsWith("#") || line.startsWith("%")) {
+				System.out.println(line);
+			} else if (line.length()==0) {
+			} else {
+				countEdges++;
+				int cTab = line.split("\t").length;
+				if (cTab==2 || cTab==3) {
+					countTab++;
+				} else {
+					int cComma = line.split(",").length;
+					if (cComma==2 || cComma==3) {
+						countComma++;
+					} else {
+						int cSpace = line.split(" ").length;
+						if (cSpace==2 || cSpace == 3) {
+							countSpace++;
+						}
+					}
+				}
+			}
+		}
+		reader.close();
+		System.out.println("countSpace = " + countSpace + ", countTab = " + countTab + ", countComma = " + countComma);
+		if (countSpace> countComma && countSpace>countTab) {
+			return " ";
+		} else if (countComma> countSpace && countComma> countTab) {
+			return ",";
+		} else if (countTab> countSpace && countTab> countComma) {
+			return "\t";
+		}
+		throw new RuntimeException("Unable to find separator in file " + path);
+	}
 	private void readInGraphFromTextFileWithNodeNodeWeightForEdge(String path) throws IOException {
+		final String separator = findSeparator(path);
 		BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(path)));
 		int lineNumber=0;
 		int countEdges=0;
@@ -56,8 +100,9 @@ public class ReadGraphAndVisualize {
 			lineNumber++;
 			if (line.startsWith("#") || line.startsWith("%")) {
 				System.out.println(line);
+			} else if (line.length()==0) {
 			} else {
-				String parts[]=line.split("\\s+");
+				String parts[]=line.split(separator);
 				if (parts.length<2 || parts.length>3) {
 					parts = line.split(",");
 					if (parts.length<2 || parts.length>3) {
