@@ -10,7 +10,6 @@ public class Edge {
 	public Edge(Node3D node1, Node3D node2) {
 		this.node1 = node1;
 		this.node2 = node2;
-		properties.put("hey", System.nanoTime());
 	}
 	@Override
 	public String toString() {

@@ -10,7 +10,7 @@ package grapher;
  * TODO 3: Allow different scales. It's OK if the user needs to ZOOM in to see substructure.
  * TODO 4: Compare Gephi's Yifan Hu, Force Atlas
  * TODO 5: Support hiding (high-importance) sets of nodes and their edges (which are often boring), and unhiding. Randomly?
- * TODO 6: Support labels, weights and color on edges. This will require significant changes
+ * TODO 6: Support labels, weights and color on edges. This is partially done. I added an Edge class with a tooltip.
  * TODO 7: Add a way to filter nodes and edges by properties.
  */
 
@@ -594,6 +594,11 @@ public class Visualizer extends Application {
 		Rotate rotateAroundCenter = new Rotate(-Math.toDegrees(angle), axisOfRotation);
 		Cylinder line = new Cylinder(cylinderRadius, height);
 		line.setUserData(edge);
+		if (!edge.getProperties().isEmpty()) {
+			Tooltip tooltip = new Tooltip(edge.toString());
+			tooltip.setFont(tooltipFont);
+			Tooltip.install(line, tooltip);
+		}
 		line.getTransforms().addAll(moveToMidpoint, rotateAroundCenter);
 		return line;
 	}

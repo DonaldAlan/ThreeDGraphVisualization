@@ -88,6 +88,11 @@ public class GraphMLReader {
 	    			}
 	    			Edge edge = source.addEdge(target);
 	    			target.addEdge(source,edge);
+	    			for(int i=0;i<attributes.getLength();i++) {
+	    				String name=attributes.getLocalName(i);
+	    				String value = attributes.getValue(i);
+	    				System.out.println(name + ": " + value);
+	    			}
 	    		} else if (node!=null && qName.equals("data")) {
 	    			keyName=attributes.getValue("key");
 	    		} else if (qName.equals("key")) {

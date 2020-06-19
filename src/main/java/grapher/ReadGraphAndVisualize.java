@@ -132,8 +132,8 @@ public class ReadGraphAndVisualize {
 					node2=new Node3D(n2);
 					mapFromNodeIdToNode.put(n2, node2);
 				}
-				node1.addEdge(node2,weight);
-				node2.addEdge(node1,weight);
+				Edge edge= node1.addEdge(node2,weight);
+				node2.addEdge(node1,edge);
 				countEdges++;
 			}
 		}
@@ -265,19 +265,16 @@ public class ReadGraphAndVisualize {
 					throw new IllegalStateException("No node for " + toNodeId);
 				}
 				lastToNode = toNode;
-				fromNode.addEdge(toNode, 1.0);
-				toNode.addEdge(fromNode, 1.0);
+				Edge edge =fromNode.addEdge(toNode);
+				toNode.addEdge(fromNode, edge);
 			}
 
 			@Override
 			public void edgeAttributeAdded(String sourceId, long timeId, String edgeId, String attribute,
 					Object value) {
-				if (attribute.equals("value")) {
-					// System.out.println("For edgeId " + edgeId + ", value = "
-					// + value);
-					double weight = Double.parseDouble(value.toString());
-					lastFromNode.addEdge(lastToNode, weight);
-					lastToNode.addEdge(lastFromNode, weight);
+				Edge edge = lastFromNode.getEdges().get(lastToNode);
+				if (edge!=null) {
+					edge.addProperty(attribute, value);
 				}
 			}
 		};
