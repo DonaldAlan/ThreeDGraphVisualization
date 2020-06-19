@@ -3,6 +3,12 @@ package grapher;
 import java.util.Map;
 import java.util.TreeMap;
 
+/**
+ * There is a single Edge object per pair node1 and node2 (regardless of order).
+ * So users may need to check which of node1 and node2 is the node they're expecting.
+ * @author Don Smith
+ *
+ */
 public class Edge {
 	private final Node3D node1;
 	private final Node3D node2;

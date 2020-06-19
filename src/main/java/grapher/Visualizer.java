@@ -837,18 +837,20 @@ public class Visualizer extends Application {
 		for(Cylinder cylinder:cylinders) {
 			cylinder.setVisible(false);
 			Edge edge = (Edge) cylinder.getUserData();
-			List<Cylinder> listKey = mapFromNodeToCylinder.get(edge.getNode1());
-			if (listKey==null) {
-				listKey = new ArrayList<>();
-				mapFromNodeToCylinder.put(edge.getNode1(), listKey);				
+			{
+				List<Cylinder> list1 = mapFromNodeToCylinder.get(edge.getNode1());
+				if (list1==null) {
+					list1 = new ArrayList<>();
+					mapFromNodeToCylinder.put(edge.getNode1(), list1);				
+				}
+				list1.add(cylinder);
 			}
-			listKey.add(cylinder);
-			List<Cylinder> listValue = mapFromNodeToCylinder.get(edge.getNode2());
-			if (listValue==null) {
-				listValue = new ArrayList<>();
-				mapFromNodeToCylinder.put(edge.getNode1(), listValue);				
+			List<Cylinder> list2 = mapFromNodeToCylinder.get(edge.getNode2());
+			if (list2==null) {
+				list2 = new ArrayList<>();
+				mapFromNodeToCylinder.put(edge.getNode2(), list2);				
 			}
-			listValue.add(cylinder);
+			list2.add(cylinder);
 		}
 		Queue<Node3D> toDo = new LinkedList<>();
 		toDo.add(focusedNode);
@@ -860,7 +862,7 @@ public class Visualizer extends Application {
 			if (list != null) {
 				for (Cylinder cylinder : list) {
 					Edge edge = (Edge) cylinder.getUserData();
-					Node3D next = edge.getNode1();
+					Node3D next = edge.getNode1() == node? edge.getNode2() : edge.getNode1();
 					if (!visibleNodesSoFar.contains(next)) {
 						visibleNodesSoFar.add(next);
 						cylinder.setVisible(true);
