@@ -9,7 +9,9 @@ package grapher;
  * TODO 2: Allow the relaxation algorithms to run in the background while the UI updates, with a STOP button.
  * TODO 3: Allow different scales. It's OK if the user needs to ZOOM in to see substructure.
  * TODO 4: Compare Gephi's Yifan Hu, Force Atlas
- * TODO 5: Support hiding (high-importance) sets of nodes and their edges (which are often boring), and unhiding.
+ * TODO 5: Support hiding (high-importance) sets of nodes and their edges (which are often boring), and unhiding. Randomly?
+ * TODO 6: Support labels, weights and color on edges. This will require significant changes
+ * TODO 7: Add a way to filter nodes and edges by properties.
  */
 
 import java.text.NumberFormat;
@@ -59,7 +61,6 @@ import javafx.scene.text.Font;
 import javafx.scene.transform.Rotate;
 import javafx.scene.transform.Translate;
 import javafx.stage.Stage;
-import javafx.util.Pair;
 
 public class Visualizer extends Application {
 	public static int preferredCountOfNodesShown = 1000; // The slider can override this value.
@@ -583,7 +584,7 @@ public class Visualizer extends Application {
 	}
 
 	// From http://netzwerg.ch/blog/2015/03/22/javafx-3d-line/
-	private Cylinder createCylinderBetween(Point3D origin, Point3D target,Node3D sourceNode, Node3D neighbor) { 
+	private Cylinder createCylinderBetween(Point3D origin, Point3D target,Node3D sourceNode, Node3D neighbor, Edge edge) { 
 		Point3D diff = target.subtract(origin);
 		double height = diff.magnitude();
 		Point3D mid = target.midpoint(origin);
@@ -592,7 +593,7 @@ public class Visualizer extends Application {
 		double angle = Math.acos(diff.normalize().dotProduct(YAXIS));
 		Rotate rotateAroundCenter = new Rotate(-Math.toDegrees(angle), axisOfRotation);
 		Cylinder line = new Cylinder(cylinderRadius, height);
-		line.setUserData(new Pair<Node3D,Node3D>(sourceNode,neighbor));
+		line.setUserData(edge);
 		line.getTransforms().addAll(moveToMidpoint, rotateAroundCenter);
 		return line;
 	}
@@ -641,6 +642,10 @@ public class Visualizer extends Application {
 					}
 				}
 			} else if (pr.getIntersectedNode() instanceof Cylinder) {
+				Object object = pr.getIntersectedNode().getUserData();
+				if (object!=null) {
+					System.out.println("Edge = " + object);
+				}
 			}
 		});
 		scene.setOnMouseReleased((MouseEvent me) -> {
@@ -797,17 +802,17 @@ public class Visualizer extends Application {
 		for(Node3D n:nodesToDisplay) {nodesToDisplaySet.add(n);}
 		for(Cylinder cylinder:cylinders) {
 			cylinder.setVisible(false);
-			Pair<Node3D,Node3D> pair = (Pair<Node3D,Node3D>) cylinder.getUserData();
-			List<Cylinder> listKey = mapFromNodeToCylinder.get(pair.getKey());
+			Edge edge = (Edge) cylinder.getUserData();
+			List<Cylinder> listKey = mapFromNodeToCylinder.get(edge.getNode1());
 			if (listKey==null) {
 				listKey = new ArrayList<>();
-				mapFromNodeToCylinder.put(pair.getKey(), listKey);				
+				mapFromNodeToCylinder.put(edge.getNode1(), listKey);				
 			}
 			listKey.add(cylinder);
-			List<Cylinder> listValue = mapFromNodeToCylinder.get(pair.getValue());
+			List<Cylinder> listValue = mapFromNodeToCylinder.get(edge.getNode2());
 			if (listValue==null) {
 				listValue = new ArrayList<>();
-				mapFromNodeToCylinder.put(pair.getValue(), listValue);				
+				mapFromNodeToCylinder.put(edge.getNode1(), listValue);				
 			}
 			listValue.add(cylinder);
 		}
@@ -820,8 +825,8 @@ public class Visualizer extends Application {
 			List<Cylinder> list = mapFromNodeToCylinder.get(node);
 			if (list != null) {
 				for (Cylinder cylinder : list) {
-					Pair<Node3D, Node3D> pair = (Pair<Node3D, Node3D>) cylinder.getUserData();
-					Node3D next = pair.getValue();
+					Edge edge = (Edge) cylinder.getUserData();
+					Node3D next = edge.getNode1();
 					if (!visibleNodesSoFar.contains(next)) {
 						visibleNodesSoFar.add(next);
 						cylinder.setVisible(true);
@@ -1054,8 +1059,8 @@ public class Visualizer extends Application {
 			c.randomizeColors(mergeCount);
 		}
 		for(Cylinder c:cylinders) {
-			Pair<Node3D,Node3D> pair = (Pair<Node3D,Node3D>) c.getUserData();
-			c.setMaterial(pair.getKey().getMaterial());
+			Edge edge = (Edge) c.getUserData();
+			c.setMaterial(edge.getNode1().getMaterial());
 		}
 		world.requestLayout();
 	}
@@ -1179,13 +1184,16 @@ public class Visualizer extends Application {
 			for(Node3D node:component.getNodes()) {
 				if (node.isVisible()) {
 				Point3D p1 = node.getPoint3D();
-				for (Node3D neighbor : node.getNeighbors()) {
+				for(Map.Entry<Node3D,Edge> entry: node.getEdges().entrySet()) {
+					Node3D neighbor = entry.getKey();
 					if (neighbor.isVisible()) {
 						Point3D p2 = neighbor.getPoint3D();
-						Cylinder cylinder = createCylinderBetween(p1, p2,node, neighbor);
+						final Cylinder cylinder = createCylinderBetween(p1, p2,node, neighbor, entry.getValue());
 						cylinders.add(cylinder);
 						cylinder.setMaterial(node.getMaterial());
 						group.getChildren().add(cylinder);
+						Edge edge = entry.getValue();
+						cylinder.setUserData(edge); 
 					}
 				}
 				}
@@ -1208,8 +1216,8 @@ public class Visualizer extends Application {
 		for (Node3D n : visibleNeighborhood) {
 			n.getSphere().setVisible(false);
 			for (Cylinder cyl : this.cylinders) {
-				Pair<Node3D, Node3D> pair = (Pair<Node3D, Node3D>) cyl.getUserData();
-				if (pair.getKey().equals(node) || pair.getValue().equals(n)) {
+				Edge edge = (Edge) cyl.getUserData();
+				if (edge.getNode1().equals(node) || edge.getNode2().equals(n)) {
 					cyl.setVisible(false);
 				}
 			}

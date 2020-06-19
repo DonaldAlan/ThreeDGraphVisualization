@@ -32,9 +32,10 @@ public class Node3D implements Comparable<Node3D> {
 	public static final NumberFormat numberFormat = NumberFormat.getInstance();
 	private static double importanceDelta = 0.1;
 	public static int maxDegree=0;
+	private static final Double ONE = new Double(1.0);
 	//------------------------
 	private final String id;
-	private final Map<Node3D,Double> edges = new HashMap<>(); // maps node to edge weight
+	private final Map<Node3D,Edge> edges = new HashMap<>(); // maps node to Edge, but "this" Node could be either node1 or node2
 	private final Map<String,Object> attributes= new TreeMap<>();
 	private double x,y,z;
 	private ConnectedComponent connectedComponentForDisplay;
@@ -58,11 +59,7 @@ public class Node3D implements Comparable<Node3D> {
 	}
 	@Override
 	public String toString() {
-		//	return getIdAndDescription(); //":c" + connectedComponent.getFirst().id + "@" + this.position;
-		return id + " (" 
-	+ numberFormat.format(x) + ", " 
-	+ numberFormat.format(y) + ", " 
-	+ numberFormat.format(z) + ") with connectedComponent first = " + connectedComponentForDisplay.getFirst().getId();
+		return id;
 	}
 
 	public static void computeConnectedComponentsForDisplay(Node3D[] nodesToDisplay) {
@@ -155,18 +152,26 @@ public class Node3D implements Comparable<Node3D> {
 		this.indexInImportanceOrder=index;
 	}
 	
-	public Map<Node3D,Double> getEdges() {return edges;}
+	public Map<Node3D,Edge> getEdges() {return edges;}
 
 	public ConnectedComponent getConnectedComponent() {return connectedComponentForDisplay;}
 	public double getX() {return x;}
 	public double getY() {return y;}
 	public double getZ() {return z;}
-	public void addEdge(Node3D node) {addEdge(node,1.0);}
-	public void addEdge(Node3D otherNode, double weight) {
-		edges.put(otherNode,weight);
+	public void addEdge(Node3D other, Edge edge) { 
+		edges.put(other, edge);
 		if (edges.size()>maxDegree) {
 			maxDegree = edges.size();
-		}		
+		}	
+	}
+	public Edge addEdge(Node3D node) {return addEdge(node,1.0);}
+	public Edge addEdge(Node3D otherNode, double weight) {
+		Edge edge = new Edge(this,otherNode);
+		if (weight!=1.0) {
+			edge.addProperty("weight", ONE);
+		}
+		addEdge(otherNode,edge);
+		return edge;
 	}
 	private static double edgeDistanceTo(PriorityQueue<Node3D> queue, Node3D target) {
 		while (!queue.isEmpty()) {
@@ -174,9 +179,9 @@ public class Node3D implements Comparable<Node3D> {
 			if (next.equals(target)) {
 				return next.distance;
 			}
-			for(Map.Entry<Node3D,Double> entry: next.edges.entrySet()) {
+			for(Map.Entry<Node3D,Edge> entry: next.edges.entrySet()) {
 				Node3D node = entry.getKey();
-				double weight = entry.getValue();
+				double weight = entry.getValue().getWeight();
 				double newDistance = next.distance + weight;
 				if (newDistance< node.distance) {
 					node.distance=newDistance;

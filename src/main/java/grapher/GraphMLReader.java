@@ -86,8 +86,8 @@ public class GraphMLReader {
 	    				target = new Node3D(targetId);
 	    				mapFromNodeIdToNode.put(targetId, target);
 	    			}
-	    			source.addEdge(target);
-	    			target.addEdge(source);
+	    			Edge edge = source.addEdge(target);
+	    			target.addEdge(source,edge);
 	    		} else if (node!=null && qName.equals("data")) {
 	    			keyName=attributes.getValue("key");
 	    		} else if (qName.equals("key")) {
