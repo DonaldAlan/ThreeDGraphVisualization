@@ -32,7 +32,9 @@ public class Edge {
 			}
 			if (weightObject instanceof String) {
 				try {
-					return Double.parseDouble(weightObject.toString());
+					Double value =  Double.parseDouble(weightObject.toString());
+					properties.put("weight",value);
+					return value;
 				}  catch (NumberFormatException exc) {}
 			}
 		}

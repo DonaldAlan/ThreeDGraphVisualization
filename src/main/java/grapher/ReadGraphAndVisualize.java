@@ -134,6 +134,9 @@ public class ReadGraphAndVisualize {
 				}
 				Edge edge= node1.addEdge(node2,weight);
 				node2.addEdge(node1,edge);
+				if (weight!=1.0) {
+					edge.addProperty("weight", new Double(weight));
+				}
 				countEdges++;
 			}
 		}

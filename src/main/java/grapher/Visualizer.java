@@ -10,8 +10,11 @@ package grapher;
  * TODO 3: Allow different scales. It's OK if the user needs to ZOOM in to see substructure.
  * TODO 4: Compare Gephi's Yifan Hu, Force Atlas
  * TODO 5: Support hiding (high-importance) sets of nodes and their edges (which are often boring), and unhiding. Randomly?
- * TODO 6: Support labels, weights and color on edges. This is partially done. I added an Edge class with a tooltip.
- * TODO 7: Add a way to filter nodes and edges by properties.
+ * TODO 6: Support labels, weights and color on edges. This is partially done. I added an Edge class with a tooltip and modified
+ *   GraphMLReader to read edge attributes.
+ * TODO 7: Support Node colors specified in the data file. Do it efficiently with a map from color to Material.
+ * TODO 8: Add a way to filter nodes and edges by properties.
+ * 
  */
 
 import java.text.NumberFormat;
@@ -594,11 +597,13 @@ public class Visualizer extends Application {
 		Rotate rotateAroundCenter = new Rotate(-Math.toDegrees(angle), axisOfRotation);
 		Cylinder line = new Cylinder(cylinderRadius, height);
 		line.setUserData(edge);
-		if (!edge.getProperties().isEmpty()) {
-			Tooltip tooltip = new Tooltip(edge.toString());
-			tooltip.setFont(tooltipFont);
-			Tooltip.install(line, tooltip);
-		}
+		// TODO: this causes OutOfMemory exceptions. Clicking on an edge will show data.
+//		if (!edge.getProperties().isEmpty()) {
+//			String edgeString = edge.toString();
+//			Tooltip tooltip = new Tooltip(edgeString);
+//			tooltip.setFont(tooltipFont);
+//			Tooltip.install(line, tooltip);
+//		}
 		line.getTransforms().addAll(moveToMidpoint, rotateAroundCenter);
 		return line;
 	}
@@ -647,9 +652,13 @@ public class Visualizer extends Application {
 					}
 				}
 			} else if (pr.getIntersectedNode() instanceof Cylinder) {
-				Object object = pr.getIntersectedNode().getUserData();
+				final Cylinder cylinder = (Cylinder) pr.getIntersectedNode();
+				final Object object = cylinder.getUserData();
 				if (object!=null) {
-					System.out.println("Edge = " + object);
+					Edge edge = (Edge) object;
+					String edgeString = edge.toString(); 
+					System.out.println("Edge = " + edgeString);
+					edgePopup(edge);
 				}
 			}
 		});
@@ -682,6 +691,26 @@ public class Visualizer extends Application {
 		});
 	}
 
+	private void edgePopup(Edge edge) {
+		String title ="Edge between " + edge.getNode1().getId() + " and " + edge.getNode2().getId();
+		StringBuilder sb = new StringBuilder();
+		sb.append("\n\n\n ");
+		sb.append(title);
+		sb.append("\n\n");
+		for(Map.Entry<String,Object> entry: edge.getProperties().entrySet()) {
+			sb.append("    ");
+			sb.append(entry.getKey());
+			sb.append(" = ");
+			sb.append(entry.getValue());
+			sb.append("\n");
+		}
+		String message = sb.toString();
+		if (messageBox == null || messageBox.isClosed()) {
+			messageBox = new MessageBox(message, title, edge.getNode1(), this);
+		} else {
+			messageBox.update(message, title, edge.getNode1());
+		}
+	}
 	private void spherePopup(Node3D node) {
 		double meanDistanceToNeighbors = node.meanXYZDistanceToNeighbors();
 		double meanDistanceToNonNeighbors = node.meanXYZDistanceToNonNeighbors();
@@ -945,6 +974,7 @@ public class Visualizer extends Application {
 						+ "\n Left-click on a node to see details. Right click to focus/unfocus; hit Escape to unfocus."
 						+ "\n   Press PageUp and PageDown to adjust how many nodes are shown when focused."
 						+ "\n   Press 't' to hide non-tree edges when focused."
+						+ "\n Left-click on an edge to see attributes."
 						;
 				new MessageBox(message,"Help");
 				break;
