@@ -62,6 +62,7 @@ public class GraphMLReader {
 	   final DefaultHandler2 handler = new DefaultHandler2() {
 	    	Node3D node=null;
 	    	String keyName=null;
+	    	Edge edge=null;
 	    	@Override
 	    	public void startEntity(String name) {
 	    		System.out.println(name);
@@ -71,12 +72,14 @@ public class GraphMLReader {
 	    		if (qName.equals("node")) {
 	    			String id=attributes.getValue("id");
 	    			node=new Node3D(id);
+	    			edge=null;
 	    			mapFromNodeIdToNode.put(id,node);
 	    			//showAttributes(attributes);
 	    		} else if (qName.equals("edge")) {
 	    			String sourceId=attributes.getValue("source");
 	    			String targetId=attributes.getValue("target");
 	    			Node3D source = mapFromNodeIdToNode.get(sourceId);
+	    			node=null;
 	    			if (source==null) {
 	    				source = new Node3D(sourceId);
 	    				mapFromNodeIdToNode.put(sourceId, source);
@@ -86,16 +89,18 @@ public class GraphMLReader {
 	    				target = new Node3D(targetId);
 	    				mapFromNodeIdToNode.put(targetId, target);
 	    			}
-	    			Edge edge = source.addEdge(target);
+	    			edge = source.addEdge(target);
 	    			target.addEdge(source,edge);
 	    			for(int i=0;i<attributes.getLength();i++) {
 	    				String name=attributes.getLocalName(i);
 	    				String value = attributes.getValue(i);
-	    				System.out.println(name + ": " + value);
+	    				edge.addProperty(name, value); 
 	    			}
 	    		} else if (node!=null && qName.equals("data")) {
 	    			keyName=attributes.getValue("key");
-	    		} else if (qName.equals("key")) {
+	    		} else if (edge!=null && qName.equals("data")) {
+	    			keyName=attributes.getValue("key");
+	    		} else if (qName.equals("key")) {	
 	    			processTypes(attributes);
 	    		}
 	    	}
@@ -171,6 +176,17 @@ public class GraphMLReader {
 	    				value=valueAsString;
 	    			}
 	    			node.getAttributes().put(keyName, value);
+	    			keyName=null;
+	    		} else if (edge!=null && keyName!=null) {
+	    			String valueAsString=new String(chs,start,length);
+	    			Object value;
+	    			try {
+	    				value=convert(keyName,valueAsString);
+	    			} catch (Exception exc) {
+	    				System.err.println(exc.getMessage());
+	    				value=valueAsString;
+	    			}
+	    			edge.addProperty(keyName, value);
 	    			keyName=null;
 	    		}
 	    	}
