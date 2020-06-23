@@ -828,7 +828,6 @@ public class Visualizer extends Application {
 		iterator.remove();
 		return node;
 	}
-	//TODO: buggie
 	private void makeOnlyTreeEdgesVisible() {
 		final Set<Node3D> visibleNodesSoFar = new HashSet<>();
 		final Map<Node3D,List<Cylinder>> mapFromNodeToCylinder = new HashMap<>();
@@ -857,21 +856,17 @@ public class Visualizer extends Application {
 		visibleNodesSoFar.add(focusedNode);
 		int countCylindersVisible=0;
 		while (!toDo.isEmpty()) {
-			Node3D node = toDo.poll();
-			List<Cylinder> list = mapFromNodeToCylinder.get(node);
+			final Node3D node = toDo.poll();
+			final List<Cylinder> list = mapFromNodeToCylinder.get(node);
 			if (list != null) {
 				for (Cylinder cylinder : list) {
-					Edge edge = (Edge) cylinder.getUserData();
-					Node3D next = edge.getNode1() == node? edge.getNode2() : edge.getNode1();
+					final Edge edge = (Edge) cylinder.getUserData();
+					final Node3D next = edge.getNode1() == node? edge.getNode2() : edge.getNode1();
 					if (!visibleNodesSoFar.contains(next)) {
+						toDo.add(next);
 						visibleNodesSoFar.add(next);
 						cylinder.setVisible(true);
 						countCylindersVisible++;
-						for (Node3D nextNext : next.getNeighbors()) {
-							if (nodesToDisplaySet.contains(nextNext) && !visibleNodesSoFar.contains(nextNext)) {
-								toDo.add(nextNext);
-							}
-						}
 					}
 				}
 			}
