@@ -695,10 +695,8 @@ public class Visualizer extends Application {
 		sb.append('\n');
 		int rowCnt = 0;
 		for (Map.Entry<String, Object> entry : node.getAttributes().entrySet()) {
-			if (!entry.getKey().equals("description")) {
-				sb.append(" " + entry.getKey() + " = " + entry.getValue().toString() + "\n");
-				rowCnt++;
-			}
+			sb.append(" " + entry.getKey() + " = " + entry.getValue().toString() + "\n");
+			rowCnt++;
 		}
 		sb.append(" Number of neighbors = " + node.getNeighbors().size() + ":\n ");
 		int col = 0;
@@ -718,9 +716,9 @@ public class Visualizer extends Application {
 				sb.append("; ");
 				col += 2;
 			}
-			String neighborIdDescription = neighbor.getIdAndDescription();
-			sb.append(neighborIdDescription);
-			col += neighborIdDescription.length();
+			String neighborId = neighbor.getId();
+			sb.append(neighborId);
+			col += neighborId.length();
 		} // for
 		if (sb.length() > 0) {
 			char ch = sb.charAt(sb.length() - 1);
@@ -735,7 +733,7 @@ public class Visualizer extends Application {
 				+ "\n Importance Rank = " + numberFormat.format(1+node.getIndexInImportanceOrder())
 				//+ "\n isVisible = " + node.isVisible()
 				;
-		String title = node.getIdAndDescription();
+		String title = node.getId();
 		if (messageBox == null || messageBox.isClosed()) {
 			messageBox = new MessageBox(message, title, node, this);
 		} else {
@@ -1004,6 +1002,8 @@ public class Visualizer extends Application {
 				if (ke.isControlDown() && System.currentTimeMillis()-lastSearchAndFocusTime>250) {
 					doSearchAndFocus();
 					lastSearchAndFocusTime=System.currentTimeMillis();
+				} else {
+					new FilterStage(Visualizer.this, savedAllNodes);
 				}
 				break;
 			case INSERT:

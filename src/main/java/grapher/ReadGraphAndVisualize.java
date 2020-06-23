@@ -217,11 +217,6 @@ public class ReadGraphAndVisualize {
 					} else {
 						node.getAttributes().put(attribute, value);
 					}
-					if (node.getDescription().equals(node.getId())) {
-						if (attribute.contains("label") || attribute.contains("descr")) {
-							node.getAttributes().put("description", value);
-						}
-					}
 				}
 /*				
 				// attribute is "ui.label"

@@ -50,11 +50,10 @@ public class Node3D implements Comparable<Node3D> {
 	}
 	public Node3D(String id) {
 		this(id,id);
+		assert(allIds.add(id));
 	}
 	public Node3D(String id, String description) {
 		this.id=id;
-		assert(allIds.add(id));
-		attributes.put("description",description);
 	}
 	@Override
 	public String toString() {
@@ -119,27 +118,8 @@ public class Node3D implements Comparable<Node3D> {
 	public int getZIndex() {
 		return zIndex;
 	}
-	public String getIdAndDescription() {
-		String descr = getDescription();
-		if (descr.equals(id)) {
-			return id;
-		} else {
-			return id + ":"+ descr;
-		}
-	}
 	public void setDescription(String descr) {
 		attributes.put("description", descr);
-	}
-	public String getDescription() {
-		String value= attributes.get("description").toString();
-		if (value!=null) {
-			return value;
-		}
-		value= attributes.get("label").toString();
-		if (value!=null) {
-			return value;
-		}
-		return id;
 	}
 	public Map<String,Object> getAttributes() {
 		return attributes;

@@ -65,7 +65,6 @@ public class GraphGenerators {
 			sb.append("   node\n");
 			sb.append("   [\n");
 			sb.append("      id " + node.getId() + "\n");
-			sb.append("      label \"" + node.getDescription() + "\"\n");
 			sb.append("   ]\n");
 		}
 		for(Node3D node:nodes) {
