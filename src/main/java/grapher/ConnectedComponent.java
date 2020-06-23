@@ -68,8 +68,6 @@ public class ConnectedComponent {
 		}
 		nodeMatrix = new Node3D[m][m][m];
 		numberOfNodesToShow = nodes.size();
-		Node3D.windowSize = (int) Math.ceil(m*positionFactor);
-		// placeInitiallyInGrid(m);
 		placeRandomlyInGrid(m);
 	}
 	public Node3D getFirst() {
@@ -632,10 +630,6 @@ public class ConnectedComponent {
 //		System.out.println(reps + " reps to place with Barrycenter");
 //	}
 
-	private double computeDistanceForOneEdge() {
-		return (Math.sqrt(3.0) * Node3D.windowSize) / nodes.size();
-	}
-
 	private static boolean differ(double x, double y) {
 		return Math.abs(x - y) > 0.1;
 	}
@@ -707,45 +701,7 @@ public class ConnectedComponent {
 	public Group getGroup() {
 		return group;
 	}
-	// ------------
-	public static void main2(String[] args) {
-		Node3D.windowSize = 100;
-		Node3D n1 = new Node3D("n1", "n1");
-		Node3D n2 = new Node3D("n2", "n2");
-		Node3D n3 = new Node3D("n3", "n3");
-		Node3D n4 = new Node3D("n4", "n4");
-		// Node3D n5=new Node3D("n5","n5");
-		n1.addEdge(n2);
-		n2.addEdge(n1);
-		n2.addEdge(n3);
-		n3.addEdge(n2);
-		n3.addEdge(n4);
-		n4.addEdge(n3);
-		n4.addEdge(n1);
-		n1.addEdge(n4);
-		// n4.addEdge(n5); n5.addEdge(n4);
-		// n5.addEdge(n1); n1.addEdge(n5);
-		ConnectedComponent cc = n1.getConnectedComponent();
-		cc.done();
-		trace = false;
-		// cc.placeOnePassUsingSpringModel();
-		for (Node3D node1 : cc.nodes) {
-			System.out.print(node1.getId() + " " + toString(node1.getX(), node1.getY(), node1.getZ()) + ": ");
-			for (Node3D node2 : node1.getNeighbors()) {
-				System.out.print(toString(node1.distance(node2)) + " ");
-			}
-			System.out.println();
-		}
-		for (double f = 0.5; f <= 0.91; f += 0.05) {
-			double d = 1000;
-			int count = 0;
-			while (d > 1) {
-				d = d * f;
-				count++;
-			}
-			System.out.println(f + " " + count);
-		}
-	}
+	
 
 	private static boolean shown = false;
 
@@ -791,7 +747,7 @@ public class ConnectedComponent {
 			return;
 		}
 		final double one = 0.0;
-		final double two = Node3D.windowSize;
+		final double two = 1000;
 		nodes.get(0).setXYZ(one, one, one);
 		nodes.get(1).setXYZ(one, one,  two);
 		nodes.get(2).setXYZ(one,  two, one);
@@ -830,7 +786,7 @@ public class ConnectedComponent {
 	} // barrycenter
 	//---------------------------
 	private double limit(double value, double originalValue, int source) {
-		if (!Double.isFinite(value) || Math.abs(value)>2*Node3D.windowSize) {
+		if (!Double.isFinite(value) || Math.abs(value)>2000) {
 			countLimits[source]++;
 			return originalValue+ random.nextDouble()-0.5;
 		}

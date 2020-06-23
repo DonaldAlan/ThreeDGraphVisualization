@@ -76,8 +76,8 @@ public class Visualizer extends Application {
 	private Node3D[] nodesToDisplay = null;
 	private static Node3D[] savedAllNodes=null;
 	public static double distanceForOneEdge = 30;
-	public static double sphereRadius = 5.5;
-	public static double cylinderRadius = 1.1;
+	public static double sphereRadius = 1.0;
+	public static double cylinderRadius = 0.1*sphereRadius;
 	public static String title="Visualize Graph";
 	//.....
 	private final static int width = 1600;
@@ -98,7 +98,7 @@ public class Visualizer extends Application {
 	private final XformCamera cameraXform = new XformCamera();
 	private static double cameraInitialX = 0;
 	private static double cameraInitialY = 0;
-	private static double cameraInitialZ = 0;
+	private static double cameraInitialZ = -300;
 	private static final double CAMERA_NEAR_CLIP = 0.1;
 	private static final double CAMERA_FAR_CLIP = 20000.0;
 	private static Random random = new Random();
@@ -144,14 +144,7 @@ public class Visualizer extends Application {
 	public static void setSavedAllNodes(Node3D[] nodes) {
 		savedAllNodes = nodes;
 	}
-	private boolean intersectsSomeOtherConnectedComponent(ConnectedComponent component, Set<ConnectedComponent> set) {
-		for (ConnectedComponent other : set) {
-			if (other != component && other.intersects(component)) {
-				return true;
-			}
-		}
-		return false;
-	}
+
 	private void requestReplaceOnePass() {
 		if (requestPlaceOnePassTimeInMls>0) {
 			return;
@@ -212,7 +205,7 @@ public class Visualizer extends Application {
 			newTotalCost+= connectedComponent.getCost();
 		}
 		Point3D centerOfMass = findCenterOfMass();
-		world.rotateAroundAndCenterOn(centerOfMass);
+		world.centerAndRotateAroundAndCenterOn(centerOfMass);
 		//System.out.println("Center of mass = " + centerOfMass);
 		
 		long middle = System.currentTimeMillis();
@@ -228,7 +221,6 @@ public class Visualizer extends Application {
 				 );
 		seconds = 0.001*(System.currentTimeMillis() - middle);		
 	}
-	@SuppressWarnings("unchecked")
 	private void buildRepulsiveCountComboBox(Group root) {
 		stochasticCountComboBox.setTranslateX(-520);
 		stochasticCountComboBox.setTranslateY(-410);
@@ -254,7 +246,6 @@ public class Visualizer extends Application {
 		root.getChildren().add(stochasticCountComboBox);
 	}
 
-	@SuppressWarnings("unchecked")
 	private void buildImportanceAlgorithmComboBox(Group root) {
 		importanceAlgorithmComboBox.setTranslateX(-750);
 		importanceAlgorithmComboBox.setTranslateY(-410);
@@ -375,7 +366,6 @@ public class Visualizer extends Application {
 		}
 	}
 
-	@SuppressWarnings("unchecked")
 	private void buildImportanceSlider(Group root) {
 	        importanceSlider.setTranslateX(-200);
 	        importanceSlider.setTranslateY(-286);
@@ -423,7 +413,7 @@ public class Visualizer extends Application {
 	        	}
 	        });
 	        // We add this to prevent the slider from processing the key event
-	        EventHandler filter = new EventHandler<InputEvent>() {
+	        EventHandler<InputEvent> filter = new EventHandler<InputEvent>() {
 	            public void handle(InputEvent event) {
 	            	if (event instanceof KeyEvent) {
 	            		keyEventHandler.handle((KeyEvent)event);
@@ -466,7 +456,7 @@ public class Visualizer extends Application {
     		requestReplaceOnePass();
         });
         // We add this to prevent the slider from processing the key event
-        EventHandler filter = new EventHandler<InputEvent>() {
+        EventHandler<InputEvent> filter = new EventHandler<InputEvent>() {
             public void handle(InputEvent event) {
             	if (event instanceof KeyEvent) {
             		keyEventHandler.handle((KeyEvent)event);
@@ -493,15 +483,6 @@ public class Visualizer extends Application {
 		cylinders.clear();
 		displayNodes();
 		world.requestLayout();
-	}
-
-
-	private Map<ConnectedComponent, Point3D> getCentroids() {
-		Map<ConnectedComponent, Point3D> centroids = new HashMap<>();
-		for (ConnectedComponent cc : connectedComponents) {
-			centroids.put(cc, cc.computeCentroid());
-		}
-		return centroids;
 	}
 
 	// -------
@@ -538,7 +519,7 @@ public class Visualizer extends Application {
 			r.setPivotY(point.getY());
 			r.setPivotZ(point.getZ());
 		}
-		public void rotateAroundAndCenterOn(Point3D point) {
+		public void centerAndRotateAroundAndCenterOn(Point3D point) {
 			pivot(rx,point);
 			pivot(ry,point);
 			pivot(rz,point);
@@ -621,10 +602,6 @@ public class Visualizer extends Application {
 		tooltip.setFont(tooltipFont);
 		Tooltip.install(sphere, tooltip);
 		return sphere;
-	}
-
-	private static double square(double x) {
-		return x * x;
 	}
 
 	private void handleMouse(Scene scene) {
@@ -821,12 +798,6 @@ public class Visualizer extends Application {
 			System.exit(1);
 		}
 		finishedFocusTime=System.currentTimeMillis();
-	}
-	private static Node3D removeFirst(Set<Node3D> set) {
-		Iterator<Node3D> iterator = set.iterator();
-		Node3D node = iterator.next();
-		iterator.remove();
-		return node;
 	}
 	private void makeOnlyTreeEdgesVisible() {
 		final Set<Node3D> visibleNodesSoFar = new HashSet<>();
@@ -1066,9 +1037,7 @@ public class Visualizer extends Application {
 			}
 		}
 	}
-	private void handleKeyEvents(Scene scene) {
-		scene.setOnKeyPressed(keyEventHandler);
-	}
+
 	private final Comparator<Node3D> comparatorDecreasing = new Comparator<Node3D>() {
 		@Override
 		public int compare(Node3D node1, Node3D node2) {
@@ -1095,6 +1064,14 @@ public class Visualizer extends Application {
 			c.setMaterial(edge.getNode1().getMaterial());
 		}
 		world.requestLayout();
+	}
+
+	private Map<ConnectedComponent, Point3D> getCentroids() {
+		Map<ConnectedComponent, Point3D> centroids = new HashMap<>();
+		for (ConnectedComponent cc : connectedComponents) {
+			centroids.put(cc, cc.computeCentroid());
+		}
+		return centroids;
 	}
 
 	private void showAverageDistances() {
@@ -1174,7 +1151,7 @@ public class Visualizer extends Application {
 			size=s;
 		}
 		for (ConnectedComponent connectedComponent : sortedListOfComponents) {
-			double amount=0.5*Node3D.windowSize;
+			double amount=500;
 			for (int i = 0; i < 30; i++) {
 				if (!someComponentIntersects(placed, connectedComponent)) {
 					// System.out.println(connectedComponent + " does not
@@ -1346,8 +1323,6 @@ public class Visualizer extends Application {
 			randomizeColors(2);
 		
 			//showAverageDistances();
-			world.setTranslateY(0.05*Node3D.windowSize);
-			world.setTranslateZ(0.9*Node3D.windowSize);
 			animate();
 			primaryStage.show();
 		} catch (Throwable exc) {

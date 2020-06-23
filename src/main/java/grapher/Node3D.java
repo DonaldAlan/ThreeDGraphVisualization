@@ -27,7 +27,6 @@ import javafx.scene.shape.Sphere;
 public class Node3D implements Comparable<Node3D> {
 	public static final int maxAllowedFocusDistance =800000;
 	private int xIndex,yIndex,zIndex;
-	public static int windowSize=1000;
 	private static final Random random = new Random();
 	public static final NumberFormat numberFormat = NumberFormat.getInstance();
 	private static double importanceDelta = 0.1;
