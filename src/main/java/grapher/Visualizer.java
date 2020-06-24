@@ -149,7 +149,10 @@ public class Visualizer extends Application {
 		return savedAllNodes;
 	}
 	
-	private void requestReplaceOnePass() {
+	public void setNodesToDisplay(Node3D[] nodes) {
+		this.nodesToDisplay = nodes;
+	}
+	public void requestReplaceOnePass() {
 		if (requestPlaceOnePassTimeInMls>0) {
 			return;
 		}
@@ -493,7 +496,7 @@ public class Visualizer extends Application {
 	/**
 	 * Ignores isVisible. Only needs to be done once
 	 */
-	private void computeConnectedComponentsFromNodesToDisplay() {
+	public void computeConnectedComponentsFromNodesToDisplay() {
 		connectedComponents = new HashSet<>();
 		Node3D.computeConnectedComponentsForDisplay(nodesToDisplay);
 		for(Node3D node:nodesToDisplay) {
@@ -692,17 +695,7 @@ public class Visualizer extends Application {
 			messageBox.update(message, title, edge.getNode1());
 		}
 	}
-	private void spherePopup(Node3D node) {
-		double meanDistanceToNeighbors = node.meanXYZDistanceToNeighbors();
-		double meanDistanceToNonNeighbors = node.meanXYZDistanceToNonNeighbors();
-		StringBuilder sb = new StringBuilder();
-		sb.append('\n');
-		int rowCnt = 0;
-		for (Map.Entry<String, Object> entry : node.getProperties().entrySet()) {
-			sb.append(" " + entry.getKey() + " = " + entry.getValue().toString() + "\n");
-			rowCnt++;
-		}
-		sb.append(" Number of neighbors = " + node.getNeighbors().size() + ":\n ");
+	private void addNeighbors(Node3D node, StringBuilder sb, int rowCnt) {
 		int col = 0;
 		for (Node3D neighbor : node.getNeighbors()) {
 			if (col > 40) {
@@ -724,13 +717,28 @@ public class Visualizer extends Application {
 			sb.append(neighborId);
 			col += neighborId.length();
 		} // for
-		if (sb.length() > 0) {
-			char ch = sb.charAt(sb.length() - 1);
-			if (ch != ' ' && ch != ';') {
-				sb.append(' ');
-			}
+	}
+	private void addProperties(Node3D node, StringBuilder sb) {
+		sb.append("\nProperties:\n");
+		for(String key: node.getProperties().keySet()) {
+			Object value = node.getProperties().get(key);
+			sb.append(key + " = " + value + "\n");
 		}
-		String message = sb.toString() + "\n\n Size of connected component = " + node.getConnectedComponent().size()
+	}
+	private void spherePopup(Node3D node) {
+		double meanDistanceToNeighbors = node.meanXYZDistanceToNeighbors();
+		double meanDistanceToNonNeighbors = node.meanXYZDistanceToNonNeighbors();
+		StringBuilder sb = new StringBuilder();
+		sb.append('\n');
+		int rowCnt = 0;
+		for (Map.Entry<String, Object> entry : node.getProperties().entrySet()) {
+			sb.append(" " + entry.getKey() + " = " + entry.getValue().toString() + "\n");
+			rowCnt++;
+		}
+		sb.append(" Number of neighbors = " + node.getNeighbors().size() + ":\n ");
+		//addNeighbors(node, sb, rowCnt); 
+		addProperties(node,sb);
+		String message = sb.toString() + "\nSize of connected component = " + node.getConnectedComponent().size()
 				+ "\n Mean distance to neighbors = " + numberFormat.format(meanDistanceToNeighbors)
 				+ "\n Mean distance to non-neighbors = " + numberFormat.format(meanDistanceToNonNeighbors)
 				+ "\n Importance = " + numberFormat.format(node.getImportance())

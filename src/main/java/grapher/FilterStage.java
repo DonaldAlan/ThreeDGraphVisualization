@@ -48,7 +48,7 @@ public class FilterStage {
 		scene.setOnKeyPressed(ke -> {
 			switch (ke.getCode()) {
 			case Q: 
-				stage.hide();
+//				stage.hide();
 				break;
 			default:
 				break;
@@ -75,9 +75,21 @@ public class FilterStage {
 				System.out.println(textArea.getText());
 				try {
 					NodeFilter rowFilter = new NodeFilter(textArea.getText(), nodeProperties);
+					final List<Node3D> nodesToDisplay = new ArrayList<>();
 					for(Node3D node: visualizer.getSavedAllNodes()) {
-						node.setVisible(rowFilter.shouldInclude(node)); 
+						if (rowFilter.shouldInclude(node)) {
+							nodesToDisplay.add(node);
+							node.setVisible(true);
+						} else {
+							node.setVisible(false);
+						}
 					}
+					final Node3D[] nodesTosDisplayArray = new Node3D[nodesToDisplay.size()];
+					nodesToDisplay.toArray(nodesTosDisplayArray);
+					System.out.println("Filtered to " + nodesToDisplay.size() + " nodes");
+					visualizer.setNodesToDisplay(nodesTosDisplayArray); 
+					visualizer.computeConnectedComponentsFromNodesToDisplay();
+					visualizer.requestReplaceOnePass();
 					stage.hide();
 				} catch (IllegalArgumentException exc) {
 					System.err.println("Illegal query: " + exc.getMessage());

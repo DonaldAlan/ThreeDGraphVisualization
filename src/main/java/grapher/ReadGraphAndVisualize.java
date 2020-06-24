@@ -10,6 +10,7 @@ import java.io.PrintWriter;
 import java.text.NumberFormat;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Random;
 
 import org.graphstream.stream.Sink;
 import org.graphstream.stream.SinkAdapter;
@@ -353,8 +354,11 @@ public class ReadGraphAndVisualize {
 	public void readGraphAndVisualize() throws Exception {
 		readInGraph();
 		Node3D nodes[] = new Node3D[mapFromNodeIdToNode.size()];
-		// ystem.exit(0);
 		mapFromNodeIdToNode.values().toArray(nodes);
+//		Random random = new Random();
+//		for(Node3D node:nodes) {
+//			node.getProperties().put("test", random.nextDouble());
+//		}
 		processNodes(nodes, new File(path).getName());
 	}
 	public static int countEdges(Node3D[] nodes) {

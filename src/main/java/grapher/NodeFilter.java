@@ -8,7 +8,17 @@ import scala.Char;
 public class NodeFilter {
 	private final Expression expression;
 	private final List<Token> tokens;
-	private enum ComparisonOp {Eq, LT, GT, LTE, GTE };
+	private enum ComparisonOp {
+		Eq("="), LT("<"), GT(">"), LTE(">="), GTE(">="); 
+		final String value;
+		private ComparisonOp(String value) {
+			this.value=value;
+		}
+		@Override 
+		public String toString() {
+			return value;
+		}
+	};
 	/**
 	 * 
 	 * @param query
@@ -29,8 +39,9 @@ public class NodeFilter {
 	/*
 	 * E    -> Disj 
 	 * Disj -> Conj | Conj Or Disj
-	 * Conj -> Equality | Equality And Conj |  Not Conj  | LParen E RParen
-	 * Equality -> Identifier Eq StringToken | Identifier ( Eq | LT | GT | LTE | GTE) DoubleToken | Identifier E( Eq | LT | GT | LTE | GTE)LongToken
+	 * Conj -> EqualityOrComparison | Equality And Conj |  Not Conj  | LParen E RParen
+	 * EqualityOrComparison -> Identifier Eq StringToken | Identifier Eq NullToken | 
+	 *    Identifier ( Eq | LT | GT | LTE | GTE) DoubleToken | Identifier ( Eq | LT | GT | LTE | GTE)LongToken
 	 */
 	private Expression parse() {
 		ExpressionIndex ei = parseExpression(0, tokens.size());
@@ -81,7 +92,7 @@ public class NodeFilter {
 			Token op = tokens.get(startIndex+1);
 			if (op instanceof EqToken || op instanceof LTToken || op instanceof GTToken || op instanceof LTEqToken || op instanceof GTEqToken) {
 				Token secondArg = tokens.get(startIndex+2);
-				if (secondArg instanceof StringToken || secondArg instanceof LongToken || secondArg instanceof DoubleToken) {
+				if (secondArg instanceof StringToken || secondArg instanceof LongToken || secondArg instanceof DoubleToken || secondArg instanceof NullToken) {
 					Expression expr = new Comparison(getComparisonOp(op), (Identifier)tokens.get(startIndex), secondArg);
 					return new ExpressionIndex(expr, startIndex+3);
 				}
@@ -138,14 +149,17 @@ public class NodeFilter {
 	}
 	//--------------------
 	public boolean shouldInclude(Node3D node) {
-		return true;
+		return expression.passes(node);
 	}
 	public static abstract class Expression {
 		public abstract boolean passes(Node3D node);
 	}
-	// Returns a Number if Op is not Eq
+	// If token is NullToken, returns null, otherwise returns a Number if Op is not Eq
 	private static Object normalize(ComparisonOp op, Token token) {
 		Object tokenObject = token.getObject();
+		if (token instanceof NullToken) {
+			return null;
+		}
 		if (tokenObject instanceof Long || tokenObject instanceof Double || tokenObject instanceof Integer) {
 			return tokenObject;
 		}
@@ -170,10 +184,12 @@ public class NodeFilter {
 		final ComparisonOp op;
 		final Identifier identifier;
 		final Object expectedObject; // This will be a Number if op is not Eq
+		final String expectedObjectString;
 		public Comparison(ComparisonOp op, Identifier identifier, Token other) {
 			this.op = op;
 			this.identifier= identifier;
 			this.expectedObject = normalize(op, other);
+			this.expectedObjectString = expectedObject==null? null: expectedObject.toString();
 		}
 		@Override
 		public String toString() {
@@ -182,6 +198,9 @@ public class NodeFilter {
 		@Override
 		public boolean passes(Node3D node) {
 			Object value = node.getProperties().get(identifier.getObject());
+			if (expectedObject ==null) {
+				return value==null;
+			}
 			if (value==null) {
 				return false;
 			}
@@ -189,10 +208,10 @@ public class NodeFilter {
 				if (expectedObject instanceof String) {
 					return value.toString().equals(expectedObject);
 				} else if (expectedObject instanceof Number) {
-					// TODO: this could be made faster
-					return value.toString().equals(expectedObject.toString());
+					return value.toString().equals(expectedObjectString);
 				}
 			}
+			// op is one of LT, GT, LTE, or GTE
 			if (value instanceof String) {
 				value=Double.parseDouble(value.toString());
 			}
@@ -285,6 +304,10 @@ public class NodeFilter {
 	private static class LTEqToken extends Token {@Override public String toString() { return ">";}}
 	private static class GTToken extends Token {@Override public String toString() { return "<=";}}
 	private static class GTEqToken extends Token {@Override public String toString() { return ">=";}}
+	private static class NullToken extends Token {
+		@Override public String toString() { return "Null";}
+		@Override public Object getObject() { return null;}
+		}
 	private static class StringToken extends Token {
 		final String string;
 		public StringToken(String string) {
@@ -381,12 +404,12 @@ public class NodeFilter {
 					index++;
 				}
 			} else if (Character.isAlphabetic(ch)) {
-				index = addIdentifierTokenOrAndOrOrOrNot(ch,index, query,tokens);
+				index = addIdentifierTokenOrAndOrOrOrNotOrNull(ch,index, query,tokens);
 			}
 		}
 		return tokens;
 	}
-	private int addIdentifierTokenOrAndOrOrOrNot(char ch, int index, String query, List<Token> tokens) {
+	private int addIdentifierTokenOrAndOrOrOrNotOrNull(char ch, int index, String query, List<Token> tokens) {
 		assert(ch == query.charAt(index));
 		final StringBuilder sb = new StringBuilder();
 		sb.append(ch);
@@ -404,6 +427,7 @@ public class NodeFilter {
 			case "or": tokens.add(new OrToken()); break;
 			case "and": tokens.add(new AndToken()); break;
 			case "not": tokens.add(new NotToken()); break;
+			case "null": tokens.add(new NullToken()); break;
 			default:
 				tokens.add(new Identifier(token));
 		}
@@ -446,8 +470,7 @@ public class NodeFilter {
 				sawPeriod=true;
 				sb.append(ch);
 				index++;
-			}
-			if (Character.isDigit(ch)) {
+			} else if (Character.isDigit(ch)) {
 				sb.append(ch);
 				index++;
 			} else {
@@ -463,25 +486,42 @@ public class NodeFilter {
 	}
 	//----
 	public static void test1() {
-		NodeFilter nodeFilter = new NodeFilter("abc = 123 or xyz > 5 and zzz <= 4", null);
-		System.out.println(nodeFilter.tokens);
-		System.out.println(nodeFilter.expression);
+		NodeFilter nodeFilter1 = new NodeFilter("abc = 123 or xyz > 5 and zzz <= 4", null);
+		System.out.println(nodeFilter1.tokens);
+		System.out.println(nodeFilter1.expression);
 		Node3D node1 = new Node3D("1");
 		node1.getProperties().put("abc", 123);
 		node1.getProperties().put("xyz", 1);
 		node1.getProperties().put("zzz", 5);
-		if (!nodeFilter.expression.passes(node1)) {
+		if (!nodeFilter1.expression.passes(node1)) {
 			throw new IllegalStateException();
 		}
 		node1.getProperties().put("abc", "other");
-		if (nodeFilter.expression.passes(node1)) {
+		if (nodeFilter1.expression.passes(node1)) {
 			throw new IllegalStateException();
 		}
 		node1.getProperties().put("xyz", 6);
 		node1.getProperties().put("zzz", 1);
-		if (!nodeFilter.expression.passes(node1)) {
+		if (!nodeFilter1.expression.passes(node1)) {
 			throw new IllegalStateException();
 		}
+		
+		NodeFilter nodeFilter2 = new NodeFilter("abc = null", null);
+		System.out.println(nodeFilter2.tokens);
+		System.out.println(nodeFilter2.expression);
+		Node3D node2 = new Node3D("2");
+		node2.getProperties().put("abc","hello");
+		if (nodeFilter2.expression.passes(node2)) {
+			throw new IllegalStateException();
+		}
+		node2.getProperties().remove("abc");
+		if (!nodeFilter2.expression.passes(node2)) {
+			throw new IllegalStateException();
+		}
+	}
+	private static void test2() {
+		NodeFilter nodeFilter = new NodeFilter("test > 0.2",null);
+		System.out.println(nodeFilter.tokens);
 	}
 	public static void main(String [] args) {
 		try {
