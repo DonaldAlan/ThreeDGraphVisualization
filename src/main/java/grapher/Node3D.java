@@ -35,7 +35,7 @@ public class Node3D implements Comparable<Node3D> {
 	//------------------------
 	private final String id;
 	private final Map<Node3D,Edge> edges = new HashMap<>(); // maps node to Edge, but "this" Node could be either node1 or node2
-	private final Map<String,Object> attributes= new TreeMap<>();
+	private final Map<String,Object> properties= new TreeMap<>();
 	private double x,y,z;
 	private ConnectedComponent connectedComponentForDisplay;
 	private double distance = Double.MAX_VALUE;
@@ -119,10 +119,10 @@ public class Node3D implements Comparable<Node3D> {
 		return zIndex;
 	}
 	public void setDescription(String descr) {
-		attributes.put("description", descr);
+		properties.put("description", descr);
 	}
-	public Map<String,Object> getAttributes() {
-		return attributes;
+	public Map<String,Object> getProperties() {
+		return properties;
 	}
 	public int getIndexInImportanceOrder() {
 		return indexInImportanceOrder;
@@ -776,6 +776,18 @@ public class Node3D implements Comparable<Node3D> {
 			n1.addEdge(n6); show(n1,n2,n3, n4, n5, n6);
 			
 			System.out.println(ConnectedComponent.totalCount);
+		}
+		private String getProperty(String ... keys) {
+			for(String key:keys) {
+				Object value = properties.get(key);
+				if (value!=null) {
+					return value.toString();
+				}
+			}
+			return null;
+		}
+		public String getDescription() {
+			return getProperty("description","desc","descr","label");
 		}
 
 

@@ -215,7 +215,7 @@ public class ReadGraphAndVisualize {
 							}
 						}
 					} else {
-						node.getAttributes().put(attribute, value);
+						node.getProperties().put(attribute, value);
 					}
 				}
 /*				

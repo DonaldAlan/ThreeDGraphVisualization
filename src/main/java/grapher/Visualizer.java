@@ -129,7 +129,7 @@ public class Visualizer extends Application {
 	private final Background backgroundRedrawing =new Background(backgroundFillRedrawing);
 	private final BackgroundFill controlBackgroundFill = new BackgroundFill(Color.SKYBLUE, CornerRadii.EMPTY, Insets.EMPTY);
 	private final Background controlBackground = new Background(controlBackgroundFill);
-
+	private FilterStage filterStage;
 	private final Button redrawButton=new Button("Optimize");
 	private volatile boolean newImportanceAlgorithm = false;
 	private long timeOfLastKeyEvent=0;
@@ -145,6 +145,10 @@ public class Visualizer extends Application {
 		savedAllNodes = nodes;
 	}
 
+	public Node3D[] getSavedAllNodes() {
+		return savedAllNodes;
+	}
+	
 	private void requestReplaceOnePass() {
 		if (requestPlaceOnePassTimeInMls>0) {
 			return;
@@ -694,7 +698,7 @@ public class Visualizer extends Application {
 		StringBuilder sb = new StringBuilder();
 		sb.append('\n');
 		int rowCnt = 0;
-		for (Map.Entry<String, Object> entry : node.getAttributes().entrySet()) {
+		for (Map.Entry<String, Object> entry : node.getProperties().entrySet()) {
 			sb.append(" " + entry.getKey() + " = " + entry.getValue().toString() + "\n");
 			rowCnt++;
 		}
@@ -734,6 +738,10 @@ public class Visualizer extends Application {
 				//+ "\n isVisible = " + node.isVisible()
 				;
 		String title = node.getId();
+		String description = node.getDescription();
+		if (description!=null) {
+			title = title + ": "+ description;
+		}
 		if (messageBox == null || messageBox.isClosed()) {
 			messageBox = new MessageBox(message, title, node, this);
 		} else {
@@ -1003,7 +1011,11 @@ public class Visualizer extends Application {
 					doSearchAndFocus();
 					lastSearchAndFocusTime=System.currentTimeMillis();
 				} else {
-					new FilterStage(Visualizer.this, savedAllNodes);
+					if (filterStage ==null) {
+						filterStage=new FilterStage(Visualizer.this);
+					} else {
+						filterStage.show();
+					}
 				}
 				break;
 			case INSERT:

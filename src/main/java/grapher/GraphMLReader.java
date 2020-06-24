@@ -175,7 +175,7 @@ public class GraphMLReader {
 	    				System.err.println(exc.getMessage());
 	    				value=valueAsString;
 	    			}
-	    			node.getAttributes().put(keyName, value);
+	    			node.getProperties().put(keyName, value);
 	    			keyName=null;
 	    		} else if (edge!=null && keyName!=null) {
 	    			String valueAsString=new String(chs,start,length);
@@ -237,7 +237,7 @@ public class GraphMLReader {
 	private static void showNodeAttributes(Map<String,Node3D> idToNodeMap) {
 		int count=0;
 		for(Node3D n: idToNodeMap.values()) {
-			for(Map.Entry<String,Object> entry:n.getAttributes().entrySet()) {
+			for(Map.Entry<String,Object> entry:n.getProperties().entrySet()) {
 				System.out.println(entry.getKey() + " = " + entry.getValue() + ": " + entry.getValue().getClass().getName());
 			}
 			System.out.println();
