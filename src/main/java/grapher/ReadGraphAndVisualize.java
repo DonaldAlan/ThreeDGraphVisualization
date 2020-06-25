@@ -355,10 +355,12 @@ public class ReadGraphAndVisualize {
 		readInGraph();
 		Node3D nodes[] = new Node3D[mapFromNodeIdToNode.size()];
 		mapFromNodeIdToNode.values().toArray(nodes);
-//		Random random = new Random();
-//		for(Node3D node:nodes) {
-//			node.getProperties().put("test", random.nextDouble());
-//		}
+		for(int i=0;i<0;i++) { // TODO: for testing, set limit >0
+			Random random = new Random();
+			for(Node3D node:nodes) {
+				node.getProperties().put("test"+i, random.nextDouble());
+			}
+		}
 		processNodes(nodes, new File(path).getName());
 	}
 	public static int countEdges(Node3D[] nodes) {

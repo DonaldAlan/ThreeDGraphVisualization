@@ -2,6 +2,7 @@
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 
+import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -23,6 +24,7 @@ import javafx.scene.layout.BorderStrokeStyle;
 import javafx.scene.layout.BorderWidths;
 import javafx.scene.layout.CornerRadii;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
@@ -30,10 +32,10 @@ import javafx.scene.text.Text;
 
 
 public class FilterStage {
-	private static final int width=650;
+	private static final int width=600;
 	private static final int height=300;
-	private static final String title= "Node and Edge Filter";
-	private static final Font font = new Font("New Times Roman",16);
+	private static final String title= "Node Filter";
+	private static final Font labelFont = new Font("New Times Roman",16);
 	private final Stage stage;
 	private Group root= new Group();
 	private Scene scene = new Scene(root);
@@ -41,8 +43,10 @@ public class FilterStage {
 	private final NodeProperties nodeProperties;
 	private final Visualizer visualizer;
 	private final VBox vbox = new VBox(10);
+	private final NumberFormat numberFormat = NumberFormat.getInstance();
 	public FilterStage(final Visualizer visualizer) {
 		this.visualizer = visualizer;
+		numberFormat.setMaximumFractionDigits(2);
 		vbox.setAlignment(Pos.CENTER);
 		VBox.setMargin(vbox, new Insets(50,30,0,0));
 
@@ -68,22 +72,35 @@ public class FilterStage {
 		root.getChildren().add(vbox);
 		
 		makeNodePropertiesArea();
-		vbox.getChildren().add(new HBox(40));
+		vbox.getChildren().add(makeSpacer(0,20));
 		makeFilterNotesTextArea();
+		vbox.getChildren().add(makeSpacer(0,20));
 		
 		stage.show();
 		stage.setOnCloseRequest(v -> {closed=true;} );
 		
 	}
+	private Region makeSpacer(double width, double height) {
+		Region spacer = new Region();
+		if (width>0) {
+			spacer.setPrefWidth(width);
+		}
+		if (height>0) {
+			spacer.setPrefHeight(height);
+		}
+		return spacer;
+	}
 	private void makeNodePropertiesArea() {
 		Label label = new Label("Node properties");
 		label.setTextFill(Color.ANTIQUEWHITE);
+		label.setFont(labelFont);
 		HBox hbox = new HBox();
+		hbox.getChildren().add(makeSpacer(40,0));
 		hbox.setAlignment(Pos.CENTER);
 		vbox.getChildren().add(label);
 		vbox.getChildren().add(hbox);
 		final TextArea textArea= new TextArea();
-		textArea.setPrefRowCount(nodeProperties.getMapFromPropertyNameToClasses().size());
+		textArea.setPrefRowCount(Math.min(5,nodeProperties.getMapFromPropertyNameToClasses().size()));
 		textArea.setEditable(false);
 		StringBuilder sb = new StringBuilder();
 		for(String key: nodeProperties.getMapFromPropertyNameToClasses().keySet()) {
@@ -95,9 +112,14 @@ public class FilterStage {
 				Set<Object> objects = nodeProperties.getMapFromPropertyNameToValues().get(key);
 				int col = string.length();
 				for(Object object:objects) {
-					String value = object.toString();
+					String value;
+					if (object instanceof Double) {
+						value = numberFormat.format((Double)object);
+					} else {
+						value = object.toString();
+					}
 					col += 2+value.length();
-					if (col>=76) {
+					if (col>=80) {
 						sb.append(" ...");
 						break;
 					}
@@ -112,10 +134,12 @@ public class FilterStage {
 		hbox.getChildren().add(textArea);
 	}
 	private void makeFilterNotesTextArea() {
-		Label label = new Label("Query filter:");
+		Label label = new Label("Node filter query:");
 		label.setTextFill(Color.ANTIQUEWHITE);
+		label.setFont(labelFont);
 		HBox hbox = new HBox();
 		hbox.setAlignment(Pos.CENTER);
+		hbox.getChildren().add(makeSpacer(40,0));
 		vbox.getChildren().add(label);
 		vbox.getChildren().add(hbox);
 		final TextArea textArea = new TextArea();

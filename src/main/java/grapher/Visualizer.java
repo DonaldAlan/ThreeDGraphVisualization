@@ -952,7 +952,8 @@ public class Visualizer extends Application {
 						+ "\n Press 'c' to randomize the colors."
 						+ "\n Press 's' to decrease the size of the nodes and edges, 'S' to increase the sizes"
 						+ "\n Press 'q' to exit."
-						+ "\n Press Ctrl-F to search for a node by id. If found, the program will focus on that node."
+						+ "\b Press 'f' to open a dialog for filtering nodes by properties"
+						+ "\n Press ctrl-f to search for a node by id. If found, the program will focus on that node."
 						+ "\n Left-click on a node to see details. Right click to focus/unfocus; hit Escape to unfocus."
 						+ "\n   Press PageUp and PageDown to adjust how many nodes are shown when focused."
 						+ "\n   Press 't' to hide non-tree edges when focused."
@@ -1015,9 +1016,13 @@ public class Visualizer extends Application {
 				}
 				break;
 			case F:
-				if (ke.isControlDown() && System.currentTimeMillis()-lastSearchAndFocusTime>250) {
+				if (System.currentTimeMillis()-lastSearchAndFocusTime<1000) {
+					break;
+				}
+				if (ke.isControlDown()) {
 					doSearchAndFocus();
 					lastSearchAndFocusTime=System.currentTimeMillis();
+					ke.consume();
 				} else {
 					if (filterStage ==null) {
 						filterStage=new FilterStage(Visualizer.this);
