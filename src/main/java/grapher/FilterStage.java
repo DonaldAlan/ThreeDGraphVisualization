@@ -17,6 +17,7 @@ import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextArea;
+import javafx.scene.control.Tooltip;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.Border;
 import javafx.scene.layout.BorderStroke;
@@ -72,8 +73,8 @@ public class FilterStage {
 		root.getChildren().add(vbox);
 		
 		makeNodePropertiesArea();
-		vbox.getChildren().add(makeSpacer(0,20));
-		makeFilterNotesTextArea();
+		vbox.getChildren().add(makeSpacer(0,10));
+		makeFilterQueryTextArea();
 		vbox.getChildren().add(makeSpacer(0,20));
 		
 		stage.show();
@@ -95,12 +96,12 @@ public class FilterStage {
 		label.setTextFill(Color.ANTIQUEWHITE);
 		label.setFont(labelFont);
 		HBox hbox = new HBox();
-		hbox.getChildren().add(makeSpacer(40,0));
+		hbox.getChildren().add(makeSpacer(50,0));
 		hbox.setAlignment(Pos.CENTER);
 		vbox.getChildren().add(label);
 		vbox.getChildren().add(hbox);
 		final TextArea textArea= new TextArea();
-		textArea.setPrefRowCount(Math.min(5,nodeProperties.getMapFromPropertyNameToClasses().size()));
+		textArea.setPrefRowCount(5);
 		textArea.setEditable(false);
 		StringBuilder sb = new StringBuilder();
 		for(String key: nodeProperties.getMapFromPropertyNameToClasses().keySet()) {
@@ -133,16 +134,21 @@ public class FilterStage {
 		textArea.setText(sb.toString());
 		hbox.getChildren().add(textArea);
 	}
-	private void makeFilterNotesTextArea() {
+	private void makeFilterQueryTextArea() {
 		Label label = new Label("Node filter query:");
 		label.setTextFill(Color.ANTIQUEWHITE);
 		label.setFont(labelFont);
+		Label help = new Label("For example:  weight > 1 and ( age > 40 or sex = \"male\")");
+		help.setFont(new Font(10));
+		help.setTextFill(Color.ANTIQUEWHITE);
 		HBox hbox = new HBox();
 		hbox.setAlignment(Pos.CENTER);
-		hbox.getChildren().add(makeSpacer(40,0));
+		hbox.getChildren().add(makeSpacer(50,0));
 		vbox.getChildren().add(label);
+		vbox.getChildren().add(help);
 		vbox.getChildren().add(hbox);
 		final TextArea textArea = new TextArea();
+
 		textArea.setPrefRowCount(3);
 		BorderWidths widths = new BorderWidths(5);
 		BorderStroke borderStroke= new BorderStroke(Color.CADETBLUE,BorderStrokeStyle.SOLID,CornerRadii.EMPTY,widths);
