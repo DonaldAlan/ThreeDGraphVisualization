@@ -2,6 +2,8 @@ package grapher;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import scala.Char;
 
@@ -9,7 +11,7 @@ public class NodeFilter {
 	private final Expression expression;
 	private final List<Token> tokens;
 	private enum ComparisonOp {
-		Eq("="), LT("<"), GT(">"), LTE(">="), GTE(">="); 
+		Eq("="), LT("<"), GT(">"), LTE(">="), GTE(">="), Like("~"); 
 		final String value;
 		private ComparisonOp(String value) {
 			this.value=value;
@@ -90,7 +92,7 @@ public class NodeFilter {
 	private ExpressionIndex parseEqualityOrComparison(int startIndex, int endIndexExclusive) {
 		if (tokens.get(startIndex) instanceof Identifier && startIndex+2 < endIndexExclusive) {
 			Token op = tokens.get(startIndex+1);
-			if (op instanceof EqToken || op instanceof LTToken || op instanceof GTToken || op instanceof LTEqToken || op instanceof GTEqToken) {
+			if (op instanceof EqToken || op instanceof LTToken || op instanceof GTToken || op instanceof LTEqToken || op instanceof GTEqToken || op instanceof SquigglyLikeToken) {
 				Token secondArg = tokens.get(startIndex+2);
 				if (secondArg instanceof StringToken || secondArg instanceof LongToken || secondArg instanceof DoubleToken || secondArg instanceof NullToken) {
 					Expression expr = new Comparison(getComparisonOp(op), (Identifier)tokens.get(startIndex), secondArg);
@@ -111,6 +113,8 @@ public class NodeFilter {
 			return ComparisonOp.LTE;
 		} else if (op instanceof GTEqToken) {
 			return ComparisonOp.GTE;
+		} else if (op instanceof SquigglyLikeToken) {
+			return ComparisonOp.Like;
 		}
 		throw new IllegalStateException("op = "+ op);
 	}
@@ -164,6 +168,8 @@ public class NodeFilter {
 			return tokenObject;
 		}
 		switch (op) {
+		case Like:
+			return token.getObject().toString();
 		case Eq:
 			return token.getObject();
 		case GT:
@@ -185,12 +191,15 @@ public class NodeFilter {
 		final Identifier identifier;
 		final Object expectedObject; // This will be a Number if op is not Eq
 		final String expectedObjectString;
+		final Pattern pattern;
 		public Comparison(ComparisonOp op, Identifier identifier, Token other) {
 			this.op = op;
 			this.identifier= identifier;
 			this.expectedObject = normalize(op, other);
 			this.expectedObjectString = expectedObject==null? null: expectedObject.toString();
+			this.pattern = op.equals(ComparisonOp.Like) ? makePattern(expectedObjectString) : null;
 		}
+	
 		@Override
 		public String toString() {
 			return "(" + identifier.toString() + " " + op + " " + expectedObject + ")";
@@ -210,6 +219,9 @@ public class NodeFilter {
 				} else if (expectedObject instanceof Number) {
 					return value.toString().equals(expectedObjectString);
 				}
+			} else if (op.equals(ComparisonOp.Like)) {
+				Matcher matcher = pattern.matcher(value.toString());
+				return matcher.matches();
 			}
 			// op is one of LT, GT, LTE, or GTE
 			if (value instanceof String) {
@@ -231,7 +243,21 @@ public class NodeFilter {
 			}
 		}
 	}
-	
+	// "*abc*"
+	private static Pattern makePattern(String matchString) {
+		StringBuilder sb = new StringBuilder();
+		for(int i=0;i<matchString.length();i++) {
+			char ch=matchString.charAt(i);
+			if (ch=='*') {
+				sb.append(".*");
+			} else if (ch == '?') {
+				sb.append(".");
+			} else {
+				sb.append(ch);
+			}
+		}
+		return Pattern.compile(sb.toString());
+	}
 	public static class Or extends Expression {
 		final Expression expr1;
 		final Expression expr2;
@@ -304,6 +330,7 @@ public class NodeFilter {
 	private static class LTEqToken extends Token {@Override public String toString() { return ">";}}
 	private static class GTToken extends Token {@Override public String toString() { return "<=";}}
 	private static class GTEqToken extends Token {@Override public String toString() { return ">=";}}
+	private static class SquigglyLikeToken extends Token {@Override public String toString() { return "~";}}
 	private static class NullToken extends Token {
 		@Override public String toString() { return "Null";}
 		@Override public Object getObject() { return null;}
@@ -367,6 +394,9 @@ public class NodeFilter {
 				index++;
 			} else if (ch== '"') {
 				index = addStringToken(index+1,query,tokens);
+			} else if (ch == '~') {
+				tokens.add(new SquigglyLikeToken());
+				index++;
 			} else if (ch == '=') {
 				tokens.add(new EqToken());
 				index++;

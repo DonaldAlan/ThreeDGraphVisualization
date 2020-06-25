@@ -138,7 +138,7 @@ public class FilterStage {
 		Label label = new Label("Node filter query:");
 		label.setTextFill(Color.ANTIQUEWHITE);
 		label.setFont(labelFont);
-		Label help = new Label("For example:  weight > 1 and ( age > 40 or sex = \"male\")");
+		Label help = new Label("For example:  weight > 1 and ( job ~ \"senior*\" or gender = \"male\") or NOT ( state = null)");
 		help.setFont(new Font(10));
 		help.setTextFill(Color.ANTIQUEWHITE);
 		HBox hbox = new HBox();
@@ -176,8 +176,9 @@ public class FilterStage {
 					visualizer.computeConnectedComponentsFromNodesToDisplay();
 					visualizer.requestReplaceOnePass();
 					stage.hide();
-				} catch (IllegalArgumentException exc) {
+				} catch (Exception exc) {
 					System.err.println("Illegal query: " + exc.getMessage());
+					exc.printStackTrace();
 				}
 			}
 		});
