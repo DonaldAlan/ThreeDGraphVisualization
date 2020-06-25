@@ -11,7 +11,7 @@ public class NodeFilter {
 	private final Expression expression;
 	private final List<Token> tokens;
 	private enum ComparisonOp {
-		Eq("="), LT("<"), GT(">"), LTE(">="), GTE(">="), Like("~"); 
+		Eq("="), LT("<"), GT(">"), LTE(">="), GTE(">="), Like("~"), Ne("!="); 
 		final String value;
 		private ComparisonOp(String value) {
 			this.value=value;
@@ -92,7 +92,8 @@ public class NodeFilter {
 	private ExpressionIndex parseEqualityOrComparison(int startIndex, int endIndexExclusive) {
 		if (tokens.get(startIndex) instanceof Identifier && startIndex+2 < endIndexExclusive) {
 			Token op = tokens.get(startIndex+1);
-			if (op instanceof EqToken || op instanceof LTToken || op instanceof GTToken || op instanceof LTEqToken || op instanceof GTEqToken || op instanceof SquigglyLikeToken) {
+			if (op instanceof EqToken || op instanceof NeToken || op instanceof LTToken || op instanceof GTToken 
+					|| op instanceof LTEqToken || op instanceof GTEqToken || op instanceof SquigglyLikeToken) {
 				Token secondArg = tokens.get(startIndex+2);
 				if (secondArg instanceof StringToken || secondArg instanceof LongToken || secondArg instanceof DoubleToken || secondArg instanceof NullToken) {
 					Expression expr = new Comparison(getComparisonOp(op), (Identifier)tokens.get(startIndex), secondArg);
@@ -105,6 +106,8 @@ public class NodeFilter {
 	private ComparisonOp getComparisonOp(Token op) {
 		if (op instanceof EqToken) {
 			return ComparisonOp.Eq;
+		} else if (op instanceof NeToken) {
+			return ComparisonOp.Ne;
 		} else if (op instanceof LTToken) {
 			return ComparisonOp.LT;
 		} else if (op instanceof GTToken) {
@@ -170,7 +173,7 @@ public class NodeFilter {
 		switch (op) {
 		case Like:
 			return token.getObject().toString();
-		case Eq:
+		case Eq: case Ne:
 			return token.getObject();
 		case GT:
 		case GTE:
@@ -218,6 +221,12 @@ public class NodeFilter {
 					return value.toString().equals(expectedObject);
 				} else if (expectedObject instanceof Number) {
 					return value.toString().equals(expectedObjectString);
+				}
+			} else if (op.equals(ComparisonOp.Ne)) {
+				if (expectedObject instanceof String) {
+					return !(value.toString().equals(expectedObject));
+				} else if (expectedObject instanceof Number) {
+					return !(value.toString().equals(expectedObjectString));
 				}
 			} else if (op.equals(ComparisonOp.Like)) {
 				Matcher matcher = pattern.matcher(value.toString());
@@ -322,6 +331,7 @@ public class NodeFilter {
 			return identifier;
 		}
 	}
+	private static class NeToken extends Token {@Override public String toString() { return "!=";}}
 	private static class OrToken extends Token {@Override public String toString() { return "Or";}}
 	private static class AndToken extends Token {@Override public String toString() { return "And";}}
 	private static class NotToken extends Token {@Override public String toString() { return "Not";}}
@@ -392,14 +402,24 @@ public class NodeFilter {
 			} else if (ch == ')') {
 				tokens.add(new RParen());
 				index++;
-			} else if (ch== '"') {
-				index = addStringToken(index+1,query,tokens);
+			} else if (ch== '"' || ch == '\'') {
+				index = addStringToken(index+1,query,tokens, ch);
 			} else if (ch == '~') {
 				tokens.add(new SquigglyLikeToken());
 				index++;
 			} else if (ch == '=') {
 				tokens.add(new EqToken());
 				index++;
+			} else if (ch == '!') {
+				index++;
+				if (index==query.length()) {
+					throw new IllegalArgumentException("Illegal ! at end");
+				}
+				ch = query.charAt(index);
+				if (ch == '=') {
+					index++;
+					tokens.add(new NeToken());
+				}
 			} else if (ch == '<') {
 				index++;
 				if (index==query.length()) {
@@ -464,13 +484,13 @@ public class NodeFilter {
 		return index;
 	}
 	// The char at index-1 was "
-	private int addStringToken(final int startIndex, String query, List<Token> tokens) {
+	private int addStringToken(final int startIndex, String query, List<Token> tokens, final char delimiterChar) {
 		final StringBuilder sb = new StringBuilder();
 		int index=startIndex;
 		boolean sawCloseDoubleQuote=false;
 		while (index<query.length()) {
 			char ch= query.charAt(index);
-			if (ch== '"') {
+			if (ch== delimiterChar) {
 				index++;
 				sawCloseDoubleQuote=true;
 				break;

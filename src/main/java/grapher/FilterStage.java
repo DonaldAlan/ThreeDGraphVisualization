@@ -138,7 +138,7 @@ public class FilterStage {
 		Label label = new Label("Node filter query:");
 		label.setTextFill(Color.ANTIQUEWHITE);
 		label.setFont(labelFont);
-		Label help = new Label("For example:  weight > 1 and ( job ~ \"senior*\" or gender = \"male\") or NOT ( state = null)");
+		Label help = new Label("For example:  weight > 1 and ( job ~ \"senior*\" or gender = \"female\") and NOT ( state = null)");
 		help.setFont(new Font(10));
 		help.setTextFill(Color.ANTIQUEWHITE);
 		HBox hbox = new HBox();

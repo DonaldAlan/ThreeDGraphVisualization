@@ -358,7 +358,8 @@ public class ReadGraphAndVisualize {
 		for(int i=0;i<0;i++) { // TODO: for testing, set limit >0
 			Random random = new Random();
 			for(Node3D node:nodes) {
-				node.getProperties().put("test"+i, random.nextDouble());
+				node.getProperties().put("double_"+i, random.nextDouble());
+				node.getProperties().put("string"+i, "c"+random.nextInt(3));
 			}
 		}
 		processNodes(nodes, new File(path).getName());
