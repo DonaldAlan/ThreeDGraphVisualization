@@ -33,7 +33,6 @@ public class Node3D implements Comparable<Node3D> {
 	public static int maxDegree=0;
 	private static final Double ONE = new Double(1.0);
 	//------------------------
-	private final String id;
 	private final Map<Node3D,Edge> edges = new HashMap<>(); // maps node to Edge, but "this" Node could be either node1 or node2
 	private final Map<String,Object> properties= new TreeMap<>();
 	private double x,y,z;
@@ -53,11 +52,11 @@ public class Node3D implements Comparable<Node3D> {
 		assert(allIds.add(id));
 	}
 	public Node3D(String id, String description) {
-		this.id=id;
+		properties.put("id", id);
 	}
 	@Override
 	public String toString() {
-		return id;
+		return properties.get("id").toString();
 	}
 
 	public static void computeConnectedComponentsForDisplay(Node3D[] nodesToDisplay) {
@@ -415,11 +414,11 @@ public class Node3D implements Comparable<Node3D> {
 	@Override
 	public boolean equals(Object obj) {
 		Node3D other= (Node3D)obj;
-		return other.id.equals(id);
+		return other.getId().equals(getId());
 	}
 	@Override
-	public int hashCode() {return id.hashCode();}
-	public String getId() {return id;}
+	public int hashCode() {return getId().hashCode();}
+	public String getId() {return properties.get("id").toString();}
 	
 	public double edgeDistanceTo(Node3D other, Node3D[] nodes) {
 		for(Node3D node: nodes) {
@@ -433,7 +432,7 @@ public class Node3D implements Comparable<Node3D> {
 
 	@Override
 	public int compareTo(Node3D other) {
-		  return id.compareTo(other.id);
+		  return getId().compareTo(other.getId());
 //		return Double.compare(other.importance, importance); // TODO
 	}
 	//-------------

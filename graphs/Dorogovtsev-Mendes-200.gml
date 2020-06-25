@@ -601,12 +601,15 @@ graph [
 	]
 	node [
 		id "200"
+		weight 1
 	]
 	node [
 		id "201"
+		weight 1
 	]
 	node [
 		id "202"
+		weight 2
 	]
 	edge [
 		id "0-1"

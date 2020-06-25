@@ -17,6 +17,9 @@ public class NodeProperties {
 	public Map<String, List<Class<?>>> getMapFromPropertyNameToClasses() {
 		return mapFromPropertyNameToClasses;
 	}
+	public Map<String, Set<Object>> getMapFromPropertyNameToValues() {
+		return mapFromPropertyNameToValues;
+	}
 	private void buildMapFromPropertyNameToClass(Node3D[] nodes) {
 		for(Node3D node:nodes) {
 			for(Map.Entry<String,Object> entry:node.getProperties().entrySet()) {

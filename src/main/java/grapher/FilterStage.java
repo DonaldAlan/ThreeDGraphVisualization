@@ -4,6 +4,7 @@ import javafx.stage.Stage;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -89,7 +90,21 @@ public class FilterStage {
 			sb.append(key+ ":");
 			List<Class<?>> classes=nodeProperties.getMapFromPropertyNameToClasses().get(key);
 			for(Class<?> clazz: classes) {
-				sb.append(" " + clazz.getSimpleName());
+				String string = " " + clazz.getSimpleName();
+				sb.append(string);
+				Set<Object> objects = nodeProperties.getMapFromPropertyNameToValues().get(key);
+				int col = string.length();
+				for(Object object:objects) {
+					String value = object.toString();
+					col += 2+value.length();
+					if (col>=76) {
+						sb.append(" ...");
+						break;
+					}
+					sb.append("  ");
+					sb.append(value);
+				}
+				
 			}
 			sb.append("\n");
 		}
