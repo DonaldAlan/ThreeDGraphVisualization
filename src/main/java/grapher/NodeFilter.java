@@ -90,13 +90,16 @@ public class NodeFilter {
 		}
 	}
 	private ExpressionIndex parseEqualityOrComparison(int startIndex, int endIndexExclusive) {
-		if (tokens.get(startIndex) instanceof Identifier && startIndex+2 < endIndexExclusive) {
+		if (tokens.get(startIndex) instanceof IdentifierToken && startIndex+2 < endIndexExclusive) {
 			Token op = tokens.get(startIndex+1);
 			if (op instanceof EqToken || op instanceof NeToken || op instanceof LTToken || op instanceof GTToken 
 					|| op instanceof LTEqToken || op instanceof GTEqToken || op instanceof SquigglyLikeToken) {
 				Token secondArg = tokens.get(startIndex+2);
+				if (secondArg instanceof IdentifierToken) {
+					secondArg = new StringToken(((IdentifierToken) secondArg).identifier);
+				}
 				if (secondArg instanceof StringToken || secondArg instanceof LongToken || secondArg instanceof DoubleToken || secondArg instanceof NullToken) {
-					Expression expr = new Comparison(getComparisonOp(op), (Identifier)tokens.get(startIndex), secondArg);
+					Expression expr = new Comparison(getComparisonOp(op), (IdentifierToken)tokens.get(startIndex), secondArg);
 					return new ExpressionIndex(expr, startIndex+3);
 				}
 			}
@@ -191,11 +194,11 @@ public class NodeFilter {
 	}
 	public static class Comparison extends Expression {
 		final ComparisonOp op;
-		final Identifier identifier;
+		final IdentifierToken identifier;
 		final Object expectedObject; // This will be a Number if op is not Eq
 		final String expectedObjectString;
 		final Pattern pattern;
-		public Comparison(ComparisonOp op, Identifier identifier, Token other) {
+		public Comparison(ComparisonOp op, IdentifierToken identifier, Token other) {
 			this.op = op;
 			this.identifier= identifier;
 			this.expectedObject = normalize(op, other);
@@ -317,9 +320,9 @@ public class NodeFilter {
 	private static abstract class Token {public Object getObject() {throw new IllegalStateException();}}
 	private static class LParen extends Token {@Override public String toString() { return "(";}}
 	private static class RParen extends Token {@Override public String toString() { return ")";}}
-	private static class Identifier extends Token {
+	private static class IdentifierToken extends Token {
 		final String identifier;
-		public Identifier(String identifier) {
+		public IdentifierToken(String identifier) {
 			this.identifier = identifier;
 		}
 		@Override
@@ -479,7 +482,7 @@ public class NodeFilter {
 			case "not": tokens.add(new NotToken()); break;
 			case "null": tokens.add(new NullToken()); break;
 			default:
-				tokens.add(new Identifier(token));
+				tokens.add(new IdentifierToken(token));
 		}
 		return index;
 	}
@@ -536,10 +539,11 @@ public class NodeFilter {
 	}
 	//----
 	public static void test1() {
-		NodeFilter nodeFilter1 = new NodeFilter("abc = 123 or xyz > 5 and zzz <= 4", null);
+		NodeFilter nodeFilter1 = new NodeFilter("abc = 123 and str4 = 'hello' and str4=hello or xyz > 5 and zzz <= 4", null);
 		System.out.println(nodeFilter1.tokens);
 		System.out.println(nodeFilter1.expression);
 		Node3D node1 = new Node3D("1");
+		node1.getProperties().put("str4", "hello");
 		node1.getProperties().put("abc", 123);
 		node1.getProperties().put("xyz", 1);
 		node1.getProperties().put("zzz", 5);
