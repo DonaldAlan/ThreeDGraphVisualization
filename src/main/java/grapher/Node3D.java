@@ -725,6 +725,7 @@ public class Node3D implements Comparable<Node3D> {
     }
 	
 	public boolean isVisible() {
+		// TODO: simiplify this
 		return isVisible && indexInImportanceOrder < Visualizer.countToShow;
 	}
 	public void setVisible(boolean visible) {

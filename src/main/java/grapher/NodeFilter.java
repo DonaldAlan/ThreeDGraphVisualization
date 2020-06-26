@@ -28,7 +28,9 @@ public class NodeFilter {
 	 */
 	public NodeFilter(String query, NodeProperties nodeProperties) {
 		tokens = tokenize(query);
+		System.out.println("tokens = " + tokens);
 		expression =parse();
+		System.out.println("expression = " + expression);
 	}
 	private static class ExpressionIndex {
 		final Expression expression;
@@ -458,6 +460,8 @@ public class NodeFilter {
 				}
 			} else if (Character.isAlphabetic(ch)) {
 				index = addIdentifierTokenOrAndOrOrOrNotOrNull(ch,index, query,tokens);
+			} else {
+				throw new IllegalArgumentException("Unexpected character " + ch + " at index " + index);
 			}
 		}
 		return tokens;
@@ -469,7 +473,7 @@ public class NodeFilter {
 		index++;
 		while (index<query.length()) {
 			ch = query.charAt(index);
-			if (!Character.isLetterOrDigit(ch)) {
+			if (!Character.isLetterOrDigit(ch) && ch!='.' && ch!='_') {
 				break;
 			}
 			sb.append(ch);
@@ -539,7 +543,7 @@ public class NodeFilter {
 	}
 	//----
 	public static void test1() {
-		NodeFilter nodeFilter1 = new NodeFilter("abc = 123 and str4 = 'hello' and str4=hello or xyz > 5 and zzz <= 4", null);
+		NodeFilter nodeFilter1 = new NodeFilter("abc = 123 and str4 = 'hello' and str4!=hello or xyz > 5 and zzz <= 4", null);
 		System.out.println(nodeFilter1.tokens);
 		System.out.println(nodeFilter1.expression);
 		Node3D node1 = new Node3D("1");
@@ -577,9 +581,13 @@ public class NodeFilter {
 		NodeFilter nodeFilter = new NodeFilter("test > 0.2",null);
 		System.out.println(nodeFilter.tokens);
 	}
+	private static void test3() {
+		NodeFilter nodeFilter = new NodeFilter("ui.label ~ '4*'",null);
+		System.out.println(nodeFilter.tokens);
+	}
 	public static void main(String [] args) {
 		try {
-			test1();
+			test3();
 		} catch (Throwable thr) {
 			thr.printStackTrace();
 		}

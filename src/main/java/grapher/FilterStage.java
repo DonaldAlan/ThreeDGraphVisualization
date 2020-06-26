@@ -172,11 +172,13 @@ public class FilterStage {
 					final Node3D[] nodesTosDisplayArray = new Node3D[nodesToDisplay.size()];
 					nodesToDisplay.toArray(nodesTosDisplayArray);
 					System.out.println("Filtered to " + nodesToDisplay.size() + " nodes");
+					// TODO: there is a bug involving sorting savedAllNodes for importance and visibility
 					visualizer.setNodesToDisplay(nodesTosDisplayArray); 
 					visualizer.computeConnectedComponentsFromNodesToDisplay();
 					visualizer.requestReplaceOnePass();
 					stage.hide();
-				} catch (Exception exc) {
+					System.out.println("hid FilterStage");
+				} catch (Throwable exc) {
 					System.err.println("Illegal query: " + exc.getMessage());
 					exc.printStackTrace();
 				}

@@ -316,7 +316,7 @@ public class Visualizer extends Application {
 		root.getChildren().add(graphingAlgorithmComboBox);
 	}
 	
-	private void runCurrentImportanceAlgorithm() {
+	public void runCurrentImportanceAlgorithm() {
 			switch (currentImportanceAlgorithm) {
 			case betweennessCentralityAlgorithm:
 				Node3D.computeImportanceViaJungBetweenessCentrality(savedAllNodes);
@@ -513,6 +513,10 @@ public class Visualizer extends Application {
 		for(int i=0;i<countToShow;i++) {
 			nodesToDisplay[i]=savedAllNodes[i];
 		}
+		//TODO?
+//		for(int i=0;i<savedAllNodes.length;i++) {
+//			nodesToDisplay[i].setVisible(i<countToShow);
+//		}
 	}
 	// -------------------------
 	private static class XformWorld extends Group {
@@ -1069,7 +1073,7 @@ public class Visualizer extends Application {
 			return -Double.compare(node1.getImportance(), node2.getImportance());
 		}};
 	
-	private void assignImportanceIndicesAndSortSavedAllNodes() {
+	public void assignImportanceIndicesAndSortSavedAllNodes() {
 		Arrays.sort(savedAllNodes, comparatorDecreasing);
 		int index=0;
 		for(Node3D node: savedAllNodes) {
